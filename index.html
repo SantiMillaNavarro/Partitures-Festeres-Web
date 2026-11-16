@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="ca">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#6b1722" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="Partitures Festeres" />
+  <meta name="description" content="La teua biblioteca de partitures per a les festes. Instal·lable i preparada per a treballar sense connexió." />
+  <link rel="manifest" href="./manifest.webmanifest" />
+  <link rel="icon" type="image/png" href="./assets/icon-192.png" />
+  <link rel="apple-touch-icon" href="./assets/icon-180.png" />
+  <link rel="stylesheet" href="./styles.css" />
+  <title>Partitures Festeres Web</title>
+</head>
+<body>
+  <div id="app" class="shell" aria-live="off">
+    <div class="startup"><img src="./assets/icon-192.png" alt="" /><span>Partitures Festeres</span></div>
+  </div>
+  <input id="import-input" type="file" accept=".pdf,.zip,application/pdf,application/zip" multiple hidden />
+  <script src="./vendor/jszip.min.js"></script>
+  <script type="module" src="./app.js"></script>
+</body>
+</html>

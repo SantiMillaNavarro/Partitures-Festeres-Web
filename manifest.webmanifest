@@ -1,0 +1,16 @@
+{
+  "name": "Partitures Festeres Web",
+  "short_name": "Partitures",
+  "description": "Biblioteca de partitures festeres per a iPhone, iPad i ordinador.",
+  "lang": "ca-ES-valencia",
+  "id": "./",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f5e8d1",
+  "theme_color": "#6b1722",
+  "icons": [
+    {"src":"./assets/icon-192.png","sizes":"192x192","type":"image/png","purpose":"any maskable"},
+    {"src":"./assets/icon-512.png","sizes":"512x512","type":"image/png","purpose":"any"}
+  ]
+}
