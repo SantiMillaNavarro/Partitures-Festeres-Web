@@ -1,30 +1,21 @@
-# Partitures Festeres Web — W1.2.1 (estabilización del visor)
+# Partitures Festeres Web W1.2.2 — Recuperació del visor
 
-**16 de noviembre de 2026.** Revisión correctiva tras las pruebas reales de la W1.2.
+La W1.2.2 recupera el visor natiu de W1.1. Les versions W1.2 i W1.2.1 poden deixar mescles de fitxers en la memòria cau. Per evitar-ho, aquesta versió utilitza noms de fitxer únics i una estratègia de xarxa primer, memòria cau després, per al codi.
 
-## Cambio principal
+## Publicació
 
-- Recuperado el visor PDF de la W1.1, que ya había funcionado para el usuario en Mac. Esta revisión **retira el visor experimental PDF.js W1.2** que podía fallar y dejar desactivados el zoom y los botones del visor.
-- No hay botón «Preparar visor sense connexió». No se descarga ningún motor externo ni se requiere preparar archivos para abrir un PDF.
-- Se conserva el visor PDF nativo del navegador con sus capacidades habituales de zoom y desplazamiento, y la navegación a la partitura anterior/siguiente.
-- **Limitación explícita:** todavía NO incluye los controles avanzados propios de zoom persistente, giro manual de 90º y navegación individual entre páginas que pretendíamos ofrecer en la W1.2. Las capacidades de zoom y rotación dependen del visor de cada navegador. Son tareas pendientes para una implementación fiable y probada de la fase W1.2.
-- `db.js`, `backup.js`, el formato de copia ZIP, los PDF en IndexedDB, la importación, las carpetas, los papeles y el Índex son idénticos a W1.1. Las preferencias de prueba que pudiera haber guardado W1.2 no se borran.
-- No modifica la aplicación Android ni publica bibliotecas privadas.
+1. Descomprimeix el ZIP.
+2. Puja **tot el contingut** a l'arrel del repositori GitHub Pages (`main`), incloses les noves versions `app-w122.js`, `backup-w122.js`, `db-w122.js`, `styles-w122.css`.
+3. Confirma el canvi (Commit changes) i espera a la publicació.
+4. Torna a obrir la URL habitual amb connexió i actualitza la pàgina. Si la PWA ja estava oberta, tanca-la del tot i torna-la a obrir.
+5. Comprova que en Ajustos figure «W1.2.2». Si encara es mostra una versió antiga, torna a carregar la pàgina abans de provar el visor.
 
-## Instalación en GitHub Pages
+## Important: no perdre partitures
 
-1. **Antes de tocar nada**, exporta tu copia de seguridad ZIP en Ajustos (aunque no debería alterarse ningún dato local).
-2. Descomprime el ZIP W1.2.1 y sube **su contenido**, no el ZIP, a `SantiMillaNavarro/Partitures-Festeres-Web` en rama `main`, raíz.
-3. Reemplaza `app.js`, `styles.css`, `sw.js`, `README.md` y conserva el resto de archivos y carpetas del ZIP.
-4. GitHub Pages seguirá sirviendo la misma URL. `viewer.js` de W1.2 puede permanecer en el repositorio sin efectos: esta versión no lo importa. Si quieres limpiar el repositorio, puedes eliminar ese archivo en otro commit; no es necesario para la corrección.
-5. Tras el despliegue de Pages, cierra/reabre la aplicación y verifica que en Ajustos aparece **W1.2.1**. Mantén tus datos del sitio y no desinstales la PWA.
-6. Abre varias partituras y verifica que recuperas el comportamiento anterior. No se requiere preparar el visor.
+**No desinstal·les la PWA, no esborres dades del lloc ni IndexedDB.** Aquesta actualització només canvia els fitxers públics del programa; no modifica la base de dades privada de partitures, les còpies ni les preferències.
 
-## Verificación del paquete
+Si el PDF no es veu en el visor integrat, el botó visible «Obrir en un altre visor» permet sol·licitar l'obertura nativa del PDF en una pestanya. Les capacitats del visor PDF natiu depenen del navegador i de si el sistema permet obrir la URL `blob:`.
 
-- `app.js` pasa comprobación sintáctica de Node.js.
-- `sw.js` actualiza la versión de caché y evita recuperar la W1.2 antigua desde el service worker.
-- `db.js` y `backup.js` tienen exactamente el mismo hash SHA-256 que los de la W1.1 validada.
-- Se comprueba que `index.html`, `sw.js` y `app.js` no cargan `viewer.js`, ni PDF.js, ni recursos de terceros para representar PDF.
+## Limitacions
 
-**La W1.2.1 prioriza estabilidad sobre funcionalidades avanzadas:** no afirmamos que el visor nativo permita todas las funciones de la aplicación Android. La adaptación final a Safari en iPhone queda por verificar en dispositivo real.
+Aquesta fase és una **recuperació**, no un visor PDF avançat. No inclou el zoom persistent ni la rotació manual de W1.2, que es van retirar. No s'ha validat en Safari iOS real.
