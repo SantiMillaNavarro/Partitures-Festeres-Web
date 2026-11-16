@@ -31,6 +31,9 @@ for(const [name,engine] of [['chromium',chromium],['webkit',webkit]]){
   const welcome=page.locator('[data-action="welcome-done"]');
   if(await welcome.count())await welcome.click();
   await page.locator('#import-input').setInputFiles({name:'PROVA.pdf',mimeType:'application/pdf',buffer:samplePdf()});
+  await page.waitForTimeout(800);
+  console.log(name+' import state: '+JSON.stringify(await page.evaluate(()=>({count:document.querySelectorAll('[data-action="open"]').length,dialog:document.querySelector('.modal')?.textContent?.slice(0,250),error:document.querySelector('.toast')?.textContent?.slice(0,350),main:document.querySelector('main')?.textContent?.slice(0,240)}))));
+  await page.screenshot({path:'w124-screenshots/'+name+'-import.png'});
   await page.locator('[data-action="open"]').first().waitFor();
   await page.locator('[data-action="open"]').first().click();
   await page.locator('.viewer-canvas').waitFor({timeout:45000});
