@@ -1,9 +1,9 @@
 /* Partitures Festeres Web W1: només guarda els arxius públics de l'aplicació.
    Les partitures privades es guarden en IndexedDB al dispositiu. */
-const CACHE = 'pfweb-shell-w11-20261116';
+const CACHE = 'pfweb-shell-w12-20261116';
 const ASSETS = [
   './', './index.html', './styles.css', './app.js', './db.js', './backup.js',
-  './manifest.webmanifest', './vendor/jszip.min.js',
+  './manifest.webmanifest', './vendor/jszip.min.js', './viewer.js',
   './assets/pergami.png', './assets/icon-180.png',
   './assets/icon-192.png', './assets/icon-512.png', './assets/icon-original.png'
 ];

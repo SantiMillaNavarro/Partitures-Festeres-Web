@@ -1,77 +1,71 @@
-# Partitures Festeres Web — W1.1
+# Partitures Festeres Web — W1.2
 
-**Fase W1.1: Gestión de biblioteca y copias de seguridad.** 16 de noviembre de 2026.
+**Fase W1.2: visor avançat de partitures** · 16 de noviembre de 2026.
 
-Aplicación PWA para iPhone, iPad, Mac y otros navegadores. Continúa el proyecto W1.0; **no modifica la aplicación Android**.
+La aplicación sigue siendo una **PWA para iPhone, iPad, Mac y otros navegadores**, y conserva la biblioteca, las copias de seguridad y la gestión del almacenamiento de W1.1. **No modifica Partitures Festeres Android**.
 
-## Novedades de W1.1
+## Novedades de esta versión
 
-- **Copia de seguridad completa de los datos disponibles en esta versión web:** todas las partituras PDF importadas, su organización en carpetas, rutas y fechas de incorporación, y las preferencias guardadas (por ejemplo, idioma y papel seleccionado). Se genera **un ZIP** con un manifiesto JSON y huellas SHA-256 de los PDF.
-- **Restauración desde Ajustos > Còpies de seguretat:** el usuario puede **añadir/fusionar** sin borrar los demás PDF, o **sustituir** toda la biblioteca y recuperar las preferencias de la copia. Ambas opciones muestran sus consecuencias antes de proceder.
-- **Protección contra copias dañadas:** se comprueban rutas, tamaño, cabecera PDF y SHA-256 antes de aplicar los cambios. La restauración prepara temporalmente todos los archivos y solo confirma los cambios mediante una única transacción de IndexedDB. Si falla esa transacción, la biblioteca anterior no se sustituye parcialmente.
-- **Información de almacenamiento** en Ajustos: número y tamaño de los PDF, uso estimado de almacenamiento del origen y cuota indicada por el navegador (si están disponibles), con una advertencia explícita sobre la persistencia.
-- **Opciones específicas para iPhone/iPad:** se prepara el ZIP y, desde un segundo toque, se ofrece «Guardar ZIP» o el diálogo de compartir/«Guardar en Archivos» cuando el navegador lo admite.
-- Interfaz en **valenciano y castellano** y actualización del caché PWA para cargar los nuevos archivos.
+- Visor de una sola página PDF, con fondo sin márgenes superfluos y controles adaptados a pantallas pequeñas.
+- Navegación **página anterior/siguiente** dentro de cada partitura, independiente de los botones **obra anterior/siguiente**.
+- **Zoom** de 50 % a 300 % respecto al ajuste base, **ajustar a anchura** y **ajustar página completa**.
+- **Rotación manual de 90°**, sin obligar al dispositivo a girar. Adaptación a cambios de orientación y tamaño de ventana.
+- **Recuerda por cada partitura** el zoom, la orientación, el modo de ajuste y la última página consultada. Estas preferencias se guardan en la base existente y se incluyen en las copias ZIP de W1.1.
+- **Modo sin barras** para aprovechar la pantalla y recuperar los controles fácilmente.
+- Gestos horizontales para cambiar de página cuando el documento no está ampliado horizontalmente, evitando interferir con su desplazamiento.
+- Superficie de visualización reservada para incorporar anotaciones en una fase posterior.
+- Alternativa de emergencia: si el visor avanzado falla, se abre el visor PDF original del navegador. También se conserva «Abrir en otro visor».
+- Panel «Visor de partitures» dentro de Ajustes para comprobar/preparar los recursos del visor.
 
-**Alcance de la copia:** W1.1 aún no dispone de repertorios, anotaciones, metadatos avanzados o sincronización con Drive. Por tanto, el ZIP no puede incluir esos datos inexistentes. **No es un formato de copia de la app Android**. La compatibilidad con `.pfa` queda para fases posteriores.
+## Una preparación inicial necesaria para el visor avanzado
 
-## Actualizar la aplicación web que ya está publicada
+La biblioteca y los PDF privados **continúan guardándose en IndexedDB**, sin enviarse a ningún servidor. Para representar las páginas con precisión, el visor usa la biblioteca de código abierto **Mozilla PDF.js 4.10.38, compilación legacy**, bajo licencia Apache-2.0. Es una versión posterior a la corrección de CVE-2024-4367, y adicionalmente se configura `isEvalSupported: false`.
 
-Repositorio existente: `partitures-festeres-web`.
+**Importante:** por ahora no incluimos los archivos grandes de PDF.js en el ZIP del proyecto. La **primera vez que se prepara el visor con conexión**, la web descarga dos archivos JavaScript **de versión fija** desde `cdn.jsdelivr.net` y los guarda en CacheStorage del dispositivo. La biblioteca puede después reutilizarlos sin red, **si Safari conserva ese almacenamiento**. La carga de estos recursos no sube ninguna partitura al CDN, aunque al descargar la biblioteca se establece una conexión con dicho proveedor de archivos. Esto es una **limitación del prototipo W1.2**, que conviene eliminar incorporando PDF.js localmente en una futura revisión.
 
-1. Descomprime el archivo ZIP del proyecto W1.1 en tu ordenador.
-2. En GitHub, abre **tu repositorio actual**. No crees uno nuevo.
-3. Sube a la **raíz** (rama `main`) **todos los archivos y carpetas del interior** del proyecto descomprimido, sustituyendo sus versiones anteriores: `index.html`, `app.js`, `db.js`, `backup.js` (nuevo), `styles.css`, `sw.js`, `manifest.webmanifest`, `assets/`, `vendor/` y este `README.md`.
-4. Confirma los cambios (*Commit changes*). Conserva GitHub Pages en **Settings → Pages → Deploy from a branch → main → /(root)**.
-5. Abre la URL habitual: https://santimillanavarro.github.io/partitures-festeres-web/ . No hay que cambiar la dirección de los usuarios ni reinstalar la app.
-6. Si todavía ves W1.0, cierra y vuelve a abrir la PWA con Internet para permitir que se actualice su *service worker*. A veces hará falta volver a cargar la página. **No borres los datos del sitio ni desinstales la PWA.**
+Si la conexión inicial falla, el visor avanzado se sustituye por el PDF nativo del navegador; no se borran ni modifican partituras. Para preparar el visor con Internet disponible: **Ajustos → Visor de partitures → Preparar visor sense connexió**. Cuando confirme que está preparado, abre una partitura y prueba el modo avión.
 
-La base IndexedDB se actualiza internamente de esquema 1 a 2; se **conservan las partituras y ajustes que ya haya guardados** en ese mismo navegador, dispositivo, dirección web y contexto de instalación. Si está abierta en varias pestañas, cierra las demás antes de actualizar.
+El soporte de PDF.js en Safari depende de la versión de iOS, las fuentes del PDF y la memoria disponible. La **apertura real, el zoom y el comportamiento sin conexión en iPhone/iPad todavía están pendientes de validación**. En una biblioteca extensa, el visor representa una sola página cada vez para limitar el uso de memoria.
 
-**No subas partituras ni ZIP de usuarios a GitHub.** El repositorio solo debe contener el código y los recursos públicos de la aplicación.
+## Publicar la actualización en GitHub Pages
 
-## Uso de la copia de seguridad
+Repositorio actual: `https://github.com/SantiMillaNavarro/Partitures-Festeres-Web`
 
-### Exportar
+1. Descomprime el ZIP **PartituresFesteres_Web_W1_2_VISOR_AVANZADO.zip**.
+2. En el repositorio de GitHub, sobre la rama `main`, sube a la **raíz** todo el contenido descomprimido, **reemplazando** los archivos antiguos (especialmente `app.js`, `styles.css`, `sw.js` y `README.md`) e **incluyendo `viewer.js` como archivo nuevo**.
+3. Conserva `db.js`, `backup.js`, la carpeta `assets/`, `vendor/` y los demás archivos tal y como vienen en el ZIP. No subas PDF privados ni ZIP de bibliotecas de músicos.
+4. Confirma los cambios con «Commit changes». GitHub Pages sigue configurado en `main / (root)`. No es necesario compilar ni cambiar la URL.
+5. Abre `https://santimillanavarro.github.io/partitures-festeres-web/` y comprueba en **Ajustos** que se indica **W1.2**.
+6. Si aún ves W1.1, cierra y vuelve a abrir la web/PWA con Internet; puede que sea necesario recargarla para que el nuevo *service worker* asuma el control. **No desinstales la app ni borres los datos del sitio**.
 
-1. Abre Partitures Festeres Web → **Ajustos** → **Còpies de seguretat**.
-2. Pulsa **Preparar còpia ZIP**. Espera a que aparezca **Còpia preparada**.
-3. Pulsa **Guardar ZIP**. En iPhone, también puedes utilizar **Compartir / Guardar en Fitxers** si aparece; en el menú del sistema elige «Guardar en Archivos» y una carpeta fuera de la aplicación.
-4. **Comprueba en Archivos/Finder que el ZIP existe.** Preparar una copia dentro de la app NO implica que se haya guardado fuera.
+La base IndexedDB y su versión de esquema **no cambian** de W1.1 a W1.2. Las partituras que habías importado deben mantenerse disponibles en el mismo navegador y contexto de instalación.
 
-La copia debe conservarse en Archivos, iCloud Drive (opcional), un ordenador o un disco externo. **Nunca la publiques en un repositorio público de GitHub.**
+## Prueba sugerida en Mac antes de probar en iPhone
 
-### Restaurar
+1. Abre una partitura que contenga **dos o más páginas**. Comprueba que el contador indica «Pàgina 1 / N» y que los botones de navegación cambian de página.
+2. Cambia el zoom, gira 90°, pasa a otra página, cierra el visor y vuelve a abrir **la misma partitura**. Debe recordar los ajustes.
+3. Utiliza «ajustar página completa» y «ajustar a anchura». Comprueba que no muestra dos páginas juntas.
+4. Pulsa el botón de ocultar controles y comprueba que puedes recuperarlos.
+5. Abre otra partitura mediante los botones «Anterior / Següent» inferiores. Su zoom debe ser independiente.
+6. En Ajustes, prepara el visor sin conexión; después prueba una partitura con Internet desconectado, **sin borrar las cachés del navegador**.
+7. Repite una exportación ZIP W1.1 y, si es posible, revisa que la copia sigue conteniendo los PDF. **No pruebes «sustituir biblioteca» sin guardar previamente una copia fuera de la aplicación**.
 
-1. En **Ajustos → Còpies de seguretat**, elige **Restaurar còpia ZIP**.
-2. Selecciona el ZIP generado por W1.1 y lee el recuento de PDF.
-3. Selecciona una opción:
-   - **Afegir a la biblioteca**: añade los PDF, sustituye solo los que tienen la misma ruta y **conserva** los demás PDF y los ajustes actuales.
-   - **Substituir tota la biblioteca**: **elimina** los PDF que no existen en la copia y restaura los PDF y las preferencias de esa copia. Antes de hacerlo, exporta una copia de la biblioteca actual.
-4. Espera a que finalice la comprobación de integridad. No cierres la aplicación durante este proceso.
-5. Abre varios PDF y comprueba los papeles, el índice y el recuento de obras.
+## Prueba prioritaria en iPhone o iPad
 
-**Importante:** las copias W1.1 se restauran desde «Restaurar copia ZIP». El botón habitual «Importar PDF o ZIP» está pensado para bibliotecas ordinarias y no debe emplearse para este formato especial.
+Instala primero la PWA desde Safari, impórtale algunas partituras y abre una de varias páginas **con Internet**. Prueba zoom, giro, página siguiente, modo sin barras y cambio de orientación. A continuación, cierra la app, activa el modo avión y vuelve a abrir la misma partitura. Si falla, anota si aparece el visor alternativo y el mensaje exacto. Repite la prueba en iPad horizontal si está disponible.
 
-## Datos, límites y cautelas
+## Verificación realizada en el entorno de desarrollo
 
-- Las partituras y las copias **no se envían a nuestros servidores**; las bibliotecas se guardan en IndexedDB del propio dispositivo.
-- IndexedDB es almacenamiento privado del navegador, y el sistema puede borrarlo en ciertas circunstancias. La copia externa es imprescindible.
-- **Safari, Chrome y la PWA instalada pueden tener almacenes diferentes**. Instala primero la aplicación en iPhone y después importa o restaura desde la app instalada.
-- El formato ZIP W1.1 guarda los PDF sin compresión adicional (muchos PDF ya están comprimidos) para reducir el trabajo de CPU. En bibliotecas muy grandes, crear o restaurar un único ZIP puede exigir **mucha memoria y espacio temporal**, especialmente en iPhone. La primera prueba en iPhone debe hacerse con una biblioteca pequeña. Si una biblioteca grande no puede exportarse en ese dispositivo, conserva los PDF originales y evita borrar nada.
-- La restauración temporal puede necesitar espacio adicional del dispositivo para almacenar su contenido antes de aplicarlo.
-- En esta fase se mantiene el límite **100 MB por PDF** heredado de W1.0. Para importar un ZIP de biblioteca convencional se mantiene el límite de **250 MB por archivo ZIP**; las copias W1.1 tienen un flujo de restauración independiente.
-- La cuota mostrada por `navigator.storage.estimate()` es **estimada** y puede incluir otros datos del mismo origen; no corresponde al espacio libre total del iPhone.
-- Es conveniente probar el modo avión tras el primer uso con Internet, pero **el comportamiento offline y la gestión de archivos en Safari iOS deben verificarse en un dispositivo real**.
+- `node --check` de `app.js`, `viewer.js`, `db.js`, `backup.js` y `sw.js`.
+- Pruebas unitarias del controlador del visor **con páginas y canvas simulados**: dibujado de una página, avance hasta el límite, zoom, rotación, ajuste, persistencia y cierre.
+- Comparación SHA-256: `db.js` y `backup.js` son **idénticos** a los de W1.1.
+- Revisión de que `sw.js` almacena el nuevo `viewer.js` y se actualiza a la caché de W1.2; PDF.js usa su propia caché.
+- **No fue posible ejecutar la interfaz completa en el navegador automatizado de este entorno ni descargar los scripts reales de PDF.js**. Por ello, **no afirmamos que esté validado en Safari/iOS**; la prueba del dispositivo será decisiva.
 
-## Resumen de pruebas realizadas para W1.1
+## Limitaciones pendientes
 
-- Sintaxis de `app.js`, `backup.js`, `db.js` y `sw.js` comprobada.
-- Prueba automatizada de la interfaz y la lógica en Chromium **con una base de datos simulada**: ZIP de demostración → importación → exportación → comprobación del archivo ZIP → eliminación → restauración → fusión sin duplicados.
-- Pruebas de rechazo de un PDF dañado, conservación de datos anteriores al producirse ese error, y distinción entre «Afegir» y «Substituir» y sus preferencias.
-- Revisión estática de la migración IndexedDB (v1→v2) y de la lista de recursos del *service worker*.
-- **Pendiente:** prueba completa con IndexedDB real, instalación PWA, descargas o compartición, y bibliotecas grandes en **Safari/iOS reales**. Las pruebas simuladas no sustituyen esas validaciones.
+No incluye aún repertorios, anotaciones compartidas `.pfa`, metadatos avanzados, afinador, metrónomo, escáner ni conexión a Drive. Las copias de W1.1 incluyen las preferencias de visualización, pero siguen sin ser compatibles con las copias de la app Android. El navegador puede eliminar IndexedDB o CacheStorage cuando necesite espacio; guarda siempre una copia ZIP externa.
 
-## Componentes y autoría
+La incorporación definitiva de PDF.js dentro del propio repositorio —sin CDN de primera ejecución— y las pruebas reales en Safari serán prioridades antes de una publicación general para músicos.
 
-Código HTML, CSS y JavaScript propio. JSZip 3.10.1 incluido en `vendor/`, con su licencia original en `vendor/LICENCIA_JSZIP.txt`. Recursos visuales originales de Partitures Festeres Android, aportados por su autor. © SMN Systems.
+**Licencias:** recursos originales de Partitures Festeres, © SMN Systems. JSZip 3.10.1 incluido en `vendor/` con su licencia. Mozilla PDF.js 4.10.38 (Apache-2.0) se descarga bajo demanda desde un tercero; documentación: https://mozilla.github.io/pdf.js/ .
