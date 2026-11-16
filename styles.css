@@ -135,3 +135,19 @@ code{font-size:.88em;overflow-wrap:anywhere}
 }
 @media(min-width:801px) and (max-width:1080px){.main-layout{grid-template-columns:185px 1fr}.content{padding:25px 20px}}
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+/* W1.1 — Gestió de la biblioteca i còpies de seguretat */
+.backup-buttons {display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:15px 0 9px}
+.backup-buttons button {max-width:100%}
+.backup-ready {background:#eef3e7;border:1px solid #9db087;border-radius:13px;padding:15px;margin:14px 0;color:#35593a;display:grid;gap:8px}
+.backup-ready strong {display:flex;align-items:center;gap:7px}
+.backup-ready small {overflow-wrap:anywhere;font-size:.85rem}
+.backup-ready .backup-buttons {margin:4px 0 0}
+.restore-modal {text-align:left;width:min(550px,100%)}
+.restore-modal h2{text-align:center}
+.restore-options {display:grid;gap:12px;text-align:left}
+.restore-options > div {background:#f9eedb;border:1px solid #d2b58a;border-radius:12px;padding:15px}
+.restore-options strong {color:#6b1722;font-size:1.05rem}
+.restore-options p {font-size:.9rem;margin:8px 0 12px}
+.restore-options .replace-option {background:#fbece9;border-color:#d6a09b}
+@media(max-width:800px){.backup-buttons{flex-direction:column;align-items:stretch}.backup-buttons button{width:100%}.backup-ready{padding:12px}}

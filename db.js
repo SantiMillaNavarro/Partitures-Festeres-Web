@@ -1,6 +1,6 @@
 // Arxius PDF: IndexedDB privada, no s'envien a cap servidor.
 const DB_NAME = 'partitures-festeres-web-w1';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 let instance;
 
 export function openDB() {
@@ -12,6 +12,7 @@ export function openDB() {
       const db = request.result;
       if (!db.objectStoreNames.contains('scores')) db.createObjectStore('scores', { keyPath: 'path' });
       if (!db.objectStoreNames.contains('prefs')) db.createObjectStore('prefs', { keyPath: 'key' });
+      if (!db.objectStoreNames.contains('staging')) db.createObjectStore('staging', { keyPath: 'path' });
     };
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);
@@ -70,3 +71,70 @@ export async function getPref(key, fallback=null) {
   });
 }
 export function setPref(key,value) { return run('prefs','readwrite',s=>s.put({key,value})); }
+
+
+// La importació d'una còpia completa es prepara en una zona temporal, sense tocar la biblioteca.
+export function clearStaging() { return run('staging', 'readwrite', s => s.clear()); }
+export async function stageBatch(records) {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction('staging', 'readwrite');
+    const store = tx.objectStore('staging');
+    for (const item of records) store.put(item);
+    tx.oncomplete = () => resolve(records.length);
+    tx.onerror = () => reject(tx.error || new Error('No hi ha espai suficient per a preparar la còpia'));
+    tx.onabort = () => reject(tx.error || new Error('Preparació de la còpia interrompuda'));
+  });
+}
+export async function getAllPrefs() {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const req = db.transaction('prefs','readonly').objectStore('prefs').getAll();
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+export async function countStaging() {
+  const db = await openDB();
+  return new Promise((resolve,reject) => {
+    const req = db.transaction('staging', 'readonly').objectStore('staging').count();
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+// Esborrar o fusionar els arxius és una ÚNICA transacció, junt amb les preferències.
+// Davant un error (inclòs falta d'espai), la biblioteca original no es modifica a mitges.
+export async function commitStagedBackup(mode, prefs, expectedCount) {
+  if (mode !== 'merge' && mode !== 'replace') throw new Error('Mode de restauració desconegut');
+  const count = await countStaging();
+  if (count !== expectedCount) throw new Error('La còpia preparada no està completa');
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(['scores','prefs','staging'], 'readwrite');
+    const scores = tx.objectStore('scores');
+    const staging = tx.objectStore('staging');
+    const preferences = tx.objectStore('prefs');
+    if (mode === 'replace') scores.clear();
+    let copied=0;
+    const cursor = staging.openCursor();
+    cursor.onsuccess = () => {
+      const current=cursor.result;
+      if (current) {
+        scores.put(current.value);
+        copied++;
+        current.continue();
+      } else {
+        if (copied !== expectedCount) { tx.abort(); return; }
+        if (mode === 'replace') {
+          preferences.clear();
+          for (const pref of prefs) preferences.put(pref);
+        }
+        staging.clear();
+      }
+    };
+    cursor.onerror = () => { try{tx.abort();}catch{} };
+    tx.oncomplete = () => resolve(copied);
+    tx.onerror = () => reject(tx.error || new Error('No s’ha pogut restaurar la biblioteca'));
+    tx.onabort = () => reject(tx.error || new Error('Restauració interrompuda. La biblioteca original està intacta.'));
+  });
+}

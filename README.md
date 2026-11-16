@@ -1,98 +1,77 @@
-# Partitures Festeres Web — Fase W1.0 (prototipo)
+# Partitures Festeres Web — W1.1
 
-**Versión web independiente de Partitures Festeres (Android 1.11.15).**
-Primera prueba para iPhone, iPad y navegadores de escritorio.
+**Fase W1.1: Gestión de biblioteca y copias de seguridad.** 16 de noviembre de 2026.
 
-**Importante: no es el APK convertido.** Es una aplicación web nueva, hecha en HTML/CSS/JavaScript, con los recursos visuales originales de Partitures Festeres. La aplicación Android no se modifica.
+Aplicación PWA para iPhone, iPad, Mac y otros navegadores. Continúa el proyecto W1.0; **no modifica la aplicación Android**.
 
-## Qué incluye esta primera versión
+## Novedades de W1.1
 
-- Instalación desde Safari en la pantalla de inicio como aplicación web.
-- Interfaz en valenciano (predeterminado) y castellano; elección inicial de idioma.
-- Importación de uno o varios PDF sueltos o de un archivo ZIP con carpetas y PDF.
-- Navegación por carpetas reales, con acceso a la raíz.
-- Reconocimiento de carpetas como `1er`, `2n`, `3r`… para seleccionar el papel cuando existan en la raíz del ZIP.
-- Índice de todas las obras, agrupadas por carpetas; búsqueda por nombres o rutas.
-- Apertura de PDF y navegación anterior/siguiente entre obras. La representación del PDF depende del visor integrado en Safari o en el navegador; se ofrece una alternativa para abrirlo externamente.
-- Guardado local de los PDF mediante IndexedDB; aplicación sin conexión mediante Service Worker tras completar la primera instalación.
-- Eliminación local individual o de toda la biblioteca, siempre con confirmación.
-- Recursos originales: icono del saxofón y fondo de pergamino.
+- **Copia de seguridad completa de los datos disponibles en esta versión web:** todas las partituras PDF importadas, su organización en carpetas, rutas y fechas de incorporación, y las preferencias guardadas (por ejemplo, idioma y papel seleccionado). Se genera **un ZIP** con un manifiesto JSON y huellas SHA-256 de los PDF.
+- **Restauración desde Ajustos > Còpies de seguretat:** el usuario puede **añadir/fusionar** sin borrar los demás PDF, o **sustituir** toda la biblioteca y recuperar las preferencias de la copia. Ambas opciones muestran sus consecuencias antes de proceder.
+- **Protección contra copias dañadas:** se comprueban rutas, tamaño, cabecera PDF y SHA-256 antes de aplicar los cambios. La restauración prepara temporalmente todos los archivos y solo confirma los cambios mediante una única transacción de IndexedDB. Si falla esa transacción, la biblioteca anterior no se sustituye parcialmente.
+- **Información de almacenamiento** en Ajustos: número y tamaño de los PDF, uso estimado de almacenamiento del origen y cuota indicada por el navegador (si están disponibles), con una advertencia explícita sobre la persistencia.
+- **Opciones específicas para iPhone/iPad:** se prepara el ZIP y, desde un segundo toque, se ofrece «Guardar ZIP» o el diálogo de compartir/«Guardar en Archivos» cuando el navegador lo admite.
+- Interfaz en **valenciano y castellano** y actualización del caché PWA para cargar los nuevos archivos.
 
-## Lo que AÚN NO incluye
+**Alcance de la copia:** W1.1 aún no dispone de repertorios, anotaciones, metadatos avanzados o sincronización con Drive. Por tanto, el ZIP no puede incluir esos datos inexistentes. **No es un formato de copia de la app Android**. La compatibilidad con `.pfa` queda para fases posteriores.
 
-- Sincronización directa con Google Drive ni archivos `.pfa` compartidos.
-- Anotaciones, escáner, metrónomo, afinador, favoritos o repertorios.
-- Visor PDF propio con giro y zoom persistente; durante W1 se usa el del navegador.
-- Garantías de persistencia equivalentes a una aplicación nativa. iOS puede borrar datos web ante falta de espacio o por decisiones del sistema.
+## Actualizar la aplicación web que ya está publicada
 
-## Publicar en GitHub Pages (sin compilación)
+Repositorio existente: `partitures-festeres-web`.
 
-1. Crea un **repositorio público independiente**, por ejemplo `partitures-festeres-web`, desde GitHub o GitHub Desktop.
-2. Extrae este ZIP en tu ordenador.
-3. Copia **el contenido interior** de la carpeta `PartituresFesteres_Web_W1/` a la **raíz del repositorio**: `index.html`, `app.js`, `db.js`, `styles.css`, `sw.js`, `manifest.webmanifest`, `assets/`, `vendor/` y este `README.md`.
-4. Publica los cambios en la rama `main` (commit y push).
-5. Abre el repositorio en GitHub → **Settings → Pages**. En **Build and deployment**, selecciona **Deploy from a branch**, rama `main`, carpeta `/(root)`, y guarda.
-6. Abre la dirección HTTPS que muestre Pages, normalmente `https://TU_USUARIO.github.io/partitures-festeres-web/`.
-7. No necesitas `npm`, Android Studio, APK ni AAB. El sitio debe publicarse por HTTPS para disponer de Service Worker e instalación web.
+1. Descomprime el archivo ZIP del proyecto W1.1 en tu ordenador.
+2. En GitHub, abre **tu repositorio actual**. No crees uno nuevo.
+3. Sube a la **raíz** (rama `main`) **todos los archivos y carpetas del interior** del proyecto descomprimido, sustituyendo sus versiones anteriores: `index.html`, `app.js`, `db.js`, `backup.js` (nuevo), `styles.css`, `sw.js`, `manifest.webmanifest`, `assets/`, `vendor/` y este `README.md`.
+4. Confirma los cambios (*Commit changes*). Conserva GitHub Pages en **Settings → Pages → Deploy from a branch → main → /(root)**.
+5. Abre la URL habitual: https://santimillanavarro.github.io/partitures-festeres-web/ . No hay que cambiar la dirección de los usuarios ni reinstalar la app.
+6. Si todavía ves W1.0, cierra y vuelve a abrir la PWA con Internet para permitir que se actualice su *service worker*. A veces hará falta volver a cargar la página. **No borres los datos del sitio ni desinstales la PWA.**
 
-El código se ha escrito con rutas relativas (`./`); funciona en la subcarpeta de GitHub Pages sin cambiar ninguna dirección del proyecto.
+La base IndexedDB se actualiza internamente de esquema 1 a 2; se **conservan las partituras y ajustes que ya haya guardados** en ese mismo navegador, dispositivo, dirección web y contexto de instalación. Si está abierta en varias pestañas, cierra las demás antes de actualizar.
 
-**Privacidad:** GitHub Pages hará públicos estos archivos de código y diseño. **No subas los PDF reales de ningún músico al repositorio**. Los PDF se importan después, desde cada dispositivo, y se guardan en su almacenamiento local.
+**No subas partituras ni ZIP de usuarios a GitHub.** El repositorio solo debe contener el código y los recursos públicos de la aplicación.
 
-## Instalar en el iPhone / iPad
+## Uso de la copia de seguridad
 
-1. Abre la dirección de GitHub Pages en **Safari**, con conexión a Internet.
-2. Toca **Compartir → Añadir a pantalla de inicio** y deja activado **Abrir como app**.
-3. Abre el icono **Partitures Festeres** instalado, elige idioma y **importa los PDF o un ZIP desde allí**.
-4. Prueba la navegación y abre varios PDF. A continuación, cierra la app, activa el modo avión, vuelve a abrirla e intenta leer las mismas partituras.
-5. Conserva el ZIP original como copia de seguridad fuera de la aplicación. Repite la importación si iOS llega a vaciar los datos locales.
+### Exportar
 
-**Importante para iOS:** el almacén de una web abierta en Safari y el de la misma web instalada en la pantalla de inicio pueden ser independientes. Por ello, **instala la app antes de importar la biblioteca**, y realiza las importaciones dentro de la app instalada.
+1. Abre Partitures Festeres Web → **Ajustos** → **Còpies de seguretat**.
+2. Pulsa **Preparar còpia ZIP**. Espera a que aparezca **Còpia preparada**.
+3. Pulsa **Guardar ZIP**. En iPhone, también puedes utilizar **Compartir / Guardar en Fitxers** si aparece; en el menú del sistema elige «Guardar en Archivos» y una carpeta fuera de la aplicación.
+4. **Comprueba en Archivos/Finder que el ZIP existe.** Preparar una copia dentro de la app NO implica que se haya guardado fuera.
 
-## Cómo preparar un ZIP de partituras
+La copia debe conservarse en Archivos, iCloud Drive (opcional), un ordenador o un disco externo. **Nunca la publiques en un repositorio público de GitHub.**
 
-Ejemplo:
+### Restaurar
 
-```
-Partitures/
-├── 1er/
-│   ├── Pasdobles/
-│   │   └── Obra 1.pdf
-│   └── Marxes cristianes/
-│       └── Obra 2.pdf
-└── 2n/
-    └── Pasdobles/
-        └── Obra 1 (segon).pdf
-```
+1. En **Ajustos → Còpies de seguretat**, elige **Restaurar còpia ZIP**.
+2. Selecciona el ZIP generado por W1.1 y lee el recuento de PDF.
+3. Selecciona una opción:
+   - **Afegir a la biblioteca**: añade los PDF, sustituye solo los que tienen la misma ruta y **conserva** los demás PDF y los ajustes actuales.
+   - **Substituir tota la biblioteca**: **elimina** los PDF que no existen en la copia y restaura los PDF y las preferencias de esa copia. Antes de hacerlo, exporta una copia de la biblioteca actual.
+4. Espera a que finalice la comprobación de integridad. No cierres la aplicación durante este proceso.
+5. Abre varios PDF y comprueba los papeles, el índice y el recuento de obras.
 
-La carpeta contenedora llamada `Partitures/` se omite automáticamente; las carpetas interiores se conservan. También se pueden importar ZIP sin carpetas `1er` y `2n`, o PDF sueltos.
+**Importante:** las copias W1.1 se restauran desde «Restaurar copia ZIP». El botón habitual «Importar PDF o ZIP» está pensado para bibliotecas ordinarias y no debe emplearse para este formato especial.
 
-Límites conservadores **para este prototipo**: ZIP de hasta 250 MB, PDF individual de hasta 100 MB. Los ZIP demasiado grandes pueden requerir dividirse en varios archivos; se pueden importar sucesivamente. Un PDF importado de nuevo en la misma ruta sustituye al anterior.
+## Datos, límites y cautelas
 
-## Test en un ordenador antes de publicar
+- Las partituras y las copias **no se envían a nuestros servidores**; las bibliotecas se guardan en IndexedDB del propio dispositivo.
+- IndexedDB es almacenamiento privado del navegador, y el sistema puede borrarlo en ciertas circunstancias. La copia externa es imprescindible.
+- **Safari, Chrome y la PWA instalada pueden tener almacenes diferentes**. Instala primero la aplicación en iPhone y después importa o restaura desde la app instalada.
+- El formato ZIP W1.1 guarda los PDF sin compresión adicional (muchos PDF ya están comprimidos) para reducir el trabajo de CPU. En bibliotecas muy grandes, crear o restaurar un único ZIP puede exigir **mucha memoria y espacio temporal**, especialmente en iPhone. La primera prueba en iPhone debe hacerse con una biblioteca pequeña. Si una biblioteca grande no puede exportarse en ese dispositivo, conserva los PDF originales y evita borrar nada.
+- La restauración temporal puede necesitar espacio adicional del dispositivo para almacenar su contenido antes de aplicarlo.
+- En esta fase se mantiene el límite **100 MB por PDF** heredado de W1.0. Para importar un ZIP de biblioteca convencional se mantiene el límite de **250 MB por archivo ZIP**; las copias W1.1 tienen un flujo de restauración independiente.
+- La cuota mostrada por `navigator.storage.estimate()` es **estimada** y puede incluir otros datos del mismo origen; no corresponde al espacio libre total del iPhone.
+- Es conveniente probar el modo avión tras el primer uso con Internet, pero **el comportamiento offline y la gestión de archivos en Safari iOS deben verificarse en un dispositivo real**.
 
-No abras `index.html` con doble clic: la importación puede funcionar, pero Service Worker, módulos JavaScript y algunas funciones de IndexedDB no se comportan igual bajo `file://`.
+## Resumen de pruebas realizadas para W1.1
 
-Si tienes Python:
+- Sintaxis de `app.js`, `backup.js`, `db.js` y `sw.js` comprobada.
+- Prueba automatizada de la interfaz y la lógica en Chromium **con una base de datos simulada**: ZIP de demostración → importación → exportación → comprobación del archivo ZIP → eliminación → restauración → fusión sin duplicados.
+- Pruebas de rechazo de un PDF dañado, conservación de datos anteriores al producirse ese error, y distinción entre «Afegir» y «Substituir» y sus preferencias.
+- Revisión estática de la migración IndexedDB (v1→v2) y de la lista de recursos del *service worker*.
+- **Pendiente:** prueba completa con IndexedDB real, instalación PWA, descargas o compartición, y bibliotecas grandes en **Safari/iOS reales**. Las pruebas simuladas no sustituyen esas validaciones.
 
-```
-cd PartituresFesteres_Web_W1
-python -m http.server 8000
-```
+## Componentes y autoría
 
-Abre `http://localhost:8000` en tu navegador. En el iPhone se necesita GitHub Pages u otro alojamiento HTTPS.
-
-## Comprobaciones de esta entrega
-
-- Sintaxis JavaScript comprobada para `app.js`, `db.js` y `sw.js`.
-- Prueba de interfaz en Chromium con almacenamiento simulado: inicio, elección de idioma, importación de un ZIP con `1er/2n`, navegación por carpetas, apertura del visor, índice, cambio de papel y ajustes (sin errores JS detectados).
-- Comprobación de recursos locales incluidos en el proyecto y manifiesto PWA.
-
-**Pendiente:** probar IndexedDB y Service Worker en un sitio HTTPS real e investigar la visualización del PDF en Safari iOS/iPadOS. No está todavía validada la experiencia offline en un iPhone real.
-
-## Licencias y autoría
-
-Los recursos visuales se recuperaron del proyecto Android aportado por el autor de Partitures Festeres. El código del prototipo es nuevo.
-Se distribuye JSZip 3.10.1 para importar los archivos ZIP, con su licencia conservada en `vendor/LICENCIA_JSZIP.txt`. JSZip se distribuye bajo MIT/GPL (se utiliza conforme a la licencia MIT).
-
-© SMN Systems. Fase W1.0, noviembre de 2026.
+Código HTML, CSS y JavaScript propio. JSZip 3.10.1 incluido en `vendor/`, con su licencia original en `vendor/LICENCIA_JSZIP.txt`. Recursos visuales originales de Partitures Festeres Android, aportados por su autor. © SMN Systems.

@@ -1,4 +1,5 @@
 import {openDB, getAllScores, getScore, saveBatch, deleteScore, clearScores, getPref, setPref} from './db.js';
+import {BACKUP_MANIFEST, createBackup, inspectBackup, restoreBackup} from './backup.js';
 
 const I = {
   library:'<svg viewBox="0 0 24 24"><path d="M3 6h6l2 2h10v12H3z"/><path d="M3 8V5h6l2 3"/></svg>',
@@ -15,7 +16,10 @@ const I = {
   share:'<svg viewBox="0 0 24 24"><path d="M12 16V2m-5 5 5-5 5 5M4 12v9h16v-9"/></svg>',
   info:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 11v6M12 7v1"/></svg>',
   check:'<svg viewBox="0 0 24 24"><path d="m4 12 5 5L20 6"/></svg>',
-  wifi:'<svg viewBox="0 0 24 24"><path d="M2 9a16 16 0 0 1 20 0M5 13a11 11 0 0 1 14 0M9 17a5 5 0 0 1 6 0"/><circle cx="12" cy="21" r="1"/></svg>'
+  wifi:'<svg viewBox="0 0 24 24"><path d="M2 9a16 16 0 0 1 20 0M5 13a11 11 0 0 1 14 0M9 17a5 5 0 0 1 6 0"/><circle cx="12" cy="21" r="1"/></svg>',
+  save:'<svg viewBox="0 0 24 24"><path d="M5 3h12l4 4v14H3V3h2M7 3v7h9V3M7 21v-8h10v8"/></svg>',
+  download:'<svg viewBox="0 0 24 24"><path d="M12 3v13m-5-5 5 5 5-5M4 17v4h16v-4"/></svg>',
+  restore:'<svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 1 3 6.7M3 19v-6h6M12 7v5l4 2"/></svg>'
 };
 const icon = (name) => `<span class="icon" aria-hidden="true">${I[name]||I.file}</span>`;
 const L = {
@@ -30,7 +34,7 @@ const L = {
   deleteAll:'Esborrar biblioteca',deleteThis:'Esborrar esta partitura',installTitle:'Instal·lar a iPhone / iPad',
   installText:'Obri esta pàgina en Safari, toca Compartir i selecciona «Afegir a la pantalla d’inici». Activa «Obrir com a app».',
   offlineTitle:'Ús sense connexió',offlineText:'Quan hages obert l’aplicació per primera vegada amb Internet, torna-la a obrir sense connexió. Les partitures ja importades es recuperen del dispositiu. iOS pot eliminar dades del navegador si falta espai: guarda sempre una còpia del ZIP.',
-  statusOnline:'Connexió disponible',statusOffline:'Sense connexió',disk:'Espai aproximat',dev:'Versió de prova W1',
+  statusOnline:'Connexió disponible',statusOffline:'Sense connexió',disk:'Espai aproximat',dev:'Versió de prova W1.1',
   warningTitle:'Confirmar eliminació',warningText:'S’esborraran totes les partitures guardades en este dispositiu. Esta acció no es pot desfer.',
   deleteConfirm:'Sí, esborrar',cancel:'Cancel·lar',back:'Tornar',openExternal:'Obrir en un altre visor',
   viewerHint:'Si el PDF no es mostra correctament, toca «Obrir en un altre visor». La visualització depén de Safari.',
@@ -52,7 +56,21 @@ const L = {
   limitations:'Esta primera versió no inclou encara les anotacions, el sincronisme de Drive, els repertoris ni les ferramentes musicals.',
   help:'Ajuda',openPdf:'Obrir PDF',fileNumber:'Partitura',zipError:'ZIP no vàlid o protegit.',tooBig:'El PDF excedix el límit de prova de 100 MB.',
   browserNote:'No obris l’HTML com a fitxer local: publica’l en HTTPS o usa un servidor local per a les proves.',
-  confirmOne:'Vols esborrar esta partitura del dispositiu?'
+  confirmOne:'Vols esborrar esta partitura del dispositiu?',
+  backupTitle:'Còpies de seguretat',backupDesc:'Exporta les partitures i les preferències en un ZIP complet, que podràs guardar en Fitxers o en un disc extern.',
+  createBackup:'Preparar còpia ZIP',restoreBackup:'Restaurar còpia ZIP',backupPrepared:'Còpia preparada',saveBackup:'Guardar ZIP',shareBackup:'Compartir / Guardar en Fitxers',
+  backupTip:'Guardar la còpia fora de l’app és essencial: iOS pot esborrar les dades web si falta espai.',
+  backupCreating:'Preparant la còpia de seguretat…',backupRestoring:'Restaurant biblioteca…',backupExported:'La còpia ZIP està preparada. Guarda-la fora de l’aplicació.',
+  backupSent:'S’ha sol·licitat la descàrrega del ZIP.',backupShareCancelled:'Compartició cancel·lada',backupNotSaved:'No s’ha pogut compartir. Prova «Guardar ZIP».',
+  backupWrongInput:'Este ZIP és una còpia de seguretat. Restaura’l des d’Ajustos, no des d’Importar.',
+  restoreChoice:'Com vols restaurar la còpia?',restoreExplain:'La còpia conté {count} partitures ({size}). Es verificarà la integritat de cada PDF abans de fer cap canvi.',
+  restoreMerge:'Afegir a la biblioteca',restoreReplace:'Substituir tota la biblioteca',restoreMergeHelp:'Conserva les partitures actuals i incorpora les de la còpia. Si coincidix una ruta, se substituïx eixe PDF. Conserva els ajustos actuals.',
+  restoreReplaceHelp:'Esborra les partitures actuals que no estiguen en la còpia i restaura també els ajustos guardats. No es pot desfer; exporta abans una còpia de la biblioteca actual.',
+  restoreSuccess:'Biblioteca restaurada correctament',restoreError:'La restauració no s’ha completat. Les partitures originals es conserven.',
+  usage:'Ús total aproximat d’este lloc web',quota:'Quota indicada pel navegador',persistentYes:'Persistència del navegador concedida',persistentNo:'Persistència no garantida',
+  storageNote:'L’ús i la quota són estimacions del navegador; no representen l’espai lliure total del dispositiu.',backupNoScores:'La biblioteca no conté encara cap PDF.',
+  backupLarge:'Per a biblioteques grans, un ZIP únic pot requerir molta memòria en iPhone. Conserva una altra còpia dels PDF originals.',
+  restorePending:'Llegint l’arxiu de còpia…',backupVerify:'Verificant PDF i preparant restauració…'
  },
  es: {
   subtitle:'La música de nuestras fiestas',library:'Biblioteca',index:'Índice',settings:'Ajustes',import:'Importar',importFiles:'Importar PDF o ZIP',
@@ -65,7 +83,7 @@ const L = {
   deleteAll:'Borrar biblioteca',deleteThis:'Eliminar esta partitura',installTitle:'Instalar en iPhone / iPad',
   installText:'Abre esta página en Safari, toca Compartir y elige «Añadir a pantalla de inicio». Activa «Abrir como app».',
   offlineTitle:'Uso sin conexión',offlineText:'Tras abrir la aplicación por primera vez con Internet, vuelve a abrirla sin conexión. Las partituras importadas se recuperan del dispositivo. iOS puede eliminar datos del navegador ante falta de espacio: guarda siempre una copia del ZIP.',
-  statusOnline:'Conexión disponible',statusOffline:'Sin conexión',disk:'Espacio aproximado',dev:'Versión de prueba W1',
+  statusOnline:'Conexión disponible',statusOffline:'Sin conexión',disk:'Espacio aproximado',dev:'Versión de prueba W1.1',
   warningTitle:'Confirmar eliminación',warningText:'Se borrarán todas las partituras guardadas en este dispositivo. Esta acción no se puede deshacer.',
   deleteConfirm:'Sí, borrar',cancel:'Cancelar',back:'Volver',openExternal:'Abrir en otro visor',
   viewerHint:'Si el PDF no se muestra correctamente, pulsa «Abrir en otro visor». La visualización depende de Safari.',
@@ -87,14 +105,28 @@ const L = {
   limitations:'Esta primera versión aún no incluye anotaciones, sincronización de Drive, repertorios ni herramientas musicales.',
   help:'Ayuda',openPdf:'Abrir PDF',fileNumber:'Partitura',zipError:'ZIP inválido o protegido.',tooBig:'El PDF excede el límite de prueba de 100 MB.',
   browserNote:'No abras el HTML como archivo local: publícalo en HTTPS o usa un servidor local para las pruebas.',
-  confirmOne:'¿Quieres borrar esta partitura del dispositivo?'
+  confirmOne:'¿Quieres borrar esta partitura del dispositivo?',
+  backupTitle:'Copias de seguridad',backupDesc:'Exporta las partituras y las preferencias en un ZIP completo, que podrás guardar en Archivos o en un disco externo.',
+  createBackup:'Preparar copia ZIP',restoreBackup:'Restaurar copia ZIP',backupPrepared:'Copia preparada',saveBackup:'Guardar ZIP',shareBackup:'Compartir / Guardar en Archivos',
+  backupTip:'Guardar la copia fuera de la app es esencial: iOS puede borrar los datos web si falta espacio.',
+  backupCreating:'Preparando la copia de seguridad…',backupRestoring:'Restaurando biblioteca…',backupExported:'La copia ZIP está preparada. Guárdala fuera de la aplicación.',
+  backupSent:'Se ha solicitado la descarga del ZIP.',backupShareCancelled:'Se ha cancelado el uso compartido',backupNotSaved:'No se pudo compartir. Prueba «Guardar ZIP».',
+  backupWrongInput:'Este ZIP es una copia de seguridad. Restáuralo desde Ajustes, no desde Importar.',
+  restoreChoice:'¿Cómo quieres restaurar la copia?',restoreExplain:'La copia contiene {count} partituras ({size}). Se verificará la integridad de cada PDF antes de realizar cambios.',
+  restoreMerge:'Añadir a la biblioteca',restoreReplace:'Sustituir toda la biblioteca',restoreMergeHelp:'Conserva las partituras actuales e incorpora las de la copia. Si coincide una ruta, se sustituye ese PDF. Conserva los ajustes actuales.',
+  restoreReplaceHelp:'Borra las partituras actuales que no estén en la copia y restaura también los ajustes guardados. No se puede deshacer; exporta antes una copia de la biblioteca actual.',
+  restoreSuccess:'Biblioteca restaurada correctamente',restoreError:'La restauración no se ha completado. Se conservan las partituras originales.',
+  usage:'Uso total aproximado de esta web',quota:'Cuota indicada por el navegador',persistentYes:'Persistencia del navegador concedida',persistentNo:'Persistencia no garantizada',
+  storageNote:'El uso y la cuota son estimaciones del navegador; no representan el espacio libre total del dispositivo.',backupNoScores:'La biblioteca todavía no contiene PDF.',
+  backupLarge:'Para bibliotecas grandes, un ZIP único puede requerir mucha memoria en iPhone. Conserva otra copia de los PDF originales.',
+  restorePending:'Leyendo el archivo de copia…',backupVerify:'Verificando PDF y preparando restauración…'
  }
 };
 const $ = (q,root=document) => root.querySelector(q);
 const esc = value => String(value??'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const norm = value => (value??'').toLocaleLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
 const sort = (a,b) => a.localeCompare(b,'ca',{numeric:true,sensitivity:'base'});
-const state={lang:'va',page:'library',paper:'root',cwd:[],scores:[],search:'',view:null,blobUrl:null,modal:null,toastTimer:null,loading:false,online:navigator.onLine};
+const state={lang:'va',page:'library',paper:'root',cwd:[],scores:[],search:'',view:null,blobUrl:null,modal:null,toastTimer:null,loading:false,online:navigator.onLine,storage:null,backup:null,restore:null};
 const tr = key => L[state.lang][key]||key;
 const nice = value => value.replace(/\.pdf$/i,'');
 const topDir = path => path.split('/')[0];
@@ -169,15 +201,23 @@ function renderSettings(){
   <div class="line"><span>${esc(tr('scoreCount'))}</span><strong>${state.scores.length}</strong></div>
   <div class="line"><span>${esc(tr('disk'))}</span><strong>${bytes(sizeTotal())}</strong></div>
   <div class="line"><span>${esc(tr('network'))}</span><strong>${state.online?tr('statusOnline'):tr('statusOffline')}</strong></div>
+  ${state.storage?.usage!=null?`<div class="line"><span>${esc(tr('usage'))}</span><strong>${esc(bytes(state.storage.usage))}</strong></div>`:''}
+  ${state.storage?.quota!=null?`<div class="line"><span>${esc(tr('quota'))}</span><strong>${esc(bytes(state.storage.quota))}</strong></div>`:''}
+  <p class="help">${esc(state.storage?.persisted?tr('persistentYes'):tr('persistentNo'))}. ${esc(tr('storageNote'))}</p>
   <div class="line"><button class="secondary" data-action="import">${icon('upload')}${esc(tr('importFiles'))}</button><button class="secondary" data-action="clear">${icon('trash')}${esc(tr('deleteAll'))}</button></div>
   <p class="help">${esc(tr('saveZip'))}</p></div>
+ <div class="panel backup-panel"><h3>${icon('save')} ${esc(tr('backupTitle'))}</h3><p>${esc(tr('backupDesc'))}</p>
+  <div class="backup-buttons"><button class="primary" data-action="backup-create" ${state.loading||!state.scores.length?'disabled':''}>${icon('download')}${esc(tr('createBackup'))}</button><button class="secondary" data-action="backup-choose" ${state.loading?'disabled':''}>${icon('restore')}${esc(tr('restoreBackup'))}</button></div>
+  ${state.backup?`<div class="backup-ready"><strong>${icon('check')} ${esc(tr('backupPrepared'))}</strong><small>${esc(state.backup.name)} · ${esc(bytes(state.backup.blob.size))}</small><div class="backup-buttons"><button class="primary" data-action="backup-save">${icon('download')}${esc(tr('saveBackup'))}</button>${typeof navigator.share==='function'?`<button class="secondary" data-action="backup-share">${icon('share')}${esc(tr('shareBackup'))}</button>`:''}</div></div>`:''}
+  <p class="help">${esc(tr('backupTip'))}</p><p class="help">${esc(tr('backupLarge'))}</p></div>
  <div class="panel"><h3>${icon('share')} ${esc(tr('installTitle'))}</h3><p>${esc(tr('installText'))}</p>
    <p class="help">${esc(tr('offlineText'))}</p>
  </div>
- <div class="panel"><h3>${icon('info')} ${esc(tr('about'))}</h3><p>${esc(tr('limitations'))}</p><p>${esc(tr('intro'))}</p><div class="line"><strong>Partitures Festeres Web — W1.0</strong><span>© SMN Systems</span></div></div>`;
+ <div class="panel"><h3>${icon('info')} ${esc(tr('about'))}</h3><p>${esc(tr('limitations'))}</p><p>${esc(tr('intro'))}</p><div class="line"><strong>Partitures Festeres Web — W1.1</strong><span>© SMN Systems</span></div></div>`;
 }
 function renderModal(){if(!state.modal)return '';
  if(state.modal==='welcome')return `<div class="modal-backdrop" role="dialog" aria-modal="true"><div class="modal"><img src="./assets/icon-192.png" alt="Partitures Festeres"/><h2>Benvingut · Bienvenido</h2><p>Tria l’idioma · Elige el idioma</p><label><input type="radio" name="welcome-lang" value="va" ${state.lang==='va'?'checked':''}/> Valencià</label><label><input type="radio" name="welcome-lang" value="es" ${state.lang==='es'?'checked':''}/> Castellano</label><div class="modal-actions"><button class="primary" data-action="welcome-done">Començar · Empezar</button></div></div></div>`;
+ if(state.modal==='restore-choice'&&state.restore){const m=state.restore.manifest;return `<div class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="restore-title"><div class="modal restore-modal"><h2 id="restore-title">${esc(tr('restoreChoice'))}</h2><p>${esc(tr('restoreExplain').replace('{count}',m.scoreCount).replace('{size}',bytes(m.totalBytes)))}</p><div class="restore-options"><div><strong>${esc(tr('restoreMerge'))}</strong><p>${esc(tr('restoreMergeHelp'))}</p><button class="primary" data-action="restore-merge">${icon('upload')}${esc(tr('restoreMerge'))}</button></div><div class="replace-option"><strong>${esc(tr('restoreReplace'))}</strong><p>${esc(tr('restoreReplaceHelp'))}</p><button class="danger" data-action="restore-replace">${icon('restore')}${esc(tr('restoreReplace'))}</button></div></div><div class="modal-actions"><button class="secondary" data-action="close-modal">${esc(tr('cancel'))}</button></div></div></div>`;}
  if(state.modal==='clear')return `<div class="modal-backdrop" role="dialog" aria-modal="true"><div class="modal"><h2>${esc(tr('warningTitle'))}</h2><p>${esc(tr('warningText'))}</p><div class="modal-actions"><button class="secondary" data-action="close-modal">${esc(tr('cancel'))}</button><button class="danger" data-action="confirm-clear">${esc(tr('deleteConfirm'))}</button></div></div></div>`;
  if(state.modal==='delete-one')return `<div class="modal-backdrop" role="dialog" aria-modal="true"><div class="modal"><h2>${esc(tr('warningTitle'))}</h2><p>${esc(tr('confirmOne'))}</p><p><strong>${esc(state.view?.path||'')}</strong></p><div class="modal-actions"><button class="secondary" data-action="close-modal">${esc(tr('cancel'))}</button><button class="danger" data-action="confirm-delete-one">${esc(tr('deleteConfirm'))}</button></div></div></div>`;
  return '';
@@ -228,6 +268,7 @@ async function importSelected(files){
     let zip;
     try{zip=await window.JSZip.loadAsync(input,{checkCRC32:false});}
     catch(e){errors.push(`${input.name}: ${tr('zipError')}`);continue;}
+    if(zip.file(BACKUP_MANIFEST)){errors.push(`${input.name}: ${tr('backupWrongInput')}`);continue;}
     const entries=Object.values(zip.files).filter(e=>!e.dir && /\.pdf$/i.test(e.name));
     const original=entries.map(e=>normalizePath(e.name));
     const valid=original.map((path,i)=>({entry:entries[i],path})).filter(v=>v.path);
@@ -262,7 +303,7 @@ async function importSelected(files){
   if(state.paper!=='root'&&!papers.includes(state.paper))state.paper=papers[0]||'root';
   state.cwd=[];state.search='';state.page='library';
   await setPref('paper',state.paper);
-  render();
+  render();updateStorageInfo();
   toast(`${added} ${tr('added')}${skipped?` · ${skipped} ${tr('skipped')}`:''}${errors.length?` · ${errors[0]}`:''}`,!!errors.length&&added===0);
  }catch(e){console.error(e);toast(`${tr('error')} ${e?.message||''}`,true);state.scores=await getAllScores().catch(()=>state.scores);render();}
  finally{progress(false);$('#import-input').value='';}
@@ -275,6 +316,71 @@ async function openPdf(path){
  state.view={path};render();
 }
 function closeViewer(){if(state.blobUrl){URL.revokeObjectURL(state.blobUrl);state.blobUrl=null;}state.view=null;render();}
+async function updateStorageInfo() {
+  if(!navigator.storage) return;
+  try {
+    const estimate=await navigator.storage.estimate?.();
+    const persisted=await navigator.storage.persisted?.();
+    state.storage={usage:Number.isFinite(estimate?.usage)?estimate.usage:null,
+      quota:Number.isFinite(estimate?.quota)?estimate.quota:null,persisted:persisted===true};
+    if(state.page==='settings'&&!state.modal&&!state.view) render();
+  } catch { /* Els navegadors no sempre permeten consultar-ho. */ }
+}
+function updateProgress(msg){const text=$('#import-progress-text');if(text)text.textContent=msg;}
+async function doBackup(){
+  if(state.loading) return;
+  if(!state.scores.length){toast(tr('backupNoScores'),true);return;}
+  state.loading=true;progress(true,tr('backupCreating'));
+  try{
+    const backup=await createBackup(p=>{
+      if(p.phase==='read') updateProgress(`${p.done} / ${p.total} ${tr('scoreCount')}`);
+      if(p.phase==='zip') updateProgress(`${tr('backupCreating')} ${Math.round(p.percent||0)} %`);
+    });
+    if(state.backup?.url) URL.revokeObjectURL(state.backup.url);
+    state.backup={blob:backup.blob,name:backup.filename,url:URL.createObjectURL(backup.blob)};
+    state.page='settings';render();toast(tr('backupExported'));
+  }catch(e){console.error(e);toast(`${tr('error')} ${e.message}`,true);}
+  finally{state.loading=false;progress(false);}
+}
+function saveBackup(){
+  if(!state.backup) return;
+  const a=document.createElement('a');a.href=state.backup.url;a.download=state.backup.name;
+  document.body.append(a);a.click();a.remove();
+  toast(tr('backupSent'));
+}
+async function shareBackup(){
+  if(!state.backup || !navigator.share) return;
+  const file=new File([state.backup.blob],state.backup.name,{type:'application/zip'});
+  try{
+    if(navigator.canShare && !navigator.canShare({files:[file]}))throw new Error('El navegador no permet compartir ZIP.');
+    await navigator.share({files:[file],title:'Partitures Festeres Web'});
+  }catch(e){if(e?.name==='AbortError')toast(tr('backupShareCancelled'));else toast(`${tr('backupNotSaved')} ${e?.message||''}`,true);}
+}
+async function chooseRestoreFile(file){
+  if(!file || state.loading)return;
+  state.loading=true;progress(true,tr('restorePending'));
+  try{state.restore=await inspectBackup(file);state.modal='restore-choice';render();}
+  catch(e){console.error(e);toast(`${tr('error')} ${e.message}`,true);}
+  finally{state.loading=false;progress(false);$('#restore-input').value='';}
+}
+async function doRestore(mode){
+  if(state.loading||!state.restore)return;
+  state.loading=true;state.modal=null;render();progress(true,tr('backupVerify'));
+  try{
+    const count=await restoreBackup(state.restore,mode,p=>updateProgress(`${tr('backupVerify')} ${p.done} / ${p.total}`));
+    state.restore=null;
+    state.scores=await getAllScores();
+    if(mode==='replace'){
+      const lang=await getPref('lang',state.lang);state.lang=lang==='es'?'es':'va';
+      state.paper=await getPref('paper','root');
+    }
+    const paperList=paperRoots();
+    if(state.paper!=='root'&&!paperList.includes(state.paper))state.paper=paperList[0]||'root';
+    state.cwd=[];state.page='library';state.search='';closeViewerIfNeeded();render();
+    toast(`${tr('restoreSuccess')} · ${count} ${tr('scoreCount')}`);updateStorageInfo();
+  }catch(e){console.error(e);state.scores=await getAllScores().catch(()=>state.scores);render();toast(`${tr('restoreError')} ${e?.message||''}`,true);}
+  finally{state.loading=false;progress(false);}
+}
 async function handleClick(el){
  const action=el.dataset.action,val=el.dataset.value;
  switch(action){
@@ -283,6 +389,12 @@ async function handleClick(el){
   case 'crumb':state.cwd=state.cwd.slice(0,Number(val));state.search='';render();break;
   case 'folder':state.cwd.push(val);state.search='';render();break;
   case 'import':$('#import-input').click();break;
+  case 'backup-create':await doBackup();break;
+  case 'backup-choose':$('#restore-input').click();break;
+  case 'backup-save':saveBackup();break;
+  case 'backup-share':await shareBackup();break;
+  case 'restore-merge':await doRestore('merge');break;
+  case 'restore-replace':await doRestore('replace');break;
   case 'open':await openPdf(val);break;
   case 'viewer-close':closeViewer();break;
   case 'viewer-prev':case 'viewer-next':{
@@ -291,12 +403,12 @@ async function handleClick(el){
   case 'viewer-external':if(state.blobUrl){const anchor=document.createElement('a');anchor.href=state.blobUrl;anchor.target='_blank';anchor.rel='noopener';anchor.click();}break;
   case 'delete-one':state.modal='delete-one';render();break;
   case 'clear':state.modal='clear';render();break;
-  case 'close-modal':state.modal=null;render();break;
+  case 'close-modal':state.modal=null;state.restore=null;render();break;
   case 'confirm-delete-one':{
     const path=state.view?.path;if(path)await deleteScore(path);
-    state.scores=await getAllScores();state.modal=null;closeViewer();toast(tr('removed'));break;
+    state.scores=await getAllScores();state.modal=null;closeViewer();updateStorageInfo();toast(tr('removed'));break;
   }
-  case 'confirm-clear':await clearScores();state.scores=[];state.paper='root';state.cwd=[];await setPref('paper','root');state.modal=null;closeViewerIfNeeded();render();toast(tr('allRemoved'));break;
+  case 'confirm-clear':await clearScores();state.scores=[];state.paper='root';state.cwd=[];await setPref('paper','root');state.modal=null;closeViewerIfNeeded();render();updateStorageInfo();toast(tr('allRemoved'));break;
   case 'welcome-done':state.modal=null;await setPref('lang',state.lang);render();break;
  }
 }
@@ -313,6 +425,7 @@ async function init(){
   if(state.paper==='root'&&papers.length&&!(await getPref('paper')))state.paper=papers[0];
   if(configured!=='es'&&configured!=='va')state.modal='welcome';
   render();
+  updateStorageInfo();
   if('serviceWorker' in navigator && (location.protocol==='https:' || location.hostname==='localhost')){
    navigator.serviceWorker.register('./sw.js',{scope:'./'}).catch(e=>console.warn('Service worker:',e));
   }
@@ -330,10 +443,12 @@ document.addEventListener('input',e=>{
 });
 document.addEventListener('change',e=>{
  if(e.target.id==='import-input')importSelected([...e.target.files]);
+ if(e.target.id==='restore-input')chooseRestoreFile(e.target.files?.[0]);
  if(e.target.name==='welcome-lang'){state.lang=e.target.value;render();}
  if(e.target.id==='language-select'){state.lang=e.target.value;setPref('lang',state.lang).then(()=>{render();toast(tr('saved'));});}
 });
 window.addEventListener('online',()=>{state.online=true;if(state.page==='settings'&&!state.view)render();});
+window.addEventListener('pagehide',()=>{if(state.backup?.url)URL.revokeObjectURL(state.backup.url);});
 window.addEventListener('offline',()=>{state.online=false;if(state.page==='settings'&&!state.view)render();});
 document.addEventListener('keydown',e=>{
  if(e.key==='Escape'&&state.modal&&state.modal!=='welcome'){state.modal=null;render();}
