@@ -136,7 +136,7 @@ code{font-size:.88em;overflow-wrap:anywhere}
 @media(min-width:801px) and (max-width:1080px){.main-layout{grid-template-columns:185px 1fr}.content{padding:25px 20px}}
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 
-/* W1.1 — Gestió de la biblioteca i còpies de seguretat */
+/* W1.2.1 — Gestió de la biblioteca i còpies de seguretat */
 .backup-buttons {display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:15px 0 9px}
 .backup-buttons button {max-width:100%}
 .backup-ready {background:#eef3e7;border:1px solid #9db087;border-radius:13px;padding:15px;margin:14px 0;color:#35593a;display:grid;gap:8px}
@@ -151,43 +151,3 @@ code{font-size:.88em;overflow-wrap:anywhere}
 .restore-options p {font-size:.9rem;margin:8px 0 12px}
 .restore-options .replace-option {background:#fbece9;border-color:#d6a09b}
 @media(max-width:800px){.backup-buttons{flex-direction:column;align-items:stretch}.backup-buttons button{width:100%}.backup-ready{padding:12px}}
-
-/* W1.2 — Visor PDF avançat, una pàgina cada vegada (sense dobles pàgines) */
-.w12-viewer {background:#25201d;}
-.w12-viewer .viewer-top {flex-shrink:0;}
-.viewer-toolbar {display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:nowrap;min-height:51px;padding:6px max(9px,env(safe-area-inset-right)) 6px max(9px,env(safe-area-inset-left));background:#42332b;color:#fff4de;border-bottom:1px solid #77614d;flex-shrink:0}
-.viewer-toolbar .quiet {border:1px solid #756252;background:#493930;color:#ffe9cc;min-height:36px;width:39px;padding:6px;display:flex;align-items:center;justify-content:center;border-radius:9px}
-.viewer-toolbar .quiet:hover:not(:disabled){background:#6b4a3c}
-.viewer-toolbar .quiet:disabled{opacity:.35;cursor:not-allowed}
-.viewer-toolbar .icon{width:19px;height:19px}
-.viewer-page-counter{font-variant-numeric:tabular-nums;white-space:nowrap;font-size:.87rem;min-width:98px;text-align:center}
-.viewer-toolbar-divider{width:1px;height:28px;background:#745d4c;margin:0 5px}
-.viewer-zoom-label{font-size:.82rem;min-width:42px;text-align:center;font-variant-numeric:tabular-nums}
-.viewer-stage{flex:1;min-height:0;overflow:auto;position:relative;display:flex;align-items:flex-start;justify-content:safe center;touch-action:pan-x pan-y;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;background:#2e2824;padding:10px;}
-.viewer-sheet{position:relative;flex:0 0 auto;background:#fff;box-shadow:0 3px 20px #0c0706a8;margin:0 auto;}
-.viewer-canvas{display:block;background:#fff;max-width:none;}
-.viewer-annotation-layer{position:absolute;inset:0;pointer-events:none}
-.viewer-message{padding:18px 22px;max-width:90%;border-radius:12px;background:#4c382e;color:#fff3db;text-align:center;margin:25px auto;}
-.viewer-native-frame{width:100%;height:100%;flex:1;border:0;background:#fff;min-height:0;}
-.w12-viewer .viewer-bottom{flex-shrink:0;}
-.zen-exit{display:none;position:absolute;right:max(10px,env(safe-area-inset-right));top:max(12px,env(safe-area-inset-top));z-index:2;background:#6b1722e8;border:1px solid #b49469;border-radius:10px;color:#fff5de;min-height:43px;padding:6px 11px;align-items:center;gap:7px}
-.viewer.zen-mode .viewer-top,.viewer.zen-mode .viewer-toolbar,.viewer.zen-mode .viewer-bottom{display:none}
-.viewer.zen-mode .zen-exit{display:flex}
-@media(max-width:600px){
- .viewer-toolbar{gap:3px;padding:5px 4px;min-height:49px}
- .viewer-toolbar .quiet{width:34px;min-height:36px;padding:5px}
- .viewer-toolbar .icon{width:17px;height:17px}
- .viewer-page-counter{font-size:.75rem;min-width:85px}
- .viewer-toolbar-divider{margin:0 2px}
- .viewer-zoom-label{min-width:36px;font-size:.75rem}
- .w12-viewer .viewer-top .viewer-external{padding:7px;min-width:33px}
- .w12-viewer .viewer-top .viewer-external .icon{margin:0}
- .w12-viewer .viewer-top .viewer-external .viewer-extended{display:none}
- .viewer-stage{padding:5px}
-}
-@media(max-width:355px){
- .viewer-toolbar{gap:2px}
- .viewer-toolbar .quiet{width:30px}
- .viewer-toolbar-divider{display:none}
- .viewer-page-counter{min-width:72px}
-}

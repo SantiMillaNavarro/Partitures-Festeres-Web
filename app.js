@@ -1,6 +1,5 @@
 import {openDB, getAllScores, getScore, saveBatch, deleteScore, clearScores, getPref, setPref} from './db.js';
 import {BACKUP_MANIFEST, createBackup, inspectBackup, restoreBackup} from './backup.js';
-import {ScoreViewer, preparePdfEngine, pdfEngineCached} from './viewer.js';
 
 const I = {
   library:'<svg viewBox="0 0 24 24"><path d="M3 6h6l2 2h10v12H3z"/><path d="M3 8V5h6l2 3"/></svg>',
@@ -20,12 +19,7 @@ const I = {
   wifi:'<svg viewBox="0 0 24 24"><path d="M2 9a16 16 0 0 1 20 0M5 13a11 11 0 0 1 14 0M9 17a5 5 0 0 1 6 0"/><circle cx="12" cy="21" r="1"/></svg>',
   save:'<svg viewBox="0 0 24 24"><path d="M5 3h12l4 4v14H3V3h2M7 3v7h9V3M7 21v-8h10v8"/></svg>',
   download:'<svg viewBox="0 0 24 24"><path d="M12 3v13m-5-5 5 5 5-5M4 17v4h16v-4"/></svg>',
-  restore:'<svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 1 3 6.7M3 19v-6h6M12 7v5l4 2"/></svg>',
-  zoomin:'<svg viewBox="0 0 24 24"><circle cx="10" cy="10" r="7"/><path d="m15 15 6 6M6 10h8M10 6v8"/></svg>',
-  zoomout:'<svg viewBox="0 0 24 24"><circle cx="10" cy="10" r="7"/><path d="m15 15 6 6M6 10h8"/></svg>',
-  rotate:'<svg viewBox="0 0 24 24"><path d="M4 11a8 8 0 1 1 2 6M4 4v7h7M8 13h8v5H8z"/></svg>',
-  expand:'<svg viewBox="0 0 24 24"><path d="M8 3H3v5M16 3h5v5M3 16v5h5M21 16v5h-5"/></svg>',
-  fit:'<svg viewBox="0 0 24 24"><path d="M3 7V3h4M17 3h4v4M3 17v4h4M21 17v4h-4M7 12h10"/></svg>'
+  restore:'<svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 1 3 6.7M3 19v-6h6M12 7v5l4 2"/></svg>'
 };
 const icon = (name) => `<span class="icon" aria-hidden="true">${I[name]||I.file}</span>`;
 const L = {
@@ -40,7 +34,7 @@ const L = {
   deleteAll:'Esborrar biblioteca',deleteThis:'Esborrar esta partitura',installTitle:'Instal·lar a iPhone / iPad',
   installText:'Obri esta pàgina en Safari, toca Compartir i selecciona «Afegir a la pantalla d’inici». Activa «Obrir com a app».',
   offlineTitle:'Ús sense connexió',offlineText:'Quan hages obert l’aplicació per primera vegada amb Internet, torna-la a obrir sense connexió. Les partitures ja importades es recuperen del dispositiu. iOS pot eliminar dades del navegador si falta espai: guarda sempre una còpia del ZIP.',
-  statusOnline:'Connexió disponible',statusOffline:'Sense connexió',disk:'Espai aproximat',dev:'Versió de prova W1.2',
+  statusOnline:'Connexió disponible',statusOffline:'Sense connexió',disk:'Espai aproximat',dev:'Versió de prova W1.2.1',
   warningTitle:'Confirmar eliminació',warningText:'S’esborraran totes les partitures guardades en este dispositiu. Esta acció no es pot desfer.',
   deleteConfirm:'Sí, esborrar',cancel:'Cancel·lar',back:'Tornar',openExternal:'Obrir en un altre visor',
   viewerHint:'Si el PDF no es mostra correctament, toca «Obrir en un altre visor». La visualització depén de Safari.',
@@ -76,9 +70,7 @@ const L = {
   usage:'Ús total aproximat d’este lloc web',quota:'Quota indicada pel navegador',persistentYes:'Persistència del navegador concedida',persistentNo:'Persistència no garantida',
   storageNote:'L’ús i la quota són estimacions del navegador; no representen l’espai lliure total del dispositiu.',backupNoScores:'La biblioteca no conté encara cap PDF.',
   backupLarge:'Per a biblioteques grans, un ZIP únic pot requerir molta memòria en iPhone. Conserva una altra còpia dels PDF originals.',
-  restorePending:'Llegint l’arxiu de còpia…',backupVerify:'Verificant PDF i preparant restauració…',
-  viewerLoading:'Carregant partitura…',viewerPage:'Pàgina',viewerFitWidth:'Ajustar a l’amplària',viewerFitPage:'Ajustar pàgina completa',viewerRotate:'Girar 90°',viewerZoomIn:'Ampliar',viewerZoomOut:'Reduir',viewerZen:'Ocultar controls',viewerShowControls:'Mostrar controls',viewerPrevPage:'Pàgina anterior',viewerNextPage:'Pàgina següent',viewerPages:'Pàgines',viewerFallback:'El visor avançat no està disponible; s’ha obert el visor del navegador.',
-  viewerPrepare:'Preparar visor sense connexió',viewerPrepared:'Visor avançat preparat per a treballar sense connexió',viewerNeedPrepare:'El visor avançat necessita una preparació amb Internet. Les partitures continuen guardades localment.',viewerInfo:'El visor avançat permet ampliar, girar i canviar de pàgina. Amb Internet descarrega PDF.js una vegada i el guarda per a ús sense connexió, mentre el navegador conserve la memòria cau. Si falla, obri el visor alternatiu.',viewerReadyToast:'Visor preparat per a usar sense connexió',viewerEngineTitle:'Visor de partitures',viewerPercent:'Ampliació',viewerShow:'Mostrar visor original',viewerTouch:'En zoom normal, llisca horitzontalment per a canviar de pàgina.'
+  restorePending:'Llegint l’arxiu de còpia…',backupVerify:'Verificant PDF i preparant restauració…'
  },
  es: {
   subtitle:'La música de nuestras fiestas',library:'Biblioteca',index:'Índice',settings:'Ajustes',import:'Importar',importFiles:'Importar PDF o ZIP',
@@ -91,7 +83,7 @@ const L = {
   deleteAll:'Borrar biblioteca',deleteThis:'Eliminar esta partitura',installTitle:'Instalar en iPhone / iPad',
   installText:'Abre esta página en Safari, toca Compartir y elige «Añadir a pantalla de inicio». Activa «Abrir como app».',
   offlineTitle:'Uso sin conexión',offlineText:'Tras abrir la aplicación por primera vez con Internet, vuelve a abrirla sin conexión. Las partituras importadas se recuperan del dispositivo. iOS puede eliminar datos del navegador ante falta de espacio: guarda siempre una copia del ZIP.',
-  statusOnline:'Conexión disponible',statusOffline:'Sin conexión',disk:'Espacio aproximado',dev:'Versión de prueba W1.2',
+  statusOnline:'Conexión disponible',statusOffline:'Sin conexión',disk:'Espacio aproximado',dev:'Versión de prueba W1.2.1',
   warningTitle:'Confirmar eliminación',warningText:'Se borrarán todas las partituras guardadas en este dispositivo. Esta acción no se puede deshacer.',
   deleteConfirm:'Sí, borrar',cancel:'Cancelar',back:'Volver',openExternal:'Abrir en otro visor',
   viewerHint:'Si el PDF no se muestra correctamente, pulsa «Abrir en otro visor». La visualización depende de Safari.',
@@ -127,18 +119,14 @@ const L = {
   usage:'Uso total aproximado de esta web',quota:'Cuota indicada por el navegador',persistentYes:'Persistencia del navegador concedida',persistentNo:'Persistencia no garantizada',
   storageNote:'El uso y la cuota son estimaciones del navegador; no representan el espacio libre total del dispositivo.',backupNoScores:'La biblioteca todavía no contiene PDF.',
   backupLarge:'Para bibliotecas grandes, un ZIP único puede requerir mucha memoria en iPhone. Conserva otra copia de los PDF originales.',
-  restorePending:'Leyendo el archivo de copia…',backupVerify:'Verificando PDF y preparando la restauración…',
-  viewerLoading:'Cargando partitura…',viewerPage:'Página',viewerFitWidth:'Ajustar a anchura',viewerFitPage:'Ajustar página completa',viewerRotate:'Girar 90°',viewerZoomIn:'Ampliar',viewerZoomOut:'Reducir',viewerZen:'Ocultar controles',viewerShowControls:'Mostrar controles',viewerPrevPage:'Página anterior',viewerNextPage:'Página siguiente',viewerPages:'Páginas',viewerFallback:'No está disponible el visor avanzado; se ha abierto el visor del navegador.',
-  viewerPrepare:'Preparar visor sin conexión',viewerPrepared:'Visor avanzado preparado para funcionar sin conexión',viewerNeedPrepare:'El visor avanzado necesita una preparación con Internet. Las partituras siguen guardadas localmente.',viewerInfo:'El visor avanzado permite ampliar, girar y cambiar de página. Con Internet descarga PDF.js una vez y lo guarda para uso sin conexión mientras el navegador conserve su caché. Si falla, abre el visor alternativo.',viewerReadyToast:'Visor preparado para usar sin conexión',viewerEngineTitle:'Visor de partituras',viewerPercent:'Ampliación',viewerShow:'Mostrar visor original',viewerTouch:'Con zoom normal, desliza horizontalmente para cambiar de página.'
+  restorePending:'Leyendo el archivo de copia…',backupVerify:'Verificando PDF y preparando restauración…'
  }
 };
 const $ = (q,root=document) => root.querySelector(q);
 const esc = value => String(value??'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const norm = value => (value??'').toLocaleLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
 const sort = (a,b) => a.localeCompare(b,'ca',{numeric:true,sensitivity:'base'});
-const state={lang:'va',page:'library',paper:'root',cwd:[],scores:[],search:'',view:null,blobUrl:null,modal:null,toastTimer:null,loading:false,online:navigator.onLine,storage:null,backup:null,restore:null,viewerReady:false,zen:false};
-let scoreViewer=null;
-let viewerRequest=0;
+const state={lang:'va',page:'library',paper:'root',cwd:[],scores:[],search:'',view:null,blobUrl:null,modal:null,toastTimer:null,loading:false,online:navigator.onLine,storage:null,backup:null,restore:null};
 const tr = key => L[state.lang][key]||key;
 const nice = value => value.replace(/\.pdf$/i,'');
 const topDir = path => path.split('/')[0];
@@ -222,12 +210,10 @@ function renderSettings(){
   <div class="backup-buttons"><button class="primary" data-action="backup-create" ${state.loading||!state.scores.length?'disabled':''}>${icon('download')}${esc(tr('createBackup'))}</button><button class="secondary" data-action="backup-choose" ${state.loading?'disabled':''}>${icon('restore')}${esc(tr('restoreBackup'))}</button></div>
   ${state.backup?`<div class="backup-ready"><strong>${icon('check')} ${esc(tr('backupPrepared'))}</strong><small>${esc(state.backup.name)} · ${esc(bytes(state.backup.blob.size))}</small><div class="backup-buttons"><button class="primary" data-action="backup-save">${icon('download')}${esc(tr('saveBackup'))}</button>${typeof navigator.share==='function'?`<button class="secondary" data-action="backup-share">${icon('share')}${esc(tr('shareBackup'))}</button>`:''}</div></div>`:''}
   <p class="help">${esc(tr('backupTip'))}</p><p class="help">${esc(tr('backupLarge'))}</p></div>
- <div class="panel"><h3>${icon('fit')} ${esc(tr('viewerEngineTitle'))}</h3><p>${esc(tr('viewerInfo'))}</p>
- <div class="line"><span>${esc(state.viewerReady?tr('viewerPrepared'):tr('viewerNeedPrepare'))}</span><button class="secondary" data-action="prepare-viewer">${icon('download')}${esc(tr('viewerPrepare'))}</button></div></div>
  <div class="panel"><h3>${icon('share')} ${esc(tr('installTitle'))}</h3><p>${esc(tr('installText'))}</p>
    <p class="help">${esc(tr('offlineText'))}</p>
  </div>
- <div class="panel"><h3>${icon('info')} ${esc(tr('about'))}</h3><p>${esc(tr('limitations'))}</p><p>${esc(tr('intro'))}</p><div class="line"><strong>Partitures Festeres Web — W1.2</strong><span>© SMN Systems</span></div></div>`;
+ <div class="panel"><h3>${icon('info')} ${esc(tr('about'))}</h3><p>${esc(tr('limitations'))}</p><p>${esc(tr('intro'))}</p><div class="line"><strong>Partitures Festeres Web — W1.2.1</strong><span>© SMN Systems</span></div></div>`;
 }
 function renderModal(){if(!state.modal)return '';
  if(state.modal==='welcome')return `<div class="modal-backdrop" role="dialog" aria-modal="true"><div class="modal"><img src="./assets/icon-192.png" alt="Partitures Festeres"/><h2>Benvingut · Bienvenido</h2><p>Tria l’idioma · Elige el idioma</p><label><input type="radio" name="welcome-lang" value="va" ${state.lang==='va'?'checked':''}/> Valencià</label><label><input type="radio" name="welcome-lang" value="es" ${state.lang==='es'?'checked':''}/> Castellano</label><div class="modal-actions"><button class="primary" data-action="welcome-done">Començar · Empezar</button></div></div></div>`;
@@ -237,55 +223,21 @@ function renderModal(){if(!state.modal)return '';
  return '';
 }
 function renderViewer(){if(!state.view)return '';
- const list=scopedScores(),idx=list.findIndex(s=>s.path===state.view.path),p=idx>=0?idx:0;
- const current=scoreViewer;
- const page=current?.pageNumber||1,total=current?.numPages||'…';
- const native=!!current?.native;
- return `<div class="viewer w12-viewer ${state.zen?'zen-mode':''}" role="dialog" aria-label="${esc(tr('openPdf'))}">
-  <div class="viewer-top"><button class="quiet" data-action="viewer-close" aria-label="${esc(tr('back'))}">${icon('back')}</button><span class="viewer-title">${esc(nice(parts(state.view.path).at(-1)))}</span><button class="quiet" data-action="delete-one" title="${esc(tr('deleteThis'))}">${icon('trash')}</button><button class="quiet" data-action="viewer-zen" title="${esc(tr('viewerZen'))}">${icon('expand')}</button><button class="secondary viewer-external" data-action="viewer-external">${icon('share')}<span class="viewer-extended">${esc(tr('openExternal'))}</span></button></div>
-  <div class="viewer-toolbar">
-   <button class="quiet" id="viewer-prev-page" data-action="viewer-page-prev" aria-label="${esc(tr('viewerPrevPage'))}" ${page<=1||native?'disabled':''}>${icon('back')}</button>
-   <span class="viewer-page-counter" id="viewer-page-counter">${esc(tr('viewerPage'))} ${page} / ${total}</span>
-   <button class="quiet" id="viewer-next-page" data-action="viewer-page-next" aria-label="${esc(tr('viewerNextPage'))}" ${native||!!current?.numPages&&page>=current.numPages?'disabled':''}>${icon('next')}</button>
-   <span class="viewer-toolbar-divider"></span>
-   <button class="quiet" data-action="viewer-zoom-out" aria-label="${esc(tr('viewerZoomOut'))}" title="${esc(tr('viewerZoomOut'))}" ${native?'disabled':''}>${icon('zoomout')}</button>
-   <span id="viewer-zoom-label" class="viewer-zoom-label">${Math.round((current?.zoom||1)*100)}%</span>
-   <button class="quiet" data-action="viewer-zoom-in" aria-label="${esc(tr('viewerZoomIn'))}" title="${esc(tr('viewerZoomIn'))}" ${native?'disabled':''}>${icon('zoomin')}</button>
-   <button class="quiet" id="viewer-fit-button" data-action="viewer-fit" title="${esc(current?.fit==='page'?tr('viewerFitWidth'):tr('viewerFitPage'))}" aria-label="${esc(tr('viewerFitPage'))}" ${native?'disabled':''}>${icon('fit')}</button>
-   <button class="quiet" data-action="viewer-rotate" title="${esc(tr('viewerRotate'))}" aria-label="${esc(tr('viewerRotate'))}" ${native?'disabled':''}>${icon('rotate')}</button>
-  </div>
-  <div id="viewer-stage" class="viewer-stage" data-path="${esc(state.view.path)}"><p class="viewer-message">${esc(tr('viewerLoading'))}</p></div>
-  <div class="viewer-bottom"><button data-action="viewer-prev" ${p<=0?'disabled':''}>${icon('back')} ${esc(tr('noPrevious'))}</button><span>${p+1} / ${list.length} ${esc(tr('scoreCount'))}</span><button data-action="viewer-next" ${p>=list.length-1?'disabled':''}>${esc(tr('noNext'))} ${icon('next')}</button></div>
-  <button class="zen-exit" data-action="viewer-zen" aria-label="${esc(tr('viewerShowControls'))}">${icon('expand')} ${esc(tr('viewerShowControls'))}</button>
+ const list=scopedScores();const idx=list.findIndex(s=>s.path===state.view.path);const p=idx>=0?idx:0;
+ return `<div class="viewer" role="dialog" aria-label="${esc(tr('openPdf'))}">
+ <div class="viewer-top"><button class="quiet" data-action="viewer-close" aria-label="${esc(tr('back'))}">${icon('back')}</button><span class="viewer-title">${esc(nice(parts(state.view.path).at(-1)))}</span><button class="quiet" data-action="delete-one" title="${esc(tr('deleteThis'))}">${icon('trash')}</button><button class="secondary" data-action="viewer-external">${icon('share')}<span class="viewer-extended">${esc(tr('openExternal'))}</span></button></div>
+ <iframe class="viewer-frame" title="${esc(state.view.path)}" src="${esc(state.blobUrl)}#view=FitH" allow="fullscreen"></iframe>
+ <div class="viewer-fallback">${esc(tr('viewerHint'))}</div>
+ <div class="viewer-bottom"><button data-action="viewer-prev" ${p<=0?'disabled':''}>${icon('back')} ${esc(tr('noPrevious'))}</button><span>${p+1} / ${list.length} ${esc(tr('scoreCount'))}</span><button data-action="viewer-next" ${p>=list.length-1?'disabled':''}>${esc(tr('noNext'))} ${icon('next')}</button></div>
  </div>`;
 }
-function syncViewerControls(){
- if(!state.view||!scoreViewer)return;
- const v=scoreViewer,prev=$('#viewer-prev-page'),next=$('#viewer-next-page');
- if(prev)prev.disabled=v.native||v.pageNumber<=1;
- if(next)next.disabled=v.native||v.pageNumber>=v.numPages;
- const info=$('#viewer-page-counter');if(info)info.textContent=v.native?tr('viewerShow'):`${tr('viewerPage')} ${v.pageNumber} / ${v.numPages||'…'}`;
- const zoom=$('#viewer-zoom-label');if(zoom)zoom.textContent=Math.round(v.zoom*100)+'%';
- const fit=$('#viewer-fit-button');if(fit)fit.title=v.fit==='page'?tr('viewerFitWidth'):tr('viewerFitPage');
- for(const act of ['viewer-zoom-out','viewer-zoom-in','viewer-fit','viewer-rotate']){
-  const btn=$(`[data-action="${act}"]`);if(btn)btn.disabled=v.native;
- }
-}
-
 function render(){
- // En mostrar un diàleg, conservem el canvas i el PDF ja desxifrat.
- const oldStage=$('#viewer-stage');
- const oldPath=oldStage?.dataset.path;
  document.documentElement.lang = state.lang==='va'?'ca-ES-valencia':'es';
  document.title='Partitures Festeres Web';
  const page=state.page==='index'?renderIndex():state.page==='settings'?renderSettings():renderLibrary();
  $('#app').innerHTML = `<header class="topbar"><div class="brand"><img src="./assets/icon-192.png" alt=""/><div><h1>Partitures Festeres</h1><small>${esc(tr('subtitle'))}</small></div></div><div class="top-actions"><button class="primary" data-action="import">${icon('upload')} ${esc(tr('import'))}</button></div></header>
  <div class="main-layout"><aside class="sidebar"><span class="side-caption">Partitures Festeres Web</span>${nav('library','library')}${nav('book','index')}${nav('settings','settings')}<div class="side-bottom">${esc(tr('dev'))}<p>${esc(tr('offlineReady'))}</p></div></aside><main class="content">${page}</main></div>
  <nav class="bottom-nav" aria-label="Navegació">${tabsMobile('library','library')}${tabsMobile('book','index')}${tabsMobile('settings','settings')}</nav>${renderViewer()}${renderModal()}`;
- if(oldStage && state.view?.path===oldPath && scoreViewer){
-  $('#viewer-stage')?.replaceWith(oldStage);
- }
- syncViewerControls();
 }
 function toast(message,isError=false){$('.toast')?.remove();clearTimeout(state.toastTimer);const div=document.createElement('div');div.className='toast'+(isError?' error':'');div.setAttribute('role','status');div.textContent=message;document.body.append(div);state.toastTimer=setTimeout(()=>div.remove(),5500);}
 function progress(show,txt){$('.import-progress')?.remove();if(!show)return;const d=document.createElement('div');d.className='import-progress';d.innerHTML=`<div class="panel" role="status"><div class="spinner"></div><h3>${esc(tr('importing'))}</h3><p id="import-progress-text">${esc(txt||tr('preparing'))}</p></div>`;document.body.append(d);}
@@ -357,29 +309,13 @@ async function importSelected(files){
  finally{progress(false);$('#import-input').value='';}
 }
 async function openPdf(path){
- const request=++viewerRequest;
  const record=await getScore(path);
- if(request!==viewerRequest)return;
  if(!record?.blob){toast(tr('pdfUnavailable'),true);return;}
- closeViewerIfNeeded();
+ if(state.blobUrl)URL.revokeObjectURL(state.blobUrl);
  state.blobUrl=URL.createObjectURL(record.blob);
- state.view={path};state.zen=false;
- const saved=await getPref('viewer:'+path,{});
- if(request!==viewerRequest){closeViewerIfNeeded();return;}
- render();
- const host=$('#viewer-stage');
- scoreViewer=new ScoreViewer({
-  host,blob:record.blob,fallbackUrl:state.blobUrl,initial:saved,
-  labels:{loading:tr('viewerLoading'),page:tr('viewerPage'),fallback:tr('viewerFallback'),native:tr('openPdf')},
-  onChange:value=>setPref('viewer:'+path,value).catch(e=>console.warn('Desament del visor:',e)),
-  onUpdate:()=>syncViewerControls(),
-  onWarning:message=>toast(message,true)
- });
- await scoreViewer.open();
- state.viewerReady=await pdfEngineCached();
+ state.view={path};render();
 }
-function closeViewer(){viewerRequest++;closeViewerIfNeeded();render();}
-
+function closeViewer(){if(state.blobUrl){URL.revokeObjectURL(state.blobUrl);state.blobUrl=null;}state.view=null;render();}
 async function updateStorageInfo() {
   if(!navigator.storage) return;
   try {
@@ -454,12 +390,6 @@ async function handleClick(el){
   case 'folder':state.cwd.push(val);state.search='';render();break;
   case 'import':$('#import-input').click();break;
   case 'backup-create':await doBackup();break;
-  case 'prepare-viewer':{
-    toast(tr('viewerLoading'));
-    try {await preparePdfEngine();state.viewerReady=await pdfEngineCached();render();toast(tr('viewerReadyToast'));}
-    catch(e){console.error(e);toast(tr('viewerNeedPrepare')+' '+e.message,true);}
-    break;
-  }
   case 'backup-choose':$('#restore-input').click();break;
   case 'backup-save':saveBackup();break;
   case 'backup-share':await shareBackup();break;
@@ -467,13 +397,6 @@ async function handleClick(el){
   case 'restore-replace':await doRestore('replace');break;
   case 'open':await openPdf(val);break;
   case 'viewer-close':closeViewer();break;
-  case 'viewer-page-prev':await scoreViewer?.turnPage(-1);break;
-  case 'viewer-page-next':await scoreViewer?.turnPage(1);break;
-  case 'viewer-zoom-in':if(scoreViewer)await scoreViewer.setZoom(scoreViewer.zoom+.2);break;
-  case 'viewer-zoom-out':if(scoreViewer)await scoreViewer.setZoom(scoreViewer.zoom-.2);break;
-  case 'viewer-fit':if(scoreViewer)await scoreViewer.setFit(scoreViewer.fit==='page'?'width':'page');break;
-  case 'viewer-rotate':await scoreViewer?.rotate();break;
-  case 'viewer-zen':state.zen=!state.zen;$('.viewer')?.classList.toggle('zen-mode',state.zen);break;
   case 'viewer-prev':case 'viewer-next':{
     const a=scopedScores(),i=a.findIndex(s=>s.path===state.view?.path),other=a[i+(action==='viewer-prev'?-1:1)];if(other)await openPdf(other.path);break;
   }
@@ -489,11 +412,7 @@ async function handleClick(el){
   case 'welcome-done':state.modal=null;await setPref('lang',state.lang);render();break;
  }
 }
-function closeViewerIfNeeded(){
- scoreViewer?.close();scoreViewer=null;
- if(state.blobUrl){URL.revokeObjectURL(state.blobUrl);state.blobUrl=null;}
- state.view=null;state.zen=false;
-}
+function closeViewerIfNeeded(){if(state.view){URL.revokeObjectURL(state.blobUrl);state.blobUrl=null;state.view=null;}}
 async function init(){
  try{
   await openDB();
@@ -507,7 +426,6 @@ async function init(){
   if(configured!=='es'&&configured!=='va')state.modal='welcome';
   render();
   updateStorageInfo();
-  pdfEngineCached().then(cached=>{state.viewerReady=cached;if(state.page==='settings'&&!state.view)render();}).catch(()=>{});
   if('serviceWorker' in navigator && (location.protocol==='https:' || location.hostname==='localhost')){
    navigator.serviceWorker.register('./sw.js',{scope:'./'}).catch(e=>console.warn('Service worker:',e));
   }
@@ -535,9 +453,7 @@ window.addEventListener('offline',()=>{state.online=false;if(state.page==='setti
 document.addEventListener('keydown',e=>{
  if(e.key==='Escape'&&state.modal&&state.modal!=='welcome'){state.modal=null;render();}
  else if(e.key==='Escape'&&state.view)closeViewer();
- else if(e.key==='ArrowRight'&&state.view){scoreViewer?.turnPage(1);}
- else if(e.key==='ArrowLeft'&&state.view){scoreViewer?.turnPage(-1);}
- else if(e.key==='+'&&state.view){scoreViewer?.setZoom(scoreViewer.zoom+.2);}
- else if(e.key==='-'&&state.view){scoreViewer?.setZoom(scoreViewer.zoom-.2);}
+ else if(e.key==='ArrowRight'&&state.view){const a=scopedScores(),idx=a.findIndex(s=>s.path===state.view.path);if(a[idx+1])openPdf(a[idx+1].path);}
+ else if(e.key==='ArrowLeft'&&state.view){const a=scopedScores(),idx=a.findIndex(s=>s.path===state.view.path);if(a[idx-1])openPdf(a[idx-1].path);}
 });
 init();
