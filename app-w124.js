@@ -248,6 +248,7 @@ function renderViewer(){if(!state.view)return '';
 let viewerMenuTimer = 0;
 function showViewerMenu(show){
  const view=$('.pf-reading-mode'); if(!view)return;
+ view.querySelector('.viewer-intro')?.classList.add('hidden-intro');
  state.zen=!show;
  view.classList.toggle('zen-mode',state.zen);
  clearTimeout(viewerMenuTimer);
@@ -357,6 +358,7 @@ async function importSelected(files){
 }
 async function openPdf(path){
  clearTimeout(viewerMenuTimer);
+ $('.toast')?.remove();clearTimeout(state.toastTimer);
  const request=++viewerRequest;
  const record=await getScore(path);
  if(request!==viewerRequest)return;
