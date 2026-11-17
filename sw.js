@@ -1,6 +1,6 @@
 /* Partitures Festeres Web W1.2.3: public assets cached only. Private PDF in IndexedDB */
-const CACHE='pfweb-shell-w231-landscape-20261117';
-const ASSETS=['./','./index.html','./app-w231.js','./viewer-w231.js','./styles-w231.css','./db.js','./backup.js','./metadata.js','./search-filters.js','./index-groups.js','./annotations.js','./annotation-geometry.js','./viewer-orientation.js','./navigation-state.js','./manifest.webmanifest','./vendor/jszip.min.js','./vendor/pdf.js','./vendor/pdf.worker.js','./assets/pergami.png','./assets/icon-180.png','./assets/icon-192.png','./assets/icon-512.png','./assets/icon-original.png'];
+const CACHE='pfweb-shell-w232-auto-orientation-20261117';
+const ASSETS=['./','./index.html','./app-w232.js','./viewer-w232.js','./styles-w232.css','./db.js','./backup.js','./metadata.js','./search-filters.js','./index-groups.js','./annotations.js','./annotation-geometry.js','./viewer-orientation.js','./score-orientation.js','./navigation-state.js','./manifest.webmanifest','./vendor/jszip.min.js','./vendor/pdf.js','./vendor/pdf.worker.js','./assets/pergami.png','./assets/icon-180.png','./assets/icon-192.png','./assets/icon-512.png','./assets/icon-original.png'];
 self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS)).then(()=>self.skipWaiting())));
 self.addEventListener('activate',e=>e.waitUntil((async()=>{const keys=await caches.keys();await Promise.all(keys.filter(k=>k.startsWith('pfweb-shell-')&&k!==CACHE).map(k=>caches.delete(k)));await self.clients.claim()})()));
 self.addEventListener('fetch',e=>{

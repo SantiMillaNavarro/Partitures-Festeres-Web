@@ -1,25 +1,30 @@
-# Partitures Festeres Web — W2.3.1 · Visor horitzontal per defecte
+# Partitures Festeres Web — W2.3.2 · Orientació automàtica de les partitures
 
-El visor de PDF es presenta per defecte **en horitzontal**, com en l'app Android. La resta de seccions (Biblioteca, Repertoris, Índex, Recents, Favorits, Ajustos) conserven l'orientació normal del dispositiu.
+Esta fase corregix un problema detectat en proves reals amb partitures com **Arcum**: en W2.3.1 el *visor* es presentava horitzontalment, però la *pàgina del PDF* continuava apareixent de costat o del revés. Les partitures importades amb contingut girat no han de requerir una correcció manual cada vegada.
 
-## Com funciona
+## Com orienta el PDF
 
-- **Navegadors que ho permeten:** en obrir un PDF s'intenta bloquejar l'orientació de pantalla a `landscape` amb l'API oficial, i s'allibera el bloqueig en tancar el PDF.
-- **Safari en iPhone/iPad:** iOS no permet el bloqueig d'orientació amb JavaScript. Quan la pantalla del dispositiu està en vertical, el visor complet (partitura i controls) es presenta girat 90° i ocupa tota la superfície. Gira físicament el dispositiu per llegir la partitura amb normalitat. Si el dispositiu ja està en horitzontal, es veu directament sense una rotació addicional.
-- **Només en dispositius tàctils:** una finestra d'ordinador estreta no s'ha de girar artificialment.
-- **Rotació manual del PDF:** el botó existent de girar la pàgina continua funcionant de manera independent de l'orientació del visor. Si un PDF està guardat amb les pàgines girades, es pot corregir amb eixe botó.
-- **Gestos i anotacions:** les coordenades dels tocs es convertixen a les coordenades locals del visor per tal de conservar el pas de pàgina, el zoom, els dibuixos, les formes i el text en les posicions correctes.
-- **Recarregar:** la recuperació de l'última partitura i pàgina continua activa, i el visor tornarà a presentar-se horitzontal.
-- **Tancar:** l'app torna a la secció anterior sense forçar la Biblioteca a posar-se en horitzontal.
+1. En obrir una obra, es consulta la primera pàgina sol·licitada i les dades del PDF.
+2. Si el document conté text vectorial llegible, el visor analitza la direcció de les seues línies (títol, autoria, etc.) per decidir automàticament la rotació correcta entre 0°, 90°, 180° i 270°. No sols detecta la forma vertical o horitzontal de la pàgina, també el **sentit** del text per a evitar partituras cap per avall.
+3. Si no hi ha capa de text, el visor analitza localment una versió de baixa resolució de la pàgina i detecta la direcció principal dels pentagrames. Les partitures que tenen els pentagrames verticals es posen automàticament horitzontals, respectant /Rotate si indica una de les orientacions correctes. En escanejos sense informació de sentit, s'utilitza 270° per defecte; alguns escanejos excepcionals poden requerir un únic gir manual.
+4. En passar a una altra pàgina, l'anàlisi de text es repetix. Quan la pàgina no conté text i manté el mateix format, es reutilitza l'orientació detectada en la resta de l'obra, evitant retards.
+5. La Biblioteca, Repertoris i els altres menús conserven el funcionament anterior: només afecta el contingut del visor PDF.
 
-L'orientació preferida *no* es declara globalment en el manifest perquè això forçaria també la Biblioteca i els menús. El bloqueig només s'intenta quan es consulta una partitura.
+## Respecta les preferències existents
 
-## Compatibilitat i dades
-
-No es canvien els PDF, les dades d'anotacions, els repertoris ni el format de la còpia ZIP. La versió d'Ajustos i l'etiqueta de còpia passen a **W2.3.1**.
+- **L'orientació automàtica és la predeterminada** per a cada obra, també per a aquelles que W2.3.1 havia guardat a 0° sense que el músic haguera girat la pàgina.
+- **Girar 90°** continua disponible. En tocar-lo, la rotació de l'obra passa a ser una preferència manual i queda guardada. Les preferències antigues de 90°, 180° i 270° es respecten com a ajustos manuals.
+- **AUTO**: botó menut en el visor que torna a activar la detecció automàtica després d'haver girat una partitura.
+- Ni el PDF ni les anotacions existents es modifiquen. Les coordenades d'anotacions es mantenen relatives a la pàgina original, independentment del gir.
+- Les preferències continuen guardant-se en IndexedDB i s'inclouen en les còpies ZIP. El format de les còpies no canvia.
+- Sense enviaments de PDF a cap servei extern: l'anàlisi utilitza el PDF.js local.
 
 ## Proves
 
-Comprovacions automàtiques en navegador amb pantalla mòbil tàctil vertical i horitzontal, transformació visual del visor, pulsació en els costats per a canviar de pàgina, traços i selecció amb coordenades correctes, zoom, rotació manual, recàrrega i retorn a Biblioteca. També passen les proves de regressió de totes les fases anteriors.
+Les comprovacions de navegació i de totes les fases W1/W2 existents es mantenen. W2.3.2 incorpora proves de contingut girat, text normal, pentagrames escanejats sense text, pàgines de diferents orientacions, persistència, restauració de la manera automàtica després d'una recàrrega, respecte als girs manuals antics i integritat dels PDF.
 
-**Nota:** les proves automàtiques són sobre Chromium amb dispositiu tàctil simulat. Cal validar el comportament real en Safari instal·lat com a web-app d'iPhone/iPad, especialment amb el bloqueig de rotació d'iOS activat i desactivat. No esborres dades del navegador sense una còpia ZIP de la biblioteca.
+**Limitació:** en alguns PDF escanejats que no tenen text recuperable ni informació del sentit «dalt/baix», detectar automàticament si la partitura està exactament cap per avall és intrínsecament ambigu; en eixos casos es pot aplicar el gir manual una vegada per obra. La resta de la biblioteca no necessita una correcció obra per obra.
+
+Versió visible en Ajustos i en còpies ZIP: **W2.3.2**. Pendent de validació en Safari real de l'iPhone/iPad després de fusionar el PR.
+
+**No esborres les dades del navegador sense conservar una còpia ZIP externa.**
