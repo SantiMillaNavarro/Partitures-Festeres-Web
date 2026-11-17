@@ -895,7 +895,7 @@ async function openPdf(path,requestedPage=null){
   setPref('w13:recents',state.recents).catch(e=>console.warn('Recents:',e));
  closeViewerIfNeeded(true);
  state.blobUrl=URL.createObjectURL(record.blob);
- state.view={path,page:1};viewerPendingOpen=false;state.zen=true;state.annotating=false;state.annotationGroup='strokes';setReadingColors(true);
+ state.view={path,page:1};viewerPendingOpen=false;state.zen=true;state.annotating=false;state.objectMenuOpen=false;state.annotationGroup='strokes';setReadingColors(true);
  await viewerPreferencesQueue.catch(()=>{});
  if(request!==viewerRequest)return;
  const saved=await getPref('viewer:'+path,{});
