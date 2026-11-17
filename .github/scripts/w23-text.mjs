@@ -45,7 +45,7 @@ try{
  await page.goto('http://127.0.0.1:8765/',{waitUntil:'domcontentloaded'});
  if(await page.locator('[data-action="welcome-done"]').count())await page.locator('[data-action="welcome-done"]').click();
  await page.locator('.bottom-link[data-value="settings"]').click();
- assert.match(await page.locator('main.content').innerText(),/Partitures Festeres Web — W2\.4\.1/);
+ assert.match(await page.locator('main.content').innerText(),/Partitures Festeres Web — W2\.5/);
  await page.locator('.bottom-link[data-value="library"]').click();
  await page.locator('#import-input').setInputFiles({name:'TEXT_W23.pdf',mimeType:'application/pdf',buffer:pdf});
  await page.locator('.score-row').first().waitFor();
@@ -56,7 +56,7 @@ try{
   await page.locator('.score-row [data-action="open"]').first().click();
   await page.locator('.viewer-canvas').waitFor({timeout:15000});
   await page.locator('#viewer-stage').click({position:{x:190,y:330}});
-  await page.locator('[data-action="viewer-annotate"]').waitFor({state:'visible'});
+  await page.locator('[data-action="viewer-annotate"]').first().waitFor({state:'visible'});
  };
  const relative=async(x,y)=>{
   const b=await page.locator('.viewer-annotation-layer').boundingBox();
@@ -75,7 +75,8 @@ try{
   await page.locator('[data-action="annotation-group"][data-value="'+group+'"]').click();
   await page.locator('[data-action="annotation-tool"][data-value="'+name+'"]').click();
  };
- await open();await page.locator('[data-action="viewer-annotate"]').click();
+ await open();await page.locator('[data-action="viewer-annotate"]').first().click();
+ await page.locator('[data-action="rosette-legacy"]').click();
  await page.locator('.w23-annotation-toolbar').waitFor();
  assert.equal(await page.locator('.annotation-rosette .annotation-petal').count(),4,'Grouped annotation control');
  await tool('text');
