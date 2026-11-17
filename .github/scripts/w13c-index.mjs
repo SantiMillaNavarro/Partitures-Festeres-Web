@@ -54,7 +54,7 @@ try{
  await edit(paths[2],{composer:'Miguel Ángel Mas',type:'Marxa cristiana',year:'2006'});
  await page.selectOption('#index-group-by','composer');
  assert.equal(await page.locator('.index-group').count(),3,'Accent variants group together');
- assert.deepEqual(await page.locator('.index-group-toggle span').allTextContents(),['Miguel Ángel Mas','Ramón García','Sense dades']);
+ assert.deepEqual(await page.locator('.index-group-toggle > span:not(.icon)').allTextContents(),['Miguel Ángel Mas','Ramón García','Sense dades']);
  assert.deepEqual(await page.locator('.index-group').nth(1).locator('.index-score-row').count(),2);
  // Group folding is visual only, leaving the catalog untouched.
  await page.locator('.index-group-toggle').nth(1).click();
