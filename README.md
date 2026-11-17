@@ -1,23 +1,26 @@
-# Partitures Festeres Web W1.3A.1
+# Partitures Festeres Web — W1.3B.1 · Metadades opcionals
 
-Corregix l'ús dels **Repertoris** perquè es puguen incorporar partitures sense eixir de la secció.
+Esta versió incorpora un editor de metadades independent dels PDF, amb accés des de Biblioteca, Repertoris, Recents, Favorits i Índex.
 
-- Nou botó **Afegir partitures** dins de cada repertori.
-- Selector amb **cerca immediata per nom o ruta de carpeta**, sobre tota la biblioteca, independent del filtre actual.
-- Selecció de múltiples obres, fins i tot fent cerques diferents, i confirmació conjunta.
-- Les partitures ja incloses es mostren com a afegides i no poden duplicar-se.
-- En tancar amb Cancel·lar, no es modifica el repertori.
-- La nova incorporació va al final del repertori, conservant l'orde previ.
-- Manté PDF.js, el visor W1.2.4, els papers, els PDF en IndexedDB i el sistema de còpies.
-- **W1.3A.1** apareix en Ajustos; manté els textos en valencià i castellà.
+## Camps
+- Títol
+- Compositor / autoria
+- Tipus de composició
+- Any (quatre xifres)
+- Observacions
 
-## Prova ràpida
-1. Obrir un repertori amb o sense partitures.
-2. Polsar **Afegir partitures**.
-3. Escriure una cerca (per exemple, *Alm*), marcar una obra, buscar una altra i marcar-la.
-4. Polsar **Afegir seleccionades**.
-5. Comprovar que totes apareixen, conservant l'orde de les obres que ja hi havia.
-6. Tancar/reobrir l'app i verificar persistència. Repetir amb Cancel·lar.
+**Tot és opcional.** No es demana cap dada al pujar PDF. El títol opcional es pot mostrar en les llistes i buscar amb la cerca senzilla, però la ruta i el nom físic del PDF **no canvien**.
 
-## Seguretat
-És una PR independent; **main no es modificarà fins que l'usuari l'aprove**. No s'altera `db.js`, `backup.js` ni s'esborren PDFs. No desinstal·lar la PWA ni netejar dades del navegador.
+## Emmagatzematge
+Les metadades es guarden junt amb cada registre PDF d'IndexedDB, sense alterar els bytes del document ni canviar la versió de la base de dades. Quan s'importa de nou un PDF que ja existix amb la mateixa ruta, es conserven les metadades.
+
+El manifest de les còpies ZIP completa inclou les metadades opcionalment a cada arxiu. Les còpies W1.1 sense metadades seguixen admeses:
+- **Fusionar** amb una còpia antiga conserva les metadades locals de les obres sense metadades de la còpia.
+- **Substituir** recupera el que hi havia en la còpia; si és una còpia antiga, no contindrà metadades.
+
+Manté la biblioteca, el visor W1.2.4, els repertoris, favorits, recents i papers. La cerca avançada amb filtres combinats arribarà en W1.3B.2.
+
+## Proves
+CI comprova edició i cancel·lació, any invàlid, cerca per títol, integritat PDF, persistència, importació de PDF repetit, exportació ZIP, restauració nova i compatibilitat amb ZIP antic. També s'executen les proves heretades del visor i repertoris.
+
+**Esta PR no canvia la web pública fins que l'usuari accepte la fusió.** No neteges les dades del navegador ni desinstal·les la PWA.
