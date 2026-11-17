@@ -233,7 +233,7 @@ function htmlScoreRow(score,{note='',repertoireId=null,reorder=0,count=0}={}){
  </div>`;
 }
 function renderCollectionPage(page){
- const all=currentCollectionScores(),q=norm(state.search.trim()),shown=all.filter(s=>scoreSearch(s).includes(q));
+ const all=currentCollectionScores(),q=norm(state.search.trim()),shown=all.filter(matchListScore);
  return heading(page,tr(page==='favorites'?'favoritesSubtitle':'recentsSubtitle'))+paperBar()+
   `<div class="section-tools">${searchBox()}<span class="stat">${icon('file')}${all.length} ${esc(tr('scoreCount'))}</span></div>`+
   (shown.length?`<div class="cards score-list">${shown.map(s=>htmlScoreRow(s,{note:relativePath(s.path)})).join('')}</div>`:empty(tr(q?'noResults':page==='favorites'?'emptyFavorites':'emptyRecents'),tr('noResultsDesc')));
@@ -276,7 +276,7 @@ function renderRepertoires(){
  const current=findRepertoire(state.repertoireOpen);
  let block=`<div class="rep-actions"><button class="primary" data-action="rep-create">${icon('plus')}${esc(tr('createRepertoire'))}</button>${current?`<button class="secondary" data-action="rep-back">${icon('back')}${esc(tr('repertoireAll'))}</button>`:''}</div>`;
  if(current){
-  const scores=new Map(state.scores.map(s=>[s.path,s])),all=current.paths.filter(p=>scores.has(p)),q=norm(state.search.trim()),visible=all.filter(p=>scoreSearch(scores.get(p)).includes(q));
+  const scores=new Map(state.scores.map(s=>[s.path,s])),all=current.paths.filter(p=>scores.has(p)),q=norm(state.search.trim()),visible=all.filter(p=>matchListScore(scores.get(p)));
   block+=`<div class="panel rep-head"><h3>${esc(current.name)}</h3><div class="rep-actions"><button class="primary" data-action="rep-add-open">${icon('plus')}${esc(tr('repAddOpen'))}</button><button class="secondary" data-action="rep-rename" data-id="${esc(current.id)}">${esc(tr('renameRepertoire'))}</button><button class="secondary" data-action="rep-delete" data-id="${esc(current.id)}">${icon('trash')}${esc(tr('removeRepertoire'))}</button></div></div>`;
   block+=`<div class="section-tools">${searchBox()}<span class="stat">${all.length} ${esc(tr('scoreCount'))}</span></div>`;
   block+=visible.length?`<div class="cards score-list">${visible.map(p=>htmlScoreRow(scores.get(p),{note:relativePath(p),repertoireId:current.id,reorder:all.indexOf(p),count:all.length})).join('')}</div>`:empty(tr(q?'noResults':'repertoireEmpty'),tr('repertoireSubtitle'));
@@ -327,8 +327,8 @@ function renderLibrary(){
  const visible=availableFolders(selected,prefix);
  const q=norm(state.search.trim());
  let folders=visible.folders,docs=visible.direct;
- if(q){
-  docs=selected.filter(s => scoreSearch(s).includes(q)).sort((a,b)=>sort(a.path,b.path));folders=[];
+ if(q||countAdvancedFilters(state.advanced)){
+  docs=selected.filter(matchListScore).sort((a,b)=>sort(a.path,b.path));folders=[];
  }
  const allInScope=selected.length;
  const folderCount=folders.length;
@@ -343,7 +343,7 @@ function renderLibrary(){
 }
 function renderIndex(){
  const selected=scopedScores(),q=norm(state.search.trim());
- const records=selected.filter(x=>scoreSearch(x).includes(q));
+ const records=selected.filter(matchListScore);
  const groups=new Map();
  for(const score of records){const p=relativePath(score.path);const dirs=parts(p).slice(0,-1).join(' / ')||tr('indexGroup');if(!groups.has(dirs))groups.set(dirs,[]);groups.get(dirs).push(score);}
  const ui=[...groups.entries()].sort((a,b)=>sort(a[0],b[0])).map(([group,files])=>`<section class="group"><div class="group-title">${icon('folder')} <span>${esc(group)}</span><small>${files.length}</small></div><div class="list">${files.map(s=>`<div class="index-score-row"><button class="list-row" data-action="open" data-value="${esc(s.path)}">${icon('file')}<span class="filetitle">${esc(scoreDisplayTitle(s))}</span><small>${esc(s.metadata?.composer||bytes(s.size))}</small></button><button class="score-tool score-metadata" data-action="meta-open" data-value="${esc(s.path)}" title="${esc(tr('metadataEdit'))}" aria-label="${esc(tr('metadataEdit'))}">${icon('edit')}</button></div>`).join('')}</div></section>`).join('');
@@ -666,6 +666,8 @@ async function doRestore(mode){
 async function handleClick(el){
  const action=el.dataset.action,val=el.dataset.value;
  switch(action){
+  case 'advanced-toggle':state.advancedOpen=!state.advancedOpen;render();break;
+  case 'advanced-clear':state.advanced=blankAdvancedFilters();render();break;
   case 'page': closeViewerIfNeeded();setPage(val);break;
   case 'paper':state.paper=val;state.cwd=[];state.search='';await setPref('paper',val);render();break;
   case 'crumb':state.cwd=state.cwd.slice(0,Number(val));state.search='';render();break;
@@ -706,8 +708,8 @@ async function handleClick(el){
    await setPref('w13:favorites',state.favorites);render();break;
   }
   case 'rep-create':state.modal='rep-name';state.modalRepId=null;render();$('#rep-name-input')?.focus();break;
-  case 'rep-back':state.repertoireOpen=null;state.search='';render();break;
-  case 'rep-open':state.repertoireOpen=el.dataset.id;state.search='';render();break;
+  case 'rep-back':state.repertoireOpen=null;state.search='';clearAdvancedSearch();render();break;
+  case 'rep-open':state.repertoireOpen=el.dataset.id;state.search='';clearAdvancedSearch();render();break;
   case 'rep-rename':state.modalRepId=el.dataset.id;state.modal='rep-name';render();$('#rep-name-input')?.focus();break;
   case 'rep-delete':state.modalRepId=el.dataset.id;state.modal='rep-delete-confirm';render();break;
   case 'rep-save-name':{
@@ -852,6 +854,15 @@ document.addEventListener('keydown',e=>{
 });
 document.addEventListener('click',e=>{const b=e.target.closest('[data-action]');if(b){e.preventDefault();handleClick(b).catch(err=>{console.error(err);toast(`${tr('error')} ${err.message}`,true);});}});
 document.addEventListener('input',e=>{
+ if(e.target?.dataset?.advField){
+   const key=e.target.dataset.advField;
+   if(!['composer','type','yearFrom','yearTo'].includes(key))return;
+   const source=e.target,position=source.selectionStart;
+   state.advanced[key]=key==='yearFrom'||key==='yearTo'?source.value.replace(/\D/g,'').slice(0,4):source.value;
+   render();const target=$('[data-adv-field="'+key+'"]');
+   target?.focus();try{target?.setSelectionRange(position,position);}catch{}
+   return;
+ }
  if(e.target.id==='rep-add-search'){state.repAddSearch=e.target.value;const results=$('#rep-add-results');if(results)results.scrollTop=0;syncRepAddDialog();return;}
  if(e.target.id==='search-input'){
   const focus=e.target,sel=focus.selectionStart;state.search=focus.value;
