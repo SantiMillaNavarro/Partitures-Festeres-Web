@@ -49,7 +49,6 @@ try{
  const context=await browser.newContext({viewport:{width:390,height:844},deviceScaleFactor:2,isMobile:true,hasTouch:true});
  const page=await context.newPage(),errors=[];
  page.on('pageerror',e=>errors.push(e.message));
- page.on('console',msg=>{if(msg.text().startsWith('W232'))console.log('PAGE LOG',msg.text());});
  await page.goto('http://127.0.0.1:8765/',{waitUntil:'domcontentloaded'});
  if(await page.locator('[data-action="welcome-done"]').count())await page.locator('[data-action="welcome-done"]').click();
  const add=async(name,buffer)=>{
@@ -59,6 +58,15 @@ try{
  const pref=async name=>page.evaluate(async n=>{
   const {getPref}=await import('./db.js');return getPref('viewer:'+n,null);
  },name);
+ const waitPref=async(name,expected)=>{
+  let result;
+  for(let attempt=0;attempt<150;attempt++){
+   result=await pref(name);
+   if(result&&Object.entries(expected).every(([key,val])=>result[key]===val))return result;
+   await new Promise(resolve=>setTimeout(resolve,70));
+  }
+  throw new Error('Stored viewer state was not updated: '+name+' expected '+JSON.stringify(expected)+' got '+JSON.stringify(result));
+ };
  const savePref=async(name,value)=>page.evaluate(async v=>{
   const {setPref}=await import('./db.js');return setPref('viewer:'+v.name,v.value);
  },{name,value});
@@ -94,13 +102,7 @@ try{
  assert.equal((await pref('ARCUM.pdf')).rotation,270,'Page without text reuses the first page orientation');
  await page.locator('[data-action="viewer-page-next"]').click();
  await page.waitForFunction(()=>document.querySelector('#viewer-page-counter')?.textContent.includes('3 / 3'));
- await page.waitForFunction(async()=>{
-  const {getPref}=await import('./db.js');const p=await getPref('viewer:ARCUM.pdf');
-  return p?.page===3&&p?.rotation===0&&p?.rotationMode==='auto';
- },null,{timeout:10000});
- console.log('PAGE3 PREF AT WAIT',JSON.stringify(await pref('ARCUM.pdf')));
- await page.waitForTimeout(250);
- console.log('PAGE3 PREF AFTER DELAY',JSON.stringify(await pref('ARCUM.pdf')));
+ await waitPref('ARCUM.pdf',{page:3,rotation:0,rotationMode:'auto'});
  assert.equal((await pref('ARCUM.pdf')).rotation,0,'Portrait text content stays upright within mixed document');
  assert((await dims()).height>(await dims()).width);
  await page.locator('[data-action="viewer-rotate"]').click();
@@ -111,24 +113,15 @@ try{
  assert.equal((await pref('ARCUM.pdf')).rotationMode,'manual','Manual override survives reopening');
  assert.equal((await pref('ARCUM.pdf')).rotation,90);
  await page.locator('[data-action="viewer-auto-rotate"]').click();
- await page.waitForFunction(async()=>{
-  const {getPref}=await import('./db.js');const p=await getPref('viewer:ARCUM.pdf');
-  return p?.rotationMode==='auto'&&p?.page===3&&p?.rotation===0;
- },null,{timeout:10000});
+ await waitPref('ARCUM.pdf',{page:3,rotation:0,rotationMode:'auto'});
  assert.equal((await pref('ARCUM.pdf')).rotation,0);
  await page.locator('[data-action="viewer-page-prev"]').click();
  await page.locator('[data-action="viewer-page-prev"]').click();
- await page.waitForFunction(async()=>{
-  const {getPref}=await import('./db.js');const p=await getPref('viewer:ARCUM.pdf');
-  return p?.page===1&&p?.rotation===270;
- },null,{timeout:10000});
+ await waitPref('ARCUM.pdf',{page:1,rotation:270,rotationMode:'auto'});
  assert.equal((await pref('ARCUM.pdf')).rotation,270);
  await page.reload();
  await page.locator('.viewer-canvas').waitFor({timeout:20000});
- await page.waitForFunction(async()=>{
-  const {getPref}=await import('./db.js');const p=await getPref('viewer:ARCUM.pdf');
-  return p?.rotationMode==='auto'&&p?.rotation===270;
- });
+ await waitPref('ARCUM.pdf',{page:1,rotation:270,rotationMode:'auto'});
  await page.locator('#viewer-stage').click({position:{x:190,y:350}});
  await close();
 
