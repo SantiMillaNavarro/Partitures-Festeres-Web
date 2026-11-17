@@ -1,0 +1,29 @@
+name: W2.1 PDF annotation tests
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+jobs:
+  annotations:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install Chromium
+        run: |
+          npm install --no-save playwright
+          npx playwright install chromium --with-deps
+      - name: Start HTTP server
+        run: python3 -m http.server 8765 --bind 127.0.0.1 > /tmp/partitures.log 2>&1 &
+      - name: Check JS syntax
+        run: |
+          node --check app-w2a.js
+          node --check viewer-w2a.js
+          node --check annotations.js
+          node --check db.js
+          node --check backup.js
+          node --check .github/scripts/w2a-annotations.mjs
+      - name: Test annotations and ZIP compatibility in Chromium
+        run: node .github/scripts/w2a-annotations.mjs
