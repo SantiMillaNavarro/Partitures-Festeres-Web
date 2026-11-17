@@ -452,7 +452,7 @@ async function openPdf(path){
   setPref('w13:recents',state.recents).catch(e=>console.warn('Recents:',e));
  closeViewerIfNeeded();
  state.blobUrl=URL.createObjectURL(record.blob);
- state.view={path};state.zen=true;
+ state.view={path};state.zen=true;setReadingColors(true);
  const saved=await getPref('viewer:'+path,{});
  if(request!==viewerRequest){closeViewerIfNeeded();return;}
  render();
