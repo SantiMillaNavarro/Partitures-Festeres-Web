@@ -4,6 +4,14 @@ import {musicalSymbolIcon} from './musical-symbols.js';
 const escapeHtml=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 export function renderRosetteMarkup({viewer,state,icon,labels,width,height,language='va'}){
  if(!state.annotating||!viewer||viewer.native)return '';
+ if(state.rosetteLegacy){
+  // Mode de compatibilitat: només s'exposa un botó per a tornar al rosetó.
+  // No deixem el nucli flotant damunt de les anotacions ni dupliquem Desfer/Edita.
+  const title=language==='va'?'Tornar al rosetó':'Volver al rosetón';
+  return '<div class="pf-rosette-dock pf-rosette-legacy-toggle" role="toolbar" aria-label="'+escapeHtml(labels.edit)+'">'+
+   '<button type="button" data-action="rosette-legacy" title="'+escapeHtml(title)+
+   '" aria-label="'+escapeHtml(title)+'">'+icon('settings')+'<span>'+escapeHtml(title)+'</span></button></div>';
+ }
  const expanded=state.rosetteExpanded,level=state.rosetteLevel;
  const center=clampRosetteCenter(state.rosetteX*width,state.rosetteY*height,width,height,expanded);
  const context={annotationTool:viewer.annotationTool,annotationColor:viewer.annotationColor,
