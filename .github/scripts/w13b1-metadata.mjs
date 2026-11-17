@@ -92,6 +92,8 @@ try{
  await p.locator('#meta-title').fill('TEMPORAL');
  await p.locator('[data-action="meta-save"]').click();
  await p.locator('#restore-input').setInputFiles({name:'new.zip',mimeType:'application/zip',buffer:latest});
+ await p.waitForTimeout(1500);
+ console.log('RESTORE DIAG',await p.evaluate(()=>({modal:document.querySelector('.modal')?.textContent?.slice(0,550),toast:document.querySelector('.toast')?.textContent?.slice(0,550),lang:document.documentElement.lang,restoreInput:document.querySelector('#restore-input')?.value})));
  await p.locator('[data-action="restore-replace"]').click();
  await p.waitForFunction(()=>document.querySelector('[data-action="meta-open"][data-value="ALMUGAVIR.pdf"]')!==null,{timeout:30000});
  await p.locator('[data-action="meta-open"][data-value="ALMUGAVIR.pdf"]').click();
