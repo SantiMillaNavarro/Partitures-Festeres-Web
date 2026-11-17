@@ -82,8 +82,10 @@ try{
  assert.equal(await page.locator('.index-group').count(),4);
  // Paper switch retains grouping preference, but scopes results correctly.
  await page.locator('[data-action="paper"][data-value="2n"]').click();
+ await page.locator('[data-action="paper"][data-value="2n"].active').waitFor();
  assert.equal(await page.locator('.index-score-row').count(),1);
  await page.locator('[data-action="paper"][data-value="root"]').click();
+ await page.locator('[data-action="paper"][data-value="root"].active').waitFor();
  assert.equal(await page.locator('.index-score-row').count(),5);
  await page.reload();
  assert.equal(await page.locator('#index-group-by').count(),0,'Page restarts at Library');
