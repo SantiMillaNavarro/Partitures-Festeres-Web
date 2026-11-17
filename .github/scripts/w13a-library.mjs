@@ -35,6 +35,7 @@ try{
  const order=()=>p.locator('.score-row [data-action="open"]').evaluateAll(a=>a.map(x=>x.dataset.value));
  assert.deepEqual(await order(),['ALMUGAVIR.pdf','BISCAINS.pdf']);
  await p.locator('[data-action="rep-up"][data-value="BISCAINS.pdf"]').click();
+ await p.waitForFunction(()=>document.querySelector('.score-row [data-action="open"]')?.dataset.value==='BISCAINS.pdf');
  assert.deepEqual(await order(),['BISCAINS.pdf','ALMUGAVIR.pdf']);
  await p.reload();await p.locator('.bottom-link[data-value="repertoires"]').click();await p.locator('[data-action="rep-open"]').first().click();
  assert.deepEqual(await order(),['BISCAINS.pdf','ALMUGAVIR.pdf']);
