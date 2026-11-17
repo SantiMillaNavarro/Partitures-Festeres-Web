@@ -1,34 +1,36 @@
-# Partitures Festeres Web — W2.5 · Rosetó ornamental d'Android
+# Partitures Festeres Web — W2.6 · Editor de text dins del visor PDF
 
-Esta fase és el primer pas per a reconstruir la interfície web a partir del projecte font **Android v1.11.15** i, concretament, de `QuickAnnotationRosette` a `PdfViewerScreen.kt`. L'objectiu és igualar el comportament real de l'app sense trencar la biblioteca, les anotacions ni l'estabilitat del visor.
+La fase **W2.6** s'ha desenvolupat prenent com a model directe el codi Android **v1.11.15**, sobretot la funció `startInlineTextEditor`, el component `InlineAnnotationTextEditor` i `finishInlineTextEditor` de `PdfViewerScreen.kt`, i el model `AnnotationText` de `AnnotationStore.kt`.
 
-## Novetats W2.5
+## Com funciona
 
-- En entrar a **Anotar**, apareix un rosetó de **huit pètals, en dues corones**, amb el granat, blau fosc, or i el motiu ogival ornamental d'Android.
-- Les eines principals segueixen l'ordre d'Android: **Seleccionar, Llapis, Ressaltador, Text, Formes, Símbols, Retall i Goma**.
-- El **centre del rosetó** obri la flor si està tancada; si està oberta, retrocedix al menú anterior; a l'arrel, la tanca. El centre es pot **arrossegar amb el dit** i queda limitat a l'àrea visible. Les coordenades de moviment tenen en compte el gir visual d'iOS.
-- També es pot mostrar el rosetó amb un **doble toc al centre de la partitura** quan el visor no està en mode d'anotació.
-- El submenú de **Llapis i Ressaltador** permet triar color i grossor; el de **Text**, color, grandària, negreta i subratllat; el de **Formes**, tipus, color i grossor; i el de **Símbols**, famílies, segells, color i grandària.
-- En les opcions de símbols, els pètals es paginen quan una família conté molts elements, seguint el mecanisme de la versió Android.
-- Els controls de **Desfer, Editar text, Eliminar seleccionada i Acabar** continuen accessibles des d'una barra compacta.
-- La barra anterior de W2.4.1 no desapareix: **«Més opcions»** la desplega si encara necessites utilitzar controls detallats no incorporats al rosetó.
+- Des de **Anotar → Text** del rosetó, toca la partitura per a crear un **quadre de text estàndard (28% d'amplària × 10% d'altura)**, o arrossega el dit per a dibuixar un quadre de la grandària que necessites. Els textos creats abans conserven les seues dimensions.
+- **S'escriu directament damunt de la partitura**: apareix un camp de text amb vora blava, cursor real i focus al teclat. No cal obrir el diàleg clàssic.
+- La barra de format a tocar del quadre permet **negreta, cursiva, subratllat, alineació esquerra/centre/dreta, grandària, color, fons blanc i marc**.
+- **Guardar (✓)** confirma el text; **Cancel·lar (×)** conserva intacta l'anotació original si es tractava d'una edició. `Control/Command + Enter` també guarda; `Escape` cancel·la.
+- El camp permet **cinc línies**, seguint Android, i un màxim ordinari de **240 caràcters**. Els textos antics més llargs es poden reobrir sense truncar-los automàticament.
+- Després de guardar, la ferramenta passa a **Seleccionar**, com a Android: el quadre es pot moure o redimensionar amb les ferramentes ja existents.
+- Si canvia la pàgina o es tanca el visor amb un esborrany vàlid, s'intenta confirmar-lo **abans** de destruir la pàgina, seguint la protecció Android davant de la pèrdua del text.
+- El camp està integrat en la capa del PDF; acompanya el **zoom, el gir, la mida de pantalla** i, quan és possible, conserva el focus encara que el visor renderitze la pàgina de nou.
+- En Chrome/Android, si obrir el teclat virtual trau el navegador de fullscreen, **el visor no es tanca** per eixe canvi de fullscreen.
 
-## Diferències deliberades respecte a Android
+## Rosetó i compatibilitat
 
-- **Retall** ocupa el pètal original, però encara no modifica el PDF ni executa un retall. Informa explícitament que la ferramenta s'implementarà en W2.8.
-- Android té sis famílies de símbols, però W2.5 conserva les cinc que estan disponibles a la web; les articulacions i els reguladors especialitzats s'ampliaran en W2.7.
-- Els menús de text encara no inclouen cursiva i alineació exactes de la versió Android; s'afegiran amb l'editor integrat en W2.6.
-- El rosetó web utilitza el catàleg de colors, grossors i figures *ja validats* a la web, sense crear configuracions que l'emmagatzematge actual no suportaria.
+- El submenú **Text** del rosetó incorpora també **Cursiva** i **Alineació**, com Android, a més de negreta i subratllat.
+- **«Més opcions» conserva l'editor modal anterior** com a alternativa. Això permet comparar els dos mètodes abans de retirar el sistema antic.
+- El format d'anotacions continua en **`version:1`**; `italic`, `alignment`, `backgroundEnabled` i `borderEnabled` són camps **opcionals**, validados abans de guardar o restaurar. Les anotacions de W2.1–W2.5 continuen sent compatibles.
+- No s'escriu mai el text dins dels bytes originals del PDF. El contingut s'emmagatzema en IndexedDB i es conserva en les còpies ZIP de la biblioteca.
+- El visor horitzontal, la rotació automàtica, el gest Android «Enrere», els repertoris, el rosetó i totes les eines no textuals continuen intactes.
+- **Ajustos i manifest ZIP:** W2.6. La memòria caché de la PWA es renova sense netejar IndexedDB.
 
-## Estabilitat
+## Limitacions respecte a Android
 
-Els mecanismes de PDF, IndexedDB, anotacions, repertoris, biblioteca, orientació horitzontal, gest «Enrere» i el format ZIP es mantenen. No hi ha migracions de dades, canvis en les rutes PDF, ni eliminacions. **No cal reimportar fitxers ni esborrar les dades de l'app.**
-
-Ajustos i còpies ZIP indiquen **W2.5**. La caché offline inclou els nous mòduls del rosetó.
+El teclat virtual, la seua tecla «Fet» i el comportament exacte del fullscreen depenen del navegador i el sistema. El botó visible **✓** permet guardar de manera equivalent. La **rotació individual dels quadres, duplicació i capa d'objectes** s'abordaran en W2.7, i el recort en W2.8; no s'han afegit simulacions que pareguen funcionals sense ser-ho.
 
 ## Proves
 
-- Nova prova Playwright: huit pètals i dues corones, navegació de submenús, canvi de color/grossor, categories musicals, pètal Retall pendent, inserció de matisos sobre PDF, centre mòbil, tecla Escape i barra de compatibilitat.
-- Les proves anteriors continuen cobrint llapis, formes, text, símbols, zoom, gir, anotacions, còpies ZIP, repertoris, navegació Android i recuperació després d'actualitzar.
+La nova bateria automatitzada comprova editor sobre la pàgina, focus, format, zoom durant l'edició, desfer/cancel·lar, canvi de pàgina amb text en edició, regressió de modal antic, recuperació després de refrescar i integritat exacta dels bytes PDF. La resta de proves de W2.1–W2.5 continuen executant-se en CI.
 
-**Validació en dispositiu real:** comprova que els pètals es poden tocar amb comoditat, que el centre es desplaça sense crear traços i que «Més opcions» permet continuar treballant mentre completem la paritat d'Android.
+**Validació real recomanada:** crear un quadre amb un toc i un altre arrossegant; escriure amb el teclat físic/virtual; canviar alineació i cursiva; prémer ✓, seleccionar, moure i ampliar la partitura. Comprovar també que el gest «Enrere» manté el funcionament de W2.3.5.
+
+No és necessari eliminar dades ni reimportar partitures; abans de canvis importants convé guardar una còpia ZIP fora del navegador.
