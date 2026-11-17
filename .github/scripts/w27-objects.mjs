@@ -73,6 +73,11 @@ try{
  await tap(.18,.22);
  await page.locator('.pf-inline-input').waitFor();
  await page.locator('.pf-inline-input').fill('Quadre únic');
+ // Tocar el PDF amb el teclat actiu NO ha de crear un segon editor.
+ await tap(.75,.73);
+ assert.equal(await page.locator('.pf-inline-input').count(),1,'Only one editor stays mounted');
+ assert.equal(await page.locator('.pf-inline-input').inputValue(),'Quadre únic','Draft survives touches outside');
+ assert.equal(await page.locator('.pf-inline-input').evaluate(el=>document.activeElement===el),true,'Typing keeps focus');
  await page.locator('[data-inline="save"]').click();
  await page.locator('.pf-inline-input').waitFor({state:'detached'});
  assert.equal(await layer.evaluate(el=>getComputedStyle(el).pointerEvents),'auto');
