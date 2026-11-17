@@ -638,7 +638,20 @@ function renderModal(){if(!state.modal)return '';
   <div class="modal-actions"><button class="secondary" data-action="rep-create">${icon('plus')}${esc(tr('createRepertoire'))}</button><button class="secondary" data-action="close-modal">${esc(tr('cancel'))}</button></div></div></div>`;
  }
  if(state.modal==='clear')return `<div class="modal-backdrop" role="dialog" aria-modal="true"><div class="modal"><h2>${esc(tr('warningTitle'))}</h2><p>${esc(tr('warningText'))}</p><div class="modal-actions"><button class="secondary" data-action="close-modal">${esc(tr('cancel'))}</button><button class="danger" data-action="confirm-clear">${esc(tr('deleteConfirm'))}</button></div></div></div>`;
- if(state.modal==='annotation-text'&&state.textDraft){
+ if(state.modal==='annotation-symbols'&&state.annotating&&scoreViewer){
+   const groups=SYMBOL_GROUPS.map(g=>`<button class="symbol-category ${state.symbolGroup===g.id?'selected':''}" data-action="annotation-symbol-group" data-value="${g.id}" aria-pressed="${state.symbolGroup===g.id}">${esc(g.name[state.lang])}</button>`).join('');
+   const choices=Object.entries(MUSICAL_SYMBOLS).filter(([id,spec])=>spec.group===state.symbolGroup).map(([id,spec])=>`<button class="musical-stamp-choice ${scoreViewer?.musicalSymbol===id?'selected':''}" data-action="annotation-symbol-pick" data-value="${id}" title="${esc(spec.name[state.lang])}" aria-label="${esc(spec.name[state.lang])}" aria-pressed="${scoreViewer?.musicalSymbol===id}">${musicalSymbolIcon(id)}<span>${esc(spec.name[state.lang])}</span></button>`).join('');
+   return `<div class="modal-backdrop annotation-symbol-backdrop" role="presentation">
+    <section class="modal annotation-symbol-modal" role="dialog" aria-modal="true" aria-labelledby="annotation-symbol-title">
+     <h2 id="annotation-symbol-title">${esc(tr('annotationSymbolPicker'))}</h2>
+     <div class="musical-symbol-categories" role="group" aria-label="${esc(tr('annotationSymbolPicker'))}">${groups}</div>
+     <div class="musical-symbol-grid">${choices}</div>
+     <p class="annotation-symbol-help">${esc(tr('annotationSymbolHelp'))}</p>
+     <div class="modal-actions"><button class="secondary" data-action="annotation-symbol-cancel">${esc(tr('cancel'))}</button></div>
+    </section>
+   </div>`;
+  }
+  if(state.modal==='annotation-text'&&state.textDraft){
    const d=state.textDraft,editing=d.index!=null;
    const optSize=TEXT_SIZES.map(n=>`<option value="${n}" ${d.fontSize===n?'selected':''}>${Math.round(n*1000)/10}%</option>`).join('');
    const optOpacity=TEXT_OPACITIES.map(n=>`<option value="${n}" ${d.opacity===n?'selected':''}>${Math.round(n*100)}%</option>`).join('');
@@ -1114,6 +1127,21 @@ async function handleClick(el){
      render();
    }break;
    case 'annotation-tool':if(scoreViewer?.annotationMode){scoreViewer.setAnnotationTool(val);render();}break;
+   case 'annotation-symbol-picker':{
+     if(!scoreViewer?.annotationMode)break;
+     state.symbolGroup=MUSICAL_SYMBOLS[scoreViewer.musicalSymbol]?.group||'notes';
+     state.modal='annotation-symbols';render();break;
+   }
+   case 'annotation-symbol-group':{
+     if(state.modal!=='annotation-symbols'||!SYMBOL_GROUPS.some(g=>g.id===val))break;
+     state.symbolGroup=val;render();break;
+   }
+   case 'annotation-symbol-pick':{
+     if(state.modal!=='annotation-symbols'||!scoreViewer?.annotationMode||!isMusicalSymbol(val))break;
+     scoreViewer.setMusicalSymbol(val);
+     state.modal=null;render();break;
+   }
+   case 'annotation-symbol-cancel':state.modal=null;render();break;
    case 'annotation-text-edit':{
      const item=scoreViewer?.getSelectedText();
      if(!item||!state.view)break;
@@ -1172,7 +1200,7 @@ function closeViewerIfNeeded(keepLandscape=false){
  setReadingColors(false);
  scoreViewer?.close();scoreViewer=null;
  state.annotating=false;
- if(state.modal==='annotation-text')state.modal=null;
+ if(state.modal==='annotation-text'||state.modal==='annotation-symbols')state.modal=null;
  state.textDraft=null;
  if(state.blobUrl){URL.revokeObjectURL(state.blobUrl);state.blobUrl=null;}
  state.view=null;state.zen=false;
@@ -1271,6 +1299,7 @@ document.addEventListener('change',e=>{
   setPref('w13c:indexSortBy',state.indexSortBy).catch(err=>console.warn(err));render();
  }
  if(e.target.id==='annotation-width'&&scoreViewer?.annotationMode){scoreViewer.setAnnotationThickness(e.target.value);render();}
+ if(e.target.id==='annotation-symbol-size'&&scoreViewer?.annotationMode){scoreViewer.setMusicalSymbolSize(e.target.value);render();}
   if(e.target.id==='import-input')importSelected([...e.target.files]);
  if(e.target.id==='restore-input')chooseRestoreFile(e.target.files?.[0]);
  if(e.target.name==='welcome-lang'){state.lang=e.target.value;render();}
