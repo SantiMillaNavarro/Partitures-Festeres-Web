@@ -683,9 +683,6 @@ async function doRestore(mode){
     if(mode==='replace'){
       const lang=await getPref('lang',state.lang);state.lang=lang==='es'?'es':'va';
       state.paper=await getPref('paper','root');
-   const savedGroup=await getPref('w13c:indexGroupBy','folder'),savedSort=await getPref('w13c:indexSortBy','title');
-   state.indexGroupBy=INDEX_GROUP_MODES.includes(savedGroup)?savedGroup:'folder';
-   state.indexSortBy=INDEX_SORT_MODES.includes(savedSort)?savedSort:'title';
     }
     const paperList=paperRoots();
     if(state.paper!=='root'&&!paperList.includes(state.paper))state.paper=paperList[0]||'root';
@@ -855,6 +852,9 @@ async function init(){
   state.scores=await getAllScores();
    await reloadCollections();
   state.paper=await getPref('paper','root');
+  const savedGroup=await getPref('w13c:indexGroupBy','folder'),savedSort=await getPref('w13c:indexSortBy','title');
+  state.indexGroupBy=INDEX_GROUP_MODES.includes(savedGroup)?savedGroup:'folder';
+  state.indexSortBy=INDEX_SORT_MODES.includes(savedSort)?savedSort:'title';
   const papers=paperRoots();
   if(state.paper!=='root'&&!papers.includes(state.paper))state.paper=papers[0]||'root';
   if(state.paper==='root'&&papers.length&&!(await getPref('paper')))state.paper=papers[0];
