@@ -38,7 +38,7 @@ function makePdf(){
 }
 const browser=await chromium.launch({headless:true,args:['--no-sandbox']});
 try{
- const ctx=await browser.newContext({viewport:{width:1024,height:768},deviceScaleFactor:2,acceptDownloads:true});
+ const ctx=await browser.newContext({viewport:{width:390,height:844},deviceScaleFactor:2,acceptDownloads:true});
  const page=await ctx.newPage(),errors=[];
  page.on('pageerror',e=>errors.push(e.message));
  await page.goto('http://127.0.0.1:8765/',{waitUntil:'domcontentloaded'});
