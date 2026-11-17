@@ -1,6 +1,6 @@
 /* W2.2 — Geometria de formes i selecció en coordenades locals del PDF.
    Funcions pures: els fitxers W2.1 es continuen llegint sense migració. */
-import {projectPoint} from './annotations.js';
+import {projectPoint,unprojectPoint} from './annotations.js';
 import {musicalSymbolBounds} from './musical-symbols.js';
 
 const clamp=(n,a,b)=>Math.min(b,Math.max(a,n));
@@ -47,18 +47,48 @@ export function strokePath(stroke,w,h,rotation=0){
 }
 // El text es dibuixa amb un <text> SVG en la pàgina, orientat amb el PDF.
 // Les mides són relatives a la part visible de la pàgina, no al zoom del navegador.
+export const STANDARD_TEXT_BOX=Object.freeze({width:.38,height:.15});
+const glyphUnits=line=>Array.from(line).reduce((n,c)=>n+(/[\u2e80-\uffff]/u.test(c)?1.05:.58),0);
+export function wrapTextInBox(text,fontPx,width){
+ const maxUnits=Math.max(1,(Math.max(1,width)-fontPx*.35)/Math.max(1,fontPx));
+ const result=[];
+ for(const paragraph of String(text).split('\n')){
+  if(!paragraph){result.push('');continue;}
+  let line='';
+  for(const word of paragraph.split(/(?<=\s)/u)){
+   if(!word)continue;
+   if(line&&glyphUnits(line+word)>maxUnits){result.push(line.trimEnd());line='';}
+   for(const ch of Array.from(word)){
+    if(line&&glyphUnits(line+ch)>maxUnits){result.push(line.trimEnd());line='';}
+    line+=ch;
+   }
+  }
+  result.push(line.trimEnd());
+ }
+ return result;
+}
 export function textBounds(stroke,w,h){
- const size=stroke.fontSize*Math.min(w,h);
- const lines=stroke.text.split('\n');
- const glyphLength=line=>Array.from(line).reduce((n,c)=>n+(/[\u2e80-\uffff]/u.test(c)?1.05:.58),0);
- const width=Math.max(size*.65,...lines.map(line=>glyphLength(line)*size));
- return {width,height:lines.length*size*1.26,fontPx:size,lines};
+ const size=stroke.fontSize*Math.min(w,h),boxed=Number.isFinite(stroke.boxWidth)&&Number.isFinite(stroke.boxHeight);
+ const lines=boxed?wrapTextInBox(stroke.text,size,stroke.boxWidth*w):stroke.text.split('\n');
+ const width=boxed?stroke.boxWidth*w:Math.max(size*.65,...lines.map(line=>glyphUnits(line)*size));
+ return {width,height:boxed?stroke.boxHeight*h:lines.length*size*1.26,fontPx:size,lines};
+}
+export function textBoxFromGesture(start,end,rotation,w,h){
+ const a=projectPoint(start,rotation),b=projectPoint(end,rotation);
+ const dragged=Math.hypot((b[0]-a[0])*w,(b[1]-a[1])*h)>=12;
+ const width=dragged?clamp(Math.abs(b[0]-a[0]),.05,.95):STANDARD_TEXT_BOX.width;
+ const height=dragged?clamp(Math.abs(b[1]-a[1]),.05,.95):STANDARD_TEXT_BOX.height;
+ let x=dragged?Math.min(a[0],b[0]):a[0],y=dragged?Math.min(a[1],b[1]):a[1];
+ x=clamp(x,0,1-width);y=clamp(y,0,1-height);
+ return {point:unprojectPoint([r4(x),r4(y)],rotation).map(r4),
+   boxWidth:r4(width),boxHeight:r4(height),drawn:dragged};
 }
 function anchoredStampDistance(stroke,point,w,h,rotation,bounds){
  const anchor=projectPoint(stroke.points[0],rotation),touch=projectPoint(point,rotation);
  const dx=(touch[0]-anchor[0])*w,dy=(touch[1]-anchor[1])*h;
- const rot=((rotation%360)+360)%360;
- const local=rot===90?[dy,-dx]:rot===180?[-dx,-dy]:rot===270?[-dy,dx]:[dx,dy];
+ // El contingut SVG està orientat visualment com el pentagrama, sense
+ // el segon gir accidental que s'aplicava als símbols en W2.4.
+ const local=[dx,dy];
  const {width,height}=bounds;
  return Math.hypot(Math.max(0,-local[0],local[0]-width),Math.max(0,-local[1],local[1]-height));
 }
