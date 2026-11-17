@@ -596,7 +596,7 @@ html.reading-pdf,body.reading-pdf{background:#fff!important;background-image:non
   position:fixed;inset:auto;top:0;left:100vw;right:auto;bottom:auto;
   width:100dvh;height:100dvw;min-width:0;min-height:0;
   transform-origin:top left;transform:rotate(90deg);
-  z-index:1000;
+  z-index:30; /* El diàleg de text (z-index 50) ha de quedar per damunt. */
  }
  .pf-reading-mode .viewer-top{
   padding:3px max(10px,env(safe-area-inset-bottom)) 3px 10px;
