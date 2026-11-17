@@ -513,6 +513,28 @@ function renderModal(){if(!state.modal)return '';
   <div class="modal-actions"><button class="secondary" data-action="rep-create">${icon('plus')}${esc(tr('createRepertoire'))}</button><button class="secondary" data-action="close-modal">${esc(tr('cancel'))}</button></div></div></div>`;
  }
  if(state.modal==='clear')return `<div class="modal-backdrop" role="dialog" aria-modal="true"><div class="modal"><h2>${esc(tr('warningTitle'))}</h2><p>${esc(tr('warningText'))}</p><div class="modal-actions"><button class="secondary" data-action="close-modal">${esc(tr('cancel'))}</button><button class="danger" data-action="confirm-clear">${esc(tr('deleteConfirm'))}</button></div></div></div>`;
+ if(state.modal==='annotation-text'&&state.textDraft){
+   const d=state.textDraft,editing=d.index!=null;
+   const optSize=TEXT_SIZES.map(n=>`<option value="${n}" ${d.fontSize===n?'selected':''}>${Math.round(n*1000)/10}%</option>`).join('');
+   const optOpacity=TEXT_OPACITIES.map(n=>`<option value="${n}" ${d.opacity===n?'selected':''}>${Math.round(n*100)}%</option>`).join('');
+   const colors=ANNOTATION_COLORS.map(c=>`<label class="annotation-text-color" title="${c}"><input type="radio" name="annotation-text-color" value="${c}" ${d.color===c?'checked':''} aria-label="${esc(tr('annotationTextColor'))} ${c}"/><span style="--swatch:${c}"></span></label>`).join('');
+   return `<div class="modal-backdrop annotation-text-backdrop" role="dialog" aria-modal="true" aria-labelledby="annotation-text-title">
+    <div class="modal annotation-text-modal"><h2 id="annotation-text-title">${esc(tr(editing?'annotationTextEdit':'annotationTextNew'))}</h2>
+    <p>${esc(tr('annotationTextHint'))}</p>
+    <label class="annotation-text-main">${esc(tr('annotationTextValue'))}
+     <textarea id="annotation-text-value" rows="3" maxlength="280" spellcheck="false" placeholder="${esc(tr('annotationTextValue'))}">${esc(d.text||'')}</textarea></label>
+    <div class="annotation-text-grid">
+     <label>${esc(tr('annotationFontSize'))}<select id="annotation-font-size">${optSize}</select></label>
+     <label>${esc(tr('annotationOpacity'))}<select id="annotation-text-opacity">${optOpacity}</select></label>
+     <label class="annotation-text-toggle"><input id="annotation-text-bold" type="checkbox" ${d.bold?'checked':''}/>${esc(tr('annotationBold'))}</label>
+     <label class="annotation-text-toggle"><input id="annotation-text-underline" type="checkbox" ${d.underline?'checked':''}/>${esc(tr('annotationUnderline'))}</label>
+    </div>
+    <fieldset class="annotation-text-colors"><legend>${esc(tr('annotationTextColor'))}</legend>${colors}</fieldset>
+    <div class="modal-actions"><button class="secondary" data-action="annotation-text-cancel">${esc(tr('cancel'))}</button>
+     <button class="primary" data-action="annotation-text-save">${esc(tr('annotationSaveText'))}</button></div>
+    </div>
+   </div>`;
+  }
  if(state.modal==='annotation-clear')return `<div class="modal-backdrop" role="dialog" aria-modal="true"><div class="modal"><h2>${esc(tr('annotationClearTitle'))}</h2><p>${esc(tr('annotationClearAsk'))}</p><div class="modal-actions"><button class="secondary" data-action="close-modal">${esc(tr('cancel'))}</button><button class="danger" data-action="annotation-clear-confirm">${esc(tr('deleteConfirm'))}</button></div></div></div>`;
  if(state.modal==='delete-one')return `<div class="modal-backdrop" role="dialog" aria-modal="true"><div class="modal"><h2>${esc(tr('warningTitle'))}</h2><p>${esc(tr('confirmOne'))}</p><p><strong>${esc(state.view?.path||'')}</strong></p><div class="modal-actions"><button class="secondary" data-action="close-modal">${esc(tr('cancel'))}</button><button class="danger" data-action="confirm-delete-one">${esc(tr('deleteConfirm'))}</button></div></div></div>`;
  return '';
