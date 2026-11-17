@@ -48,7 +48,8 @@ const I = {
   rectShape:'<svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="14" fill="none"/></svg>',
   ellipseShape:'<svg viewBox="0 0 24 24"><ellipse cx="12" cy="12" rx="9" ry="7" fill="none"/></svg>',
   arrowShape:'<svg viewBox="0 0 24 24"><path d="m4 20 16-16M10 4h10v10"/></svg>',
-  textShape:'<svg viewBox="0 0 24 24"><path d="M4 6h16M12 6v14M8 20h8M4 6v4m16-4v4"/></svg>'
+  textShape:'<svg viewBox="0 0 24 24"><path d="M4 6h16M12 6v14M8 20h8M4 6v4m16-4v4"/></svg>',
+  musicSymbol:'<svg viewBox="0 0 24 24"><ellipse cx="7" cy="18" rx="4" ry="3"/><path d="M11 18V3l9-2v14"/><ellipse cx="16" cy="16" rx="4" ry="3"/></svg>'
 };
 const icon = (name) => `<span class="icon" aria-hidden="true">${I[name]||I.file}</span>`;
 const L = {
@@ -77,7 +78,10 @@ const L = {
   offlineReady:'Els PDF importats no ixen del teu dispositiu.',
   paths:'Carpetes de la biblioteca',welcomeQuote:'La música de les nostres festes, ara també al navegador.',
   noPaper:'Arrel completa',indexGroup:'Sense carpeta',emptyIndex:'Encara no hi ha obres a l’índex.',indexUnknown:'Sense dades',indexArrange:'Organització de l’índex',indexGroupBy:'Agrupar per',indexSortBy:'Ordenar obres per',indexByFolder:'Carpeta',indexByComposer:'Compositor',indexByType:'Tipus de composició',indexByYear:'Any',indexSortTitle:'Títol',indexSortFolder:'Carpeta / ruta',indexExpandAll:'Desplegar tots',indexCollapseAll:'Plegar tots',indexGroupsCount:'grups',indexShown:'obres mostrades',annotationEdit:'Anotar',annotationDone:'Acabar',annotationPen:'Llapis',annotationHighlight:'Ressaltador',annotationColor:'Color',annotationUndo:'Desfer últim traç',annotationClear:'Esborrar anotacions de la pàgina',annotationClearTitle:'Esborrar anotacions',annotationClearAsk:'Vols esborrar tots els traços d’esta pàgina? Les altres pàgines i el PDF no es modificaran.',annotationHelp:'Tria una ferramenta. La goma esborra un traç tocant-lo; Seleccionar permet arrossegar-lo. Per a ampliar amb gestos, acaba les anotacions.',annotationThickness:'Grossor',annotationThin:'Fi',annotationThick:'Gruixut',annotationEraser:'Goma',annotationSelect:'Seleccionar',annotationDeleteSelected:'Esborrar seleccionada',annotationLine:'Línia',annotationRectangle:'Rectangle',annotationEllipse:'Cercle o el·lipse',annotationArrow:'Fletxa',
-   annotationGroupStrokes:'Traços',annotationGroupShapes:'Formes',annotationGroupEdit:'Text i edició',
+   annotationGroupStrokes:'Traços',annotationGroupShapes:'Formes',annotationGroupEdit:'Text i edició',annotationGroupMusic:'Símbols',
+    annotationSymbolTool:'Símbol actual',annotationChooseSymbol:'Triar símbol',annotationSymbolSize:'Grandària',
+    annotationSymbolPicker:'Símbols musicals',annotationSymbolHint:'Tria un símbol i toca la partitura per a posar-lo. Usa Seleccionar per a moure’l.',
+    annotationSymbolHelp:'Els símbols es poden moure, esborrar i desfer sense modificar el PDF.',
    annotationText:'Text',annotationTextNew:'Afegir text',annotationTextEdit:'Editar text',
    annotationTextHint:'Escriu el text i tria l’estil. Toca Guardar per a posar-lo en la pàgina. Després el pots moure amb Seleccionar.',
    annotationTextValue:'Text de l’anotació',annotationFontSize:'Grandària',annotationBold:'Negreta',
@@ -90,7 +94,7 @@ const L = {
   errorStorage:'No s’ha pogut obrir l’emmagatzematge local.',
   restore:'Recuperar còpia',saveZip:'Conserva una còpia del ZIP original fora de l’app.',
   installStatus:'App instal·lable',network:'Estat',about:'Sobre esta versió',
-  limitations:'Esta versió inclou un visor horitzontal amb orientació automàtica del contingut, anotacions amb llapis, ressaltador, formes i text editable. La sincronització amb Drive i les ferramentes musicals continuen pendents.',
+  limitations:'Esta versió inclou un visor horitzontal, anotacions amb llapis, formes, text i símbols musicals (figures, silencis, signes, matisos i tempo). La sincronització amb Drive, l’afinador i el metrònom continuen pendents.',
   help:'Ajuda',openPdf:'Obrir PDF',fileNumber:'Partitura',zipError:'ZIP no vàlid o protegit.',tooBig:'El PDF excedix el límit de prova de 100 MB.',
   browserNote:'No obris l’HTML com a fitxer local: publica’l en HTTPS o usa un servidor local per a les proves.',
   confirmOne:'Vols esborrar esta partitura del dispositiu?',
@@ -137,7 +141,10 @@ const L = {
   offlineReady:'Los PDF importados no salen de tu dispositivo.',
   paths:'Carpetas de la biblioteca',welcomeQuote:'La música de nuestras fiestas, ahora también en el navegador.',
   noPaper:'Raíz completa',indexGroup:'Sin carpeta',emptyIndex:'Todavía no hay obras en el índice.',indexUnknown:'Sin datos',indexArrange:'Organización del índice',indexGroupBy:'Agrupar por',indexSortBy:'Ordenar obras por',indexByFolder:'Carpeta',indexByComposer:'Compositor',indexByType:'Tipo de composición',indexByYear:'Año',indexSortTitle:'Título',indexSortFolder:'Carpeta / ruta',indexExpandAll:'Desplegar todos',indexCollapseAll:'Plegar todos',indexGroupsCount:'grupos',indexShown:'obras mostradas',annotationEdit:'Anotar',annotationDone:'Terminar',annotationPen:'Lápiz',annotationHighlight:'Resaltador',annotationColor:'Color',annotationUndo:'Deshacer último trazo',annotationClear:'Borrar anotaciones de la página',annotationClearTitle:'Borrar anotaciones',annotationClearAsk:'¿Quieres borrar todos los trazos de esta página? Las otras páginas y el PDF no se modificarán.',annotationHelp:'Elige una herramienta. La goma borra un trazo al tocarlo; Seleccionar permite arrastrarlo. Para ampliar con gestos, termina las anotaciones.',annotationThickness:'Grosor',annotationThin:'Fino',annotationThick:'Grueso',annotationEraser:'Goma',annotationSelect:'Seleccionar',annotationDeleteSelected:'Borrar seleccionada',annotationLine:'Línea',annotationRectangle:'Rectángulo',annotationEllipse:'Círculo o elipse',annotationArrow:'Flecha',
-   annotationGroupStrokes:'Trazos',annotationGroupShapes:'Formas',annotationGroupEdit:'Texto y edición',
+   annotationGroupStrokes:'Trazos',annotationGroupShapes:'Formas',annotationGroupEdit:'Texto y edición',annotationGroupMusic:'Símbolos',
+    annotationSymbolTool:'Símbolo actual',annotationChooseSymbol:'Elegir símbolo',annotationSymbolSize:'Tamaño',
+    annotationSymbolPicker:'Símbolos musicales',annotationSymbolHint:'Elige un símbolo y toca la partitura para colocarlo. Usa Seleccionar para moverlo.',
+    annotationSymbolHelp:'Los símbolos pueden moverse, borrarse y deshacerse sin modificar el PDF.',
    annotationText:'Texto',annotationTextNew:'Añadir texto',annotationTextEdit:'Editar texto',
    annotationTextHint:'Escribe el texto y elige su estilo. Pulsa Guardar para colocarlo en la página. Después puedes moverlo con Seleccionar.',
    annotationTextValue:'Texto de la anotación',annotationFontSize:'Tamaño',annotationBold:'Negrita',
@@ -150,7 +157,7 @@ const L = {
   errorStorage:'No se pudo abrir el almacenamiento local.',
   restore:'Recuperar copia',saveZip:'Conserva una copia del ZIP original fuera de la app.',
   installStatus:'App instalable',network:'Estado',about:'Sobre esta versión',
-  limitations:'Esta versión incluye visor horizontal con orientación automática del contenido y anotaciones con lápiz, resaltador, formas y texto editable. La sincronización con Drive y las herramientas musicales siguen pendientes.',
+  limitations:'Esta versión incluye visor horizontal y anotaciones con lápiz, formas, texto y símbolos musicales (figuras, silencios, signos, matices y tempo). La sincronización con Drive, el afinador y el metrónomo siguen pendientes.',
   help:'Ayuda',openPdf:'Abrir PDF',fileNumber:'Partitura',zipError:'ZIP inválido o protegido.',tooBig:'El PDF excede el límite de prueba de 100 MB.',
   browserNote:'No abras el HTML como archivo local: publícalo en HTTPS o usa un servidor local para las pruebas.',
   confirmOne:'¿Quieres borrar esta partitura del dispositivo?',
@@ -178,7 +185,7 @@ const esc = value => String(value??'').replace(/[&<>"']/g, c => ({'&':'&amp;','<
 const norm = value => (value??'').toLocaleLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
 const sort = (a,b) => a.localeCompare(b,'ca',{numeric:true,sensitivity:'base'});
 const scoreSearch = s => norm(s.path+' '+(s.metadata?.title||''));
-const state={lang:'va',page:'library',paper:'root',cwd:[],scores:[],search:'',view:null,blobUrl:null,modal:null,toastTimer:null,loading:false,online:navigator.onLine,storage:null,backup:null,restore:null,zen:false,favorites:[],recents:[],repertoires:[],repertoireOpen:null,modalRepId:null,pickerPath:null,repAddSearch:'',repAddChosen:[],metaPath:null,annotating:false,advanced:blankAdvancedFilters(),advancedOpen:false,indexGroupBy:'folder',indexSortBy:'title',indexCollapsed:new Set(),annotationGroup:'strokes',textDraft:null};
+const state={lang:'va',page:'library',paper:'root',cwd:[],scores:[],search:'',view:null,blobUrl:null,modal:null,toastTimer:null,loading:false,online:navigator.onLine,storage:null,backup:null,restore:null,zen:false,favorites:[],recents:[],repertoires:[],repertoireOpen:null,modalRepId:null,pickerPath:null,repAddSearch:'',repAddChosen:[],metaPath:null,annotating:false,advanced:blankAdvancedFilters(),advancedOpen:false,indexGroupBy:'folder',indexSortBy:'title',indexCollapsed:new Set(),annotationGroup:'strokes',symbolGroup:'notes',textDraft:null};
 let scoreViewer=null;
 let viewerRequest=0;
 let viewerPendingOpen=false;
