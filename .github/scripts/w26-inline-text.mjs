@@ -121,7 +121,7 @@ try{
  // Touch to create a second box; center returns from Text submenu to the eight main petals.
  await page.locator('.pf-rosette-core').click();
  await selectTool('text');
- await tap(.55,.62);
+ await tap(.77,.74); // Fora del radi dels pètals del rosetó flotant.
  await page.locator('.pf-inline-input').waitFor();
  await page.locator('.pf-inline-input').fill('No guardar');
  await page.locator('[data-inline="cancel"]').click();
