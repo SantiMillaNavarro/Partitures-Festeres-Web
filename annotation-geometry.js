@@ -1,4 +1,4 @@
-/* W2.2 — Geometria de formes i selecció en coordenades locals del PDF.
+/* W2.7 compatible W2.2 — Geometria de formes i selecció en coordenades locals del PDF.
    Funcions pures: els fitxers W2.1 es continuen llegint sense migració. */
 import {projectPoint,unprojectPoint} from './annotations.js';
 import {musicalSymbolBounds} from './musical-symbols.js';
@@ -105,10 +105,15 @@ function segmentDistance(point,a,b){
 }
 export function strokeDistance(stroke,point,w,h,rotation=0){
  const p=stroke.points.map(q=>projectPoint(q,rotation)).map(([x,y])=>[x*w,y*h]);
- const q=projectPoint(point,rotation);const target=[q[0]*w,q[1]*h];
+ const q=projectPoint(point,rotation);let target=[q[0]*w,q[1]*h];
  if(!p.length)return Infinity;
- if(stroke.tool==='text')return textDistance(stroke,point,w,h,rotation);
- if(stroke.tool==='symbol')return symbolDistance(stroke,point,w,h,rotation);
+ if(stroke.rotationDegrees){
+  const center=objectBounds(stroke,w,h,rotation);
+  target=rotateScreenPoint(target,center.cx,center.cy,-stroke.rotationDegrees);
+ }
+ const localPoint=unprojectPoint([target[0]/w,target[1]/h],rotation);
+ if(stroke.tool==='text')return textDistance(stroke,localPoint,w,h,rotation);
+ if(stroke.tool==='symbol')return symbolDistance(stroke,localPoint,w,h,rotation);
  if(p.length===1)return dist(target,p[0]);
  if(stroke.tool==='rectangle'){
   const [a,b]=p,minx=Math.min(a[0],b[0]),maxx=Math.max(a[0],b[0]),miny=Math.min(a[1],b[1]),maxy=Math.max(a[1],b[1]);
@@ -139,4 +144,50 @@ export function hitTestStroke(strokes,point,w,h,rotation=0,zoom=1){
   if(strokeDistance(s,point,w,h,rotation)<=tol)return i;
  }
  return -1;
+}
+
+/* W2.7 — Geometria comuna per a girar i escalar objectes sense tocar el PDF. */
+export function objectBounds(stroke,w,h,rotation=0){
+ const points=stroke.points.map(p=>projectPoint(p,rotation)).map(p=>[p[0]*w,p[1]*h]);
+ const x=Math.min(...points.map(p=>p[0])),y=Math.min(...points.map(p=>p[1]));
+ if(stroke.tool==='text'||stroke.tool==='symbol'){
+  const size=stroke.tool==='text'?textBounds(stroke,w,h):musicalSymbolBounds(stroke,w,h);
+  return {left:x,top:y,width:size.width,height:size.height,cx:x+size.width/2,cy:y+size.height/2};
+ }
+ const right=Math.max(...points.map(p=>p[0])),bottom=Math.max(...points.map(p=>p[1]));
+ return {left:x,top:y,width:right-x,height:bottom-y,cx:(x+right)/2,cy:(y+bottom)/2};
+}
+export function rotateScreenPoint(point,cx,cy,degrees){
+ const rad=degrees*Math.PI/180,c=Math.cos(rad),s=Math.sin(rad),dx=point[0]-cx,dy=point[1]-cy;
+ return [cx+dx*c-dy*s,cy+dx*s+dy*c];
+}
+export function resizedStroke(stroke,factor,w,h,rotation=0){
+ if(!Number.isFinite(factor)||factor<=0)return stroke;
+ if(stroke.tool==='symbol')return {...stroke,fontSize:r4(clamp(stroke.fontSize*factor,.018,.16))};
+ if(stroke.tool==='text'){
+  const fontSize=r4(clamp(stroke.fontSize*factor,.012,.12));
+  if(stroke.boxWidth==null||stroke.boxHeight==null)return {...stroke,fontSize};
+  const boxWidth=r4(clamp(stroke.boxWidth*factor,.03,.95));
+  const boxHeight=r4(clamp(stroke.boxHeight*factor,.03,.95));
+  const p=projectPoint(stroke.points[0],rotation);
+  const anchor=[clamp(p[0],0,1-boxWidth),clamp(p[1],0,1-boxHeight)];
+  return {...stroke,fontSize,boxWidth,boxHeight,points:[unprojectPoint(anchor,rotation).map(r4)]};
+ }
+ const b=objectBounds(stroke,w,h,rotation),pivot=unprojectPoint([b.cx/w,b.cy/h],rotation);
+ let effective=factor;
+ if(factor>1){
+  for(const p of stroke.points)for(let axis=0;axis<2;axis++){
+   const d=p[axis]-pivot[axis];
+   if(d>0)effective=Math.min(effective,(1-pivot[axis])/d);
+   else if(d<0)effective=Math.min(effective,pivot[axis]/(-d));
+  }
+ }
+ return {...stroke,points:stroke.points.map(p=>[
+  r4(clamp(pivot[0]+(p[0]-pivot[0])*effective,0,1)),
+  r4(clamp(pivot[1]+(p[1]-pivot[1])*effective,0,1))
+ ])};
+}
+export function rotatedStroke(stroke,delta){
+ const angle=((Number(stroke.rotationDegrees)||0)+delta+180+3600)%360-180;
+ return {...stroke,rotationDegrees:r4(angle)};
 }
