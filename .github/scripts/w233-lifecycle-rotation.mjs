@@ -101,7 +101,10 @@ try{
  const nativeErrors=[];
  nativePage.on('pageerror',e=>nativeErrors.push(e.message));
  await nativePage.goto(url);
- if(await nativePage.locator('[data-action="welcome-done"]').count())await nativePage.locator('[data-action="welcome-done"]').click();
+ // Context nou sense idioma guardat: esperar el diàleg inicial abans d'importar.
+ await nativePage.locator('[data-action="welcome-done"]').waitFor({state:'visible',timeout:15000});
+ await nativePage.locator('[data-action="welcome-done"]').click();
+ await nativePage.locator('.modal-backdrop').waitFor({state:'detached'});
  await nativePage.locator('#import-input').setInputFiles({name:'NATIVE.pdf',mimeType:'application/pdf',buffer:pdf()});
  await nativePage.locator('[data-action="open"][data-value="NATIVE.pdf"]').waitFor();
  await nativePage.locator('[data-action="open"][data-value="NATIVE.pdf"]').click();
