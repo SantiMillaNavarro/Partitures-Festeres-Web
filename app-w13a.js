@@ -157,7 +157,7 @@ const fileList = () => [...state.scores].sort((a,b)=>sort(a.path,b.path));
 const paperRoots = () => [...new Set(state.scores.map(s=>topDir(s.path)).filter(name => /^\d{1,2}\s*(?:er|r|n|t|é|º|ª)?$/i.test(name) && state.scores.some(s=>s.path.startsWith(name+'/'))))].sort(sort);
 function scopedScores(){return state.paper==='root'?fileList():fileList().filter(s=>s.path.startsWith(state.paper+'/'));}
 function currentBase(){return [...(state.paper==='root'?[]:[state.paper]),...state.cwd].join('/');}
-function relativePath(path){return state.paper==='root'?path:path.slice(state.paper.length+1);}
+function relativePath(path){return state.paper==='root'||!path.startsWith(state.paper+'/')?path:path.slice(state.paper.length+1);}
 function setPage(page){state.page=page;state.search='';state.cwd=[];state.view=null;render();}
 function availableFolders(records,prefix='') {
  const folders=new Set();let direct=[];
@@ -264,7 +264,7 @@ function renderLibrary(){
   const count=selected.filter(x=>x.path.startsWith(newPrefix+'/')).length;
   return `<button class="entry" data-action="folder" data-value="${esc(name)}"><span class="entry-ico">${icon('folder')}</span><span class="entry-text"><span class="entry-title">${esc(name)}</span><div class="entry-note">${count} ${esc(tr('scoreCount'))}</div></span></button>`;
  }).join('');
- const ds=docs.map(s=>`<button class="entry" data-action="open" data-value="${esc(s.path)}"><span class="entry-ico pdf">${icon('file')}</span><span class="entry-text"><span class="entry-title">${esc(nice(parts(s.path).at(-1)))}</span><div class="entry-note">${esc(q?relativePath(s.path):bytes(s.size))}</div></span></button>`).join('');
+ const ds=docs.map(s=>htmlScoreRow(s,{note:q?relativePath(s.path):''})).join('');
  return heading('library',tr('subtitle'))+paperBar()+breadcrumbs()+`<div class="section-tools">${searchBox()}</div>`+s+(fs||ds?`<div class="cards" style="margin-top:19px">${fs+ds}</div>`:empty(tr('noResults'),tr('noResultsDesc')));
 }
 function renderIndex(){
@@ -305,11 +305,11 @@ function renderModal(){if(!state.modal)return '';
  return '';
 }
 function renderViewer(){if(!state.view)return '';
- const list=scopedScores(),idx=list.findIndex(s=>s.path===state.view.path),p=idx>=0?idx:0;
+ const list=currentCollectionScores(),idx=list.findIndex(s=>s.path===state.view.path),p=idx>=0?idx:0;
  const v=scoreViewer, page=v?.pageNumber||1, total=v?.numPages||'…', native=!!v?.native;
  return `<div class="viewer w12-viewer pf-reading-mode ${state.zen?'zen-mode':''}" role="dialog" aria-label="${esc(tr('openPdf'))}">
    <div id="viewer-stage" class="viewer-stage" data-path="${esc(state.view.path)}" tabindex="0" aria-label="${esc(tr('viewerStageHint'))}"><p class="viewer-message">${esc(tr('viewerLoading'))}</p></div>
-   <div class="viewer-top"><button class="quiet" data-action="viewer-close" aria-label="${esc(tr('back'))}">${icon('back')}</button><span class="viewer-title">${esc(nice(parts(state.view.path).at(-1)))}</span><button class="quiet" data-action="viewer-rotate" title="${esc(tr('viewerRotate'))}" aria-label="${esc(tr('viewerRotate'))}">${icon('rotate')}</button><button class="quiet" id="viewer-fit-button" data-action="viewer-fit" title="${esc(tr('viewerFitPage'))}" aria-label="${esc(tr('viewerFitPage'))}">${icon('fit')}</button><button class="quiet" data-action="viewer-external" title="${esc(tr('openExternal'))}" aria-label="${esc(tr('openExternal'))}">${icon('share')}</button></div>
+   <div class="viewer-top"><button class="quiet" data-action="viewer-close" aria-label="${esc(tr('back'))}">${icon('back')}</button><span class="viewer-title">${esc(nice(parts(state.view.path).at(-1)))}</span><button class="quiet viewer-favorite ${state.favorites.includes(state.view.path)?'active':''}" data-action="favorite" data-value="${esc(state.view.path)}" aria-pressed="${state.favorites.includes(state.view.path)}" title="${esc(tr(state.favorites.includes(state.view.path)?'removeFavorite':'addFavorite'))}" aria-label="${esc(tr(state.favorites.includes(state.view.path)?'removeFavorite':'addFavorite'))}">${icon('star')}</button><button class="quiet" data-action="viewer-rotate" title="${esc(tr('viewerRotate'))}" aria-label="${esc(tr('viewerRotate'))}">${icon('rotate')}</button><button class="quiet" id="viewer-fit-button" data-action="viewer-fit" title="${esc(tr('viewerFitPage'))}" aria-label="${esc(tr('viewerFitPage'))}">${icon('fit')}</button><button class="quiet" data-action="viewer-external" title="${esc(tr('openExternal'))}" aria-label="${esc(tr('openExternal'))}">${icon('share')}</button></div>
    <div class="viewer-toolbar"><button class="quiet" id="viewer-prev-page" data-action="viewer-page-prev" aria-label="${esc(tr('viewerPrevPage'))}" ${native?'disabled':''}>${icon('back')}</button><span class="viewer-page-counter" id="viewer-page-counter">${esc(tr('viewerPage'))} ${page} / ${total}</span><button class="quiet" id="viewer-next-page" data-action="viewer-page-next" aria-label="${esc(tr('viewerNextPage'))}" ${native?'disabled':''}>${icon('next')}</button><span class="viewer-toolbar-divider"></span><button class="quiet" data-action="viewer-zoom-out" aria-label="${esc(tr('viewerZoomOut'))}" ${native?'disabled':''}>${icon('zoomout')}</button><span id="viewer-zoom-label" class="viewer-zoom-label">${Math.round((v?.zoom||1)*100)}%</span><button class="quiet" data-action="viewer-zoom-in" aria-label="${esc(tr('viewerZoomIn'))}" ${native?'disabled':''}>${icon('zoomin')}</button><button class="quiet" data-action="viewer-zen" aria-label="${esc(tr('viewerZen'))}">${icon('expand')}</button></div>
    <div class="viewer-bottom"><button data-action="viewer-prev" ${p<=0?'disabled':''}>${icon('back')} ${esc(tr('noPrevious'))}</button><span>${p+1} / ${list.length} ${esc(tr('scoreCount'))}</span><button data-action="viewer-next" ${p>=list.length-1?'disabled':''}>${esc(tr('noNext'))} ${icon('next')}</button></div>
    <div class="viewer-intro">${esc(nice(parts(state.view.path).at(-1)))}<small>${esc(tr('viewerStageHint'))}</small></div>
@@ -325,7 +325,7 @@ function showViewerMenu(show){
  if(show) viewerMenuTimer=setTimeout(()=>{if(state.view)showViewerMenu(false);},6500);
 }
 function openAdjacentScore(direction){
- const a=scopedScores(),i=a.findIndex(s=>s.path===state.view?.path);
+ const a=currentCollectionScores(),i=a.findIndex(s=>s.path===state.view?.path);
  const other=a[i+direction];
  if(other) openPdf(other.path).catch(e=>{console.error(e);toast(`${tr('error')} ${e.message}`,true);});
 }
@@ -348,10 +348,10 @@ function render(){
  const oldPath=oldStage?.dataset.path;
  document.documentElement.lang = state.lang==='va'?'ca-ES-valencia':'es';
  document.title='Partitures Festeres Web';
- const page=state.page==='index'?renderIndex():state.page==='settings'?renderSettings():renderLibrary();
+ const page=state.page==='index'?renderIndex():state.page==='settings'?renderSettings():state.page==='favorites'||state.page==='recents'?renderCollectionPage(state.page):state.page==='repertoires'?renderRepertoires():renderLibrary();
  $('#app').innerHTML = `<header class="topbar"><div class="brand"><img src="./assets/icon-192.png" alt=""/><div><h1>Partitures Festeres</h1><small>${esc(tr('subtitle'))}</small></div></div><div class="top-actions"><button class="primary" data-action="import">${icon('upload')} ${esc(tr('import'))}</button></div></header>
- <div class="main-layout"><aside class="sidebar"><span class="side-caption">Partitures Festeres Web</span>${nav('library','library')}${nav('book','index')}${nav('settings','settings')}<div class="side-bottom">${esc(tr('dev'))}<p>${esc(tr('offlineReady'))}</p></div></aside><main class="content">${page}</main></div>
- <nav class="bottom-nav" aria-label="Navegació">${tabsMobile('library','library')}${tabsMobile('book','index')}${tabsMobile('settings','settings')}</nav>${renderViewer()}${renderModal()}`;
+ <div class="main-layout"><aside class="sidebar"><span class="side-caption">Partitures Festeres Web</span>${nav('library','library')}${nav('list','repertoires')}${nav('book','index')}${nav('clock','recents')}${nav('star','favorites')}${nav('settings','settings')}<div class="side-bottom">${esc(tr('dev'))}<p>${esc(tr('offlineReady'))}</p></div></aside><main class="content">${page}</main></div>
+ <nav class="bottom-nav" aria-label="Navegació">${tabsMobile('library','library')}${tabsMobile('list','repertoires')}${tabsMobile('book','index')}${tabsMobile('clock','recents')}${tabsMobile('star','favorites')}${tabsMobile('settings','settings')}</nav>${renderViewer()}${renderModal()}`;
  if(oldStage && state.view?.path===oldPath && scoreViewer){
   $('#viewer-stage')?.replaceWith(oldStage);
  }
@@ -433,6 +433,8 @@ async function openPdf(path){
  const record=await getScore(path);
  if(request!==viewerRequest)return;
  if(!record?.blob){toast(tr('pdfUnavailable'),true);return;}
+  state.recents=[path,...state.recents.filter(p=>p!==path)].slice(0,45);
+  setPref('w13:recents',state.recents).catch(e=>console.warn('Recents:',e));
  closeViewerIfNeeded();
  state.blobUrl=URL.createObjectURL(record.blob);
  state.view={path};state.zen=true;
@@ -549,7 +551,7 @@ async function handleClick(el){
   case 'viewer-rotate':await scoreViewer?.rotate();break;
   case 'viewer-zen':showViewerMenu(state.zen);break;
   case 'viewer-prev':case 'viewer-next':{
-    const a=scopedScores(),i=a.findIndex(s=>s.path===state.view?.path),other=a[i+(action==='viewer-prev'?-1:1)];if(other)await openPdf(other.path);break;
+    const a=currentCollectionScores(),i=a.findIndex(s=>s.path===state.view?.path),other=a[i+(action==='viewer-prev'?-1:1)];if(other)await openPdf(other.path);break;
   }
   case 'viewer-external':if(state.blobUrl){const anchor=document.createElement('a');anchor.href=state.blobUrl;anchor.target='_blank';anchor.rel='noopener';anchor.click();}break;
   case 'delete-one':state.modal='delete-one';render();break;
