@@ -44,6 +44,23 @@ export function strokePath(stroke,w,h,rotation=0){
  }
  return p.map((q,i)=>(i?'L':'M')+P(q)).join(' ')+(p.length===1?' l0.01 0.01':'');
 }
+// El text es dibuixa amb un <text> SVG en la pàgina, orientat amb el PDF.
+// Les mides són relatives a la part visible de la pàgina, no al zoom del navegador.
+export function textBounds(stroke,w,h){
+ const size=stroke.fontSize*Math.min(w,h);
+ const lines=stroke.text.split('\\n');
+ const glyphLength=line=>Array.from(line).reduce((n,c)=>n+(/[\\u2e80-\\uffff]/u.test(c)?1.05:.58),0);
+ const width=Math.max(size*.65,...lines.map(line=>glyphLength(line)*size));
+ return {width,height:lines.length*size*1.26,fontPx:size,lines};
+}
+function textDistance(stroke,point,w,h,rotation){
+ const anchor=projectPoint(stroke.points[0],rotation),touch=projectPoint(point,rotation);
+ const dx=(touch[0]-anchor[0])*w,dy=(touch[1]-anchor[1])*h;
+ const rot=((rotation%360)+360)%360;
+ const local=rot===90?[dy,-dx]:rot===180?[-dx,-dy]:rot===270?[-dy,dx]:[dx,dy];
+ const {width,height}=textBounds(stroke,w,h);
+ return Math.hypot(Math.max(0,-local[0],local[0]-width),Math.max(0,-local[1],local[1]-height));
+}
 function segmentDistance(point,a,b){
  const dx=b[0]-a[0],dy=b[1]-a[1],den=dx*dx+dy*dy;
  const t=den===0?0:clamp(((point[0]-a[0])*dx+(point[1]-a[1])*dy)/den,0,1);
@@ -53,6 +70,7 @@ export function strokeDistance(stroke,point,w,h,rotation=0){
  const p=stroke.points.map(q=>projectPoint(q,rotation)).map(([x,y])=>[x*w,y*h]);
  const q=projectPoint(point,rotation);const target=[q[0]*w,q[1]*h];
  if(!p.length)return Infinity;
+ if(stroke.tool==='text')return textDistance(stroke,point,w,h,rotation);
  if(p.length===1)return dist(target,p[0]);
  if(stroke.tool==='rectangle'){
   const [a,b]=p,minx=Math.min(a[0],b[0]),maxx=Math.max(a[0],b[0]),miny=Math.min(a[1],b[1]),maxy=Math.max(a[1],b[1]);
