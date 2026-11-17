@@ -341,6 +341,30 @@ function renderModal(){if(!state.modal)return '';
  if(state.modal==='welcome')return `<div class="modal-backdrop" role="dialog" aria-modal="true"><div class="modal"><img src="./assets/icon-192.png" alt="Partitures Festeres"/><h2>Benvingut · Bienvenido</h2><p>Tria l’idioma · Elige el idioma</p><label><input type="radio" name="welcome-lang" value="va" ${state.lang==='va'?'checked':''}/> Valencià</label><label><input type="radio" name="welcome-lang" value="es" ${state.lang==='es'?'checked':''}/> Castellano</label><div class="modal-actions"><button class="primary" data-action="welcome-done">Començar · Empezar</button></div></div></div>`;
  if(state.modal==='restore-choice'&&state.restore){const m=state.restore.manifest;return `<div class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="restore-title"><div class="modal restore-modal"><h2 id="restore-title">${esc(tr('restoreChoice'))}</h2><p>${esc(tr('restoreExplain').replace('{count}',m.scoreCount).replace('{size}',bytes(m.totalBytes)))}</p><div class="restore-options"><div><strong>${esc(tr('restoreMerge'))}</strong><p>${esc(tr('restoreMergeHelp'))}</p><button class="primary" data-action="restore-merge">${icon('upload')}${esc(tr('restoreMerge'))}</button></div><div class="replace-option"><strong>${esc(tr('restoreReplace'))}</strong><p>${esc(tr('restoreReplaceHelp'))}</p><button class="danger" data-action="restore-replace">${icon('restore')}${esc(tr('restoreReplace'))}</button></div></div><div class="modal-actions"><button class="secondary" data-action="close-modal">${esc(tr('cancel'))}</button></div></div></div>`;}
 
+
+ if(state.modal==='metadata-edit'){
+   const score=state.scores.find(s=>s.path===state.metaPath);
+   if(!score)return '';
+   const m=score.metadata||{};
+   return `<div class="modal-backdrop metadata-backdrop">
+     <section class="modal metadata-modal" role="dialog" aria-modal="true" aria-labelledby="metadata-dialog-title">
+       <h2 id="metadata-dialog-title">${esc(tr('metadataTitle'))}</h2>
+       <p class="metadata-help">${esc(tr('metadataHelp'))}</p>
+       <p class="metadata-source"><strong>${esc(tr('metadataFilename'))}:</strong> ${esc(score.path)}</p>
+       <div class="metadata-fields">
+        <label for="meta-title">${esc(tr('metadataFieldTitle'))}<input id="meta-title" type="text" maxlength="140" autocomplete="off" value="${esc(m.title||'')}" /></label>
+        <label for="meta-composer">${esc(tr('metadataFieldComposer'))}<input id="meta-composer" type="text" maxlength="140" autocomplete="off" value="${esc(m.composer||'')}" /></label>
+        <label for="meta-type">${esc(tr('metadataFieldType'))}<input id="meta-type" type="text" maxlength="80" autocomplete="off" value="${esc(m.type||'')}" /></label>
+        <label for="meta-year">${esc(tr('metadataFieldYear'))}<input id="meta-year" type="text" inputmode="numeric" maxlength="4" pattern="[0-9]{4}" placeholder="${esc(tr('metadataYearHint'))}" autocomplete="off" value="${esc(m.year||'')}" /></label>
+        <label for="meta-notes">${esc(tr('metadataFieldNotes'))}<textarea id="meta-notes" rows="4" maxlength="1200">${esc(m.notes||'')}</textarea></label>
+       </div>
+       <div class="modal-actions metadata-footer">
+        <button class="secondary" data-action="close-modal">${esc(tr('cancel'))}</button>
+        <button class="primary" data-action="meta-save">${icon('check')}${esc(tr('metadataSave'))}</button>
+       </div>
+     </section>
+   </div>`;
+ }
  if(state.modal==='rep-name'){
   const r=findRepertoire(state.modalRepId);
   return `<div class="modal-backdrop" role="dialog" aria-modal="true"><div class="modal"><h2>${esc(tr(r?'renameRepertoire':'createRepertoire'))}</h2><label class="rep-name-label">${esc(tr('repertoireName'))}<input id="rep-name-input" type="text" autocomplete="off" maxlength="60" value="${esc(r?.name||'')}" /></label>
@@ -620,6 +644,28 @@ async function handleClick(el){
   case 'restore-merge':await doRestore('merge');break;
   case 'restore-replace':await doRestore('replace');break;
 
+
+  case 'meta-open':{
+    if(!scorePaths().has(val))break;
+    state.metaPath=val;state.modal='metadata-edit';
+    render();$('#meta-title')?.focus();break;
+  }
+  case 'meta-save':{
+    if(state.modal!=='metadata-edit'||!scorePaths().has(state.metaPath))break;
+    const field=id=>$('#'+id)?.value??'';
+    const year=field('meta-year').trim();
+    if(year&&!/^\d{4}$/.test(year)){toast(tr('metadataYearError'),true);$('#meta-year')?.focus();break;}
+    const data=normalizeScoreMetadata({
+      title:field('meta-title'),composer:field('meta-composer'),type:field('meta-type'),
+      year,notes:field('meta-notes')
+    });
+    await setScoreMetadata(state.metaPath,data);
+    state.scores=await getAllScores();
+    // Una còpia ZIP preparada abans del canvi ja no està actualitzada.
+    if(state.backup?.url)URL.revokeObjectURL(state.backup.url);
+    state.backup=null;state.metaPath=null;state.modal=null;
+    render();toast(tr('metadataSaved'));break;
+  }
   case 'favorite':{
    if(!scorePaths().has(val))break;
    state.favorites=state.favorites.includes(val)?state.favorites.filter(p=>p!==val):[...state.favorites,val];
@@ -716,7 +762,7 @@ async function handleClick(el){
   case 'viewer-external':if(state.blobUrl){const anchor=document.createElement('a');anchor.href=state.blobUrl;anchor.target='_blank';anchor.rel='noopener';anchor.click();}break;
   case 'delete-one':state.modal='delete-one';render();break;
   case 'clear':state.modal='clear';render();break;
-  case 'close-modal':state.modal=null;state.modalRepId=null;state.pickerPath=null;state.repAddSearch='';state.repAddChosen=[];state.restore=null;render();break;
+  case 'close-modal':state.modal=null;state.metaPath=null;state.modalRepId=null;state.pickerPath=null;state.repAddSearch='';state.repAddChosen=[];state.restore=null;render();break;
   case 'confirm-delete-one':{
     const path=state.view?.path;if(path)await deleteScore(path);
     state.scores=await getAllScores();await reloadCollections();await persistCollections();state.modal=null;closeViewer();updateStorageInfo();toast(tr('removed'));break;
