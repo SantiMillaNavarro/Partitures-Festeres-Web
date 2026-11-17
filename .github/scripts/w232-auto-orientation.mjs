@@ -93,6 +93,7 @@ try{
  assert.equal((await pref('ARCUM.pdf')).rotation,270,'Page without text reuses the first page orientation');
  await page.locator('[data-action="viewer-page-next"]').click();
  await page.waitForFunction(()=>document.querySelector('#viewer-page-counter')?.textContent.includes('3 / 3'));
+ await page.waitForFunction(async()=>{const {getPref}=await import('./db.js');return (await getPref('viewer:ARCUM.pdf'))?.rotation===0;},{timeout:10000});
  assert.equal((await pref('ARCUM.pdf')).rotation,0,'Portrait text content stays upright within mixed document');
  assert((await dims()).height>(await dims()).width);
  await page.locator('[data-action="viewer-rotate"]').click();
