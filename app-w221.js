@@ -1037,6 +1037,7 @@ document.addEventListener('change',e=>{
 window.addEventListener('online',()=>{state.online=true;if(state.page==='settings'&&!state.view)render();});
 window.addEventListener('pagehide',()=>{
   if(state.view?.path&&scoreViewer)state.view.page=scoreViewer.pageNumber;
+  if(!state.view)lastContentScrollY=window.scrollY||0;
   rememberNavigation();
   if(state.backup?.url)URL.revokeObjectURL(state.backup.url);
  });
