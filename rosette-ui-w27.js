@@ -65,7 +65,7 @@ export function renderRosetteMarkup({viewer,state,icon,labels,width,height,langu
  const objectLabel=language==='va'?'Objectes':'Objetos';
  const menu=state.objectMenuOpen?'<div class="pf-object-actions" role="toolbar" aria-label="'+escapeHtml(objectLabel)+'">'+
   btn('object-copy',language==='va'?'Copiar objecte':'Copiar objeto','file',!viewer.hasSelectedAnnotation(),'','Copiar')+
-  btn('object-paste',language==='va'?'Apegar objecte':'Pegar objeto','plus',!viewer.canPasteAnnotation(),'','Apegar')+
+  btn('object-paste',language==='va'?'Apegar objecte':'Pegar objeto','plus',!viewer.canPasteAnnotation(),'',language==='va'?'Apegar':'Pegar')+
   btn('object-rotate-left',language==='va'?'Girar 15° a l’esquerra':'Girar 15° a la izquierda','rotate',!viewer.hasSelectedAnnotation(),'','↶ 15°')+
   btn('object-rotate-right',language==='va'?'Girar 15° a la dreta':'Girar 15° a la derecha','rotate',!viewer.hasSelectedAnnotation(),'','↷ 15°')+
   btn('object-reset-rotation',language==='va'?'Restablir el gir':'Restablecer el giro','restore',!viewer.hasSelectedAnnotation(),'','0°')+
