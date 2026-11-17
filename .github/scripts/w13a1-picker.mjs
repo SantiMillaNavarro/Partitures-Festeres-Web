@@ -59,7 +59,7 @@ try{
  await p.locator('[data-action="rep-up"][data-value="BISCAINS.pdf"]').click();
  await p.waitForFunction(()=>document.querySelector('.score-row [data-action="open"]')?.dataset.value==='BISCAINS.pdf');
  assert.deepEqual(await order(),['BISCAINS.pdf','ALMUGAVIR.pdf']);
- await p.reload();await p.locator('.bottom-link[data-value="repertoires"]').click();await p.locator('[data-action="rep-open"]').first().click();
+ await p.reload();await p.locator('.rep-head h3').waitFor(); // W2.2.1: conserva el repertori obert
  assert.deepEqual(await order(),['BISCAINS.pdf','ALMUGAVIR.pdf']);
  await p.locator('.bottom-link[data-value="favorites"]').click();assert.equal(await p.locator('.score-row').count(),1);
  await p.locator('.bottom-link[data-value="recents"]').click();assert.equal(await p.locator('.score-row').count(),1);

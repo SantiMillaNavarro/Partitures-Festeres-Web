@@ -98,7 +98,7 @@ export async function createBackup(onProgress=()=>{}) {
     zip.file(annotationEntry(record.path),json,{compression:'DEFLATE'});
     annotations.push({path:record.path,size:blob.size,sha256:sha});
   }
-  const manifest={kind:BACKUP_KIND,schemaVersion:1,appVersion:'W2.2',createdAt:new Date().toISOString(),scoreCount:files.length,totalBytes,files,preferences,annotations};
+  const manifest={kind:BACKUP_KIND,schemaVersion:1,appVersion:'W2.2.1',createdAt:new Date().toISOString(),scoreCount:files.length,totalBytes,files,preferences,annotations};
   zip.file(BACKUP_MANIFEST,JSON.stringify(manifest,null,2));
   zip.file('LLEGIU-ME.txt',`PARTITURES FESTERES WEB - COPIA DE SEGURETAT\nData: ${manifest.createdAt}\nPartitures: ${files.length}\nRestaura esta copia des d'Ajustos > Restaurar copia en Partitures Festeres Web.\nNo es necessari publicar este ZIP en GitHub.\n`);
   const blob=await zip.generateAsync({type:'blob',compression:'STORE',streamFiles:true}, meta=>onProgress({phase:'zip',percent:meta.percent}));

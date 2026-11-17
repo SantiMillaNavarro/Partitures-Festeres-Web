@@ -1,0 +1,26 @@
+name: W2.2.1 navigation restoration
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+jobs:
+  reopen-location:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install Chromium
+        run: |
+          npm install --no-save playwright
+          npx playwright install chromium --with-deps
+      - name: Start HTTP server
+        run: python3 -m http.server 8765 --bind 127.0.0.1 >/tmp/partitures-navigation.log 2>&1 &
+      - name: Check syntax and local navigation state
+        run: |
+          node --check app-w221.js
+          node --check navigation-state.js
+          node --check .github/scripts/w221-navigation.mjs
+      - name: Check restored screens and PDF in Chromium
+        run: node .github/scripts/w221-navigation.mjs

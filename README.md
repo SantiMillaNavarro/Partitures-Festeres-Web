@@ -1,28 +1,33 @@
-# Partitures Festeres Web — W2.2 · Ferramentes d'anotació avançades
+# Partitures Festeres Web — W2.2.1 · Recuperar la pantalla després de recarregar
 
-Esta fase amplia el sistema d'anotacions W2.1 i manté les seues partitures, preferències, anotacions i còpies ZIP.
+Esta actualització millora la continuïtat de la navegació: **en actualitzar la web-app (també amb el gest de recarregar), es reprén l'últim lloc consultat en comptes de tornar sempre a Biblioteca**.
 
-## Novetats del visor
+## Què recorda l'aplicació
 
-- **Llapis i ressaltador:** ara tenen cinc nivells de grossor independents; els traços antics mantenen el seu grossor.
-- **Goma:** toca un traç per a esborrar només eixe element, sense afectar la resta.
-- **Formes geomètriques:** línia recta, rectangle, cercle/el·lipse i fletxa, arrossegant des de l'inici fins al final.
-- **Seleccionar:** toca una anotació i arrossega-la a una altra posició; la selecció es mostra amb un contorn ressaltat. Es pot esborrar amb el botó **Esborrar seleccionada**.
-- **Desfer:** recupera els últims canvis de la pàgina, inclòs el moviment i l'esborrat, en una sessió d'edició; continua permetent llevar l'últim traç després de reobrir.
-- **Mòbils:** les ferramentes estan en una fila amb desplaçament horitzontal; els colors, el grossor i les accions es mostren baix.
-- **Navegació:** en mode Anotar es dibuixa o edita; fes **Acabar** per a recuperar els gestos normals de zoom i navegació.
+- La secció activa: **Biblioteca, Repertoris, Índex, Recents, Favorits o Ajustos**.
+- La carpeta de Biblioteca on estaves i el paper seleccionat (1er, 2n, etc.).
+- El repertori concret que estaves consultant.
+- Si tenies una partitura oberta, torna a obrir el mateix PDF en **la mateixa pàgina**, amb el zoom i la rotació que ja es guardaven.
+- La posició de desplaçament vertical de la pantalla, quan és possible.
 
-## Dades i compatibilitat
+La recuperació valida que les carpetes, els repertoris i els PDF existisquen encara; si se n'ha eliminat algun, es recupera una pantalla vàlida sense quedar bloquejat. **No recupera els diàlegs temporals ni entra directament en mode d'edició d'anotacions**, per a evitar tocs accidentals.
 
-- El PDF original no es modifica. Tots els elements d'anotació utilitzen coordenades de pàgina independents del zoom i de la rotació.
-- Es conserva el format d'anotacions `version:1` de W2.1, ampliat amb quatre tipus de forma opcionals. No hi ha migració de la biblioteca ni d'anotacions antigues.
-- Les anotacions es guarden automàticament en IndexedDB local. Les còpies ZIP mantenen el format existent, incorporen els nous tipus d'anotació i permeten recuperar-los.
-- Sense sincronització entre dispositius en esta fase. Conserva una còpia ZIP fora de l'app.
+## Dades, privadesa i compatibilitat
+
+La ubicació es guarda exclusivament en l'emmagatzematge local del navegador. **No guarda els PDF ni les anotacions en localStorage**. Els fitxers continuen en IndexedDB i les còpies ZIP continuen sent compatibles. Les preferències de paper, zoom i rotació mantenen el funcionament anterior.
+
+Si el navegador impedix guardar esta dada local, l'app continuarà funcionant però pot no recordar la pantalla. No s'esborra cap partitura ni anotació durant una actualització.
+
+## Organització futura i coherència amb Android
+
+L'**app Android és la referència de comportament, estructura i organització de les ferramentes**. Les fases següents aproparan gradualment la distribució dels menús i el sistema d'anotacions de la web a Android, amb les adaptacions necessàries per al navegador i les pantalles tàctils. Esta fase únicament millora la continuïtat de la navegació i no reorganitza encara els controls.
 
 ## Proves
 
-Les proves automàtiques cobrixen retrocompatibilitat de les anotacions, geometria, selecció, moviment limitat a la pàgina, grossors, goma, historial de desfer, rotació, zoom, multipàgina, persistència, integritat dels PDF i còpia/restauració ZIP. A més, es passen les comprovacions de les fases prèvies.
+- Proves de navegació segura: carpetes inexistents, papers diferents, repertoris i PDF eliminats.
+- Playwright en navegador: recuperació de totes les seccions, carpeta, desplaçament, repertori obert i **mateix PDF/pàgina**, sense perdre partituras.
+- Regressions de Biblioteca, Repertoris, Índex, busca, anotacions i visor PDF.
 
-La implementació es prepara en una branca independent i **no apareixerà en la web pública fins a fusionar el PR**. Abans d'emprar-la en actuacions, prova-la en l'iPhone/iPad i amb els PDF que utilitzes normalment.
+La correcció s'ha preparat en una branca separada. La versió pública no canvia fins que es fusione el PR.
 
-**No esborres la informació del navegador ni desinstal·les l'app sense guardar abans una còpia ZIP.**
+**Recorda conservar còpies ZIP de les partitures abans d'esborrar dades del navegador o desinstal·lar l'app.**
