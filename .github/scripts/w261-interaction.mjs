@@ -63,8 +63,13 @@ try{
  assert.equal(await page.locator('[data-action="rosette-pan"]').getAttribute('aria-pressed'),'false');
  assert.equal(await page.locator('.viewer-annotation-layer').evaluate(el=>getComputedStyle(el).pointerEvents),'auto');
  const layer=await page.locator('.viewer-annotation-layer').boundingBox();
- await page.mouse.click(layer.x+layer.width*.17,layer.y+layer.height*.20);
- await page.locator('.pf-inline-input').waitFor();
+ const spot={x:layer.x+layer.width*.80,y:layer.y+layer.height*.55};
+ console.log('W261 TEXT TAP',JSON.stringify(await page.evaluate(({x,y})=>{
+  const el=document.elementFromPoint(x,y);
+  return {hit:el?.tagName,classes:el?.getAttribute('class'),x,y,stage:document.querySelector('#viewer-stage')?.getBoundingClientRect().toJSON()};
+ },spot)));
+ await page.mouse.click(spot.x,spot.y);
+ await page.locator('.pf-inline-input').waitFor({timeout:7000});
  assert.equal(await page.locator('.pf-inline-input').evaluate(el=>document.activeElement===el),true,'Textarea focused directly');
  await page.locator('.pf-inline-input').fill('Text sense salts de teclat');
  await page.locator('.pf-inline-input').evaluate(el=>el.dataset.stableW261='ok');
