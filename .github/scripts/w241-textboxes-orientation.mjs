@@ -143,6 +143,8 @@ try{
  assert.notEqual((await records())[2].boxWidth,before,'Resize handle changes box dimensions');
  await page.locator('[data-action="annotation-undo"]').click();
  assert.equal((await records())[2].boxWidth,before,'Undo restores previous size');
+ await tap(.27,.61); // Desfer deselecciona; torna a seleccionar per a editar.
+ assert.equal(await page.locator('[data-action="annotation-text-edit"]').isEnabled(),true);
  await page.locator('[data-action="annotation-text-edit"]').click();
  await page.locator('.annotation-text-modal').waitFor();
  assert.match(await page.locator('#annotation-text-value').inputValue(),/Text dins del quadre/);
