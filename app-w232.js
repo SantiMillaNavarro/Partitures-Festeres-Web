@@ -180,6 +180,14 @@ const scoreSearch = s => norm(s.path+' '+(s.metadata?.title||''));
 const state={lang:'va',page:'library',paper:'root',cwd:[],scores:[],search:'',view:null,blobUrl:null,modal:null,toastTimer:null,loading:false,online:navigator.onLine,storage:null,backup:null,restore:null,zen:false,favorites:[],recents:[],repertoires:[],repertoireOpen:null,modalRepId:null,pickerPath:null,repAddSearch:'',repAddChosen:[],metaPath:null,annotating:false,advanced:blankAdvancedFilters(),advancedOpen:false,indexGroupBy:'folder',indexSortBy:'title',indexCollapsed:new Set(),annotationGroup:'strokes',textDraft:null};
 let scoreViewer=null;
 let viewerRequest=0;
+// Les preferències del visor han d'arribar a IndexedDB en el mateix ordre que
+// els canvis de pàgina/rotació; una operació antiga no pot sobreescriure la nova.
+let viewerPreferencesQueue=Promise.resolve();
+function persistViewerSnapshot(path,value){
+  const saved=viewerPreferencesQueue.catch(()=>{}).then(()=>setPref('viewer:'+path,value));
+  viewerPreferencesQueue=saved;
+  return saved;
+}
 // Només intentem bloquejar el gir mentre es llig un PDF. Safari iOS no permet
 // screen.orientation.lock(): el visor té un suport horitzontal visual per CSS.
 let viewerOrientationToken=0,viewerOrientationLocked=false;
@@ -739,6 +747,8 @@ async function openPdf(path,requestedPage=null){
  closeViewerIfNeeded(true);
  state.blobUrl=URL.createObjectURL(record.blob);
  state.view={path,page:1};state.zen=true;state.annotating=false;state.annotationGroup='strokes';setReadingColors(true);
+ await viewerPreferencesQueue.catch(()=>{});
+ if(request!==viewerRequest)return;
  const saved=await getPref('viewer:'+path,{});
  const pageToOpen=Number.isInteger(requestedPage)&&requestedPage>0?requestedPage:saved?.page;
  state.view.page=Number.isInteger(pageToOpen)&&pageToOpen>0?pageToOpen:1;
@@ -763,7 +773,7 @@ async function openPdf(path,requestedPage=null){
   onChange:value=>{
     if(state.view?.path===path)state.view.page=value.page;
     rememberNavigation();
-    return setPref('viewer:'+path,value).catch(e=>console.warn('Desament del visor:',e));
+    return persistViewerSnapshot(path,value).catch(e=>console.warn('Desament del visor:',e));
    },
   onUpdate:()=>syncViewerControls(),
   onWarning:message=>toast(message,true),
