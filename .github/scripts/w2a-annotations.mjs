@@ -37,7 +37,7 @@ try{
  // La versió d'Ajustos i la informació sobre anotacions han d'estar actualitzades.
  await page.locator('.bottom-link[data-value="settings"]').click();
  const settingsText=await page.locator('main.content').innerText();
- assert.match(settingsText,/Partitures Festeres Web — W2\.4\.1/,'Version in settings');
+ assert.match(settingsText,/Partitures Festeres Web — W2\.5/,'Version in settings');
  assert(!settingsText.includes('Les anotacions, Drive'),'Annotations are no longer marked as pending');
  assert(settingsText.includes('llapis, formes'),'W2.2 annotation capabilities displayed in settings');
  await page.locator('.bottom-link[data-value="library"]').click();
@@ -53,10 +53,11 @@ try{
   await page.locator('.score-row [data-action="open"]').first().click();
   await page.locator('.viewer-canvas').waitFor({timeout:15000});
   await page.locator('#viewer-stage').click({position:{x:190,y:330}});
-  await page.locator('[data-action="viewer-annotate"]').waitFor({state:'visible'});
+  await page.locator('[data-action="viewer-annotate"]').first().waitFor({state:'visible'});
  };
  await open();
- await page.locator('[data-action="viewer-annotate"]').click();
+ await page.locator('[data-action="viewer-annotate"]').first().click();
+ await page.locator('[data-action="rosette-legacy"]').click();
  await page.locator('.viewer-annotation-toolbar').waitFor();
  assert.equal(await page.locator('.viewer-annotation-layer.annotation-editing').count(),1);
  const draw=async()=>{
@@ -120,7 +121,8 @@ try{
  // Clear and restore to prove round trip without losing the annotation.
  await page.locator('.bottom-link[data-value="library"]').click();
  await open();
- await page.locator('[data-action="viewer-annotate"]').click();
+ await page.locator('[data-action="viewer-annotate"]').first().click();
+ await page.locator('[data-action="rosette-legacy"]').click();
  await page.locator('[data-action="annotation-clear"]').click();
  await page.locator('[data-action="annotation-clear-confirm"]').click();
  assert.equal(await page.locator('.annotation-svg path').count(),0);
