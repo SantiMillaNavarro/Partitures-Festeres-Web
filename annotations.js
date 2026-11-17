@@ -39,8 +39,8 @@ export function normalizeAnnotations(input){
    });
    if(stroke.tool==='text'){
     if(typeof stroke.text!=='string'||stroke.text.length<1||stroke.text.length>280||
-       !stroke.text.trim()||stroke.text.split('\\n').length>5||
-       /[\\x00-\\x08\\x0b-\\x1f\\x7f]/.test(stroke.text)||
+       !stroke.text.trim()||stroke.text.split('\n').length>5||
+       /[\x00-\x08\x0b-\x1f\x7f]/.test(stroke.text)||
        !between(stroke.fontSize,.012,.12)||typeof stroke.bold!=='boolean'||
        typeof stroke.underline!=='boolean'||!between(stroke.opacity,.2,1))
       throw new Error('Text d’anotació no vàlid.');
