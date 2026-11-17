@@ -353,7 +353,7 @@ export class ScoreViewer {
   setAnnotationMode(enabled){
     if(!enabled)this.finishInlineTextEditor();
     this.annotationMode=!!enabled&&!this.native;
-    this.navigationMode=this.annotationMode; // Primer moure, després triar ferramenta.
+    this.navigationMode=false; // Conservem el llapis inicial del visor per compatibilitat; Moure s'activa des del rosetó.
     this.cancelAnnotationStroke();
     if(!this.annotationMode)this.selectedAnnotation=null;
     this.annotationLayer?.classList.toggle('annotation-editing',this.annotationMode&&!this.navigationMode);
