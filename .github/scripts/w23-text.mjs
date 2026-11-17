@@ -45,7 +45,7 @@ try{
  await page.goto('http://127.0.0.1:8765/',{waitUntil:'domcontentloaded'});
  if(await page.locator('[data-action="welcome-done"]').count())await page.locator('[data-action="welcome-done"]').click();
  await page.locator('.bottom-link[data-value="settings"]').click();
- assert.match(await page.locator('main.content').innerText(),/Partitures Festeres Web — W2\.4/);
+ assert.match(await page.locator('main.content').innerText(),/Partitures Festeres Web — W2\.4\.1/);
  await page.locator('.bottom-link[data-value="library"]').click();
  await page.locator('#import-input').setInputFiles({name:'TEXT_W23.pdf',mimeType:'application/pdf',buffer:pdf});
  await page.locator('.score-row').first().waitFor();
@@ -165,7 +165,7 @@ try{
  assert.equal(await page.locator('.annotation-text').count(),2,'Undo recovers deleted text');
  await page.locator('[data-action="viewer-annotate"]').last().click();
  await page.locator('[data-action="viewer-rotate"]').click();
- await page.waitForFunction(()=>document.querySelector('.annotation-text')?.getAttribute('transform')?.includes('rotate(90)'));
+ await page.waitForFunction(()=>{const t=document.querySelector('.annotation-text');return t&&t.getAttribute('transform')?.startsWith('translate(')&&!t.getAttribute('transform')?.includes('rotate(');});
  await page.locator('[data-action="viewer-zoom-in"]').click();
  assert.equal(await page.locator('.annotation-text').count(),2,'Rotation and zoom preserve text');
  await page.locator('[data-action="viewer-page-next"]').click();
