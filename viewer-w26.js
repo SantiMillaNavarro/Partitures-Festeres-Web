@@ -306,6 +306,7 @@ export class ScoreViewer {
     this.requestRender();
   }
   async rotate() {
+    this.finishInlineTextEditor();
     this.cancelAnnotationStroke();
     this.selectedAnnotation=null;
     this.rotationMode='manual';
@@ -319,6 +320,7 @@ export class ScoreViewer {
   }
   async useAutomaticRotation(){
     if(this.closed||!this.doc)return;
+    this.finishInlineTextEditor();
     this.cancelAnnotationStroke();
     this.selectedAnnotation=null;
     this.rotationMode='auto';
@@ -329,6 +331,7 @@ export class ScoreViewer {
   }
   async turnPage(direction) {
     if (this.closed || !this.doc) return;
+    if(this.inlineSession&&!this.finishInlineTextEditor())return;
     const next = this.pageNumber + direction;
     if (next < 1 || next > this.numPages) { this.onEdge(direction); return; }
     this.cancelAnnotationStroke();
@@ -496,6 +499,58 @@ export class ScoreViewer {
       if(idx!=null){this.selectedAnnotation=idx;this.redrawAnnotations();this.notify();}
     }
     return ok;
+  }
+  startInlineTextEditor(draft,labels={}){
+    if(!this.annotationMode||!this.page||this.native||this.closed)return false;
+    if(this.inlineSession)this.finishInlineTextEditor();
+    if(this.inlineSession)return false; // No sobreescriure un esborrany invàlid.
+    const chosen={...this.textStyle,...draft,point:[...draft.point],
+      text:draft.text||'',page:this.pageNumber,
+      fontSize:draft.fontSize||this.textStyle.fontSize,
+      color:draft.color||this.annotationColor,
+      alignment:draft.alignment||this.textStyle.alignment||'left',
+      italic:!!draft.italic,backgroundEnabled:!!draft.backgroundEnabled,
+      borderEnabled:!!draft.borderEnabled};
+    if(chosen.boxWidth==null||chosen.boxHeight==null){
+      // Textos antics sense dimensions: continuar editant sense migració prèvia.
+      const old=chosen.index!=null?this.annotationsOnPage()[chosen.index]:null;
+      const b=old?textBounds(old,Math.max(1,this.pageW),Math.max(1,this.pageH)):null;
+      chosen.boxWidth=Math.min(.95,Math.max(.28,(b?.width||0)/Math.max(1,this.pageW)+.03));
+      chosen.boxHeight=Math.min(.95,Math.max(.10,(b?.height||0)/Math.max(1,this.pageH)+.03));
+    }
+    this.inlineSession=createInlineTextEditor(this,chosen,labels);
+    this.pendingTextBox=null;this.textBoxPreview=null;
+    this.host.closest('.pf-reading-mode')?.classList.add('inline-text-active');
+    this.inlineSession.mount(this.sheet);
+    this.redrawAnnotations();this.notify();
+    return true;
+  }
+  cancelInlineTextEditor(){
+    if(!this.inlineSession)return false;
+    this.inlineSession.destroy();this.inlineSession=null;
+    this.host.closest('.pf-reading-mode')?.classList.remove('inline-text-active');
+    this.discardPendingTextBox();this.redrawAnnotations();this.notify();
+    return true;
+  }
+  finishInlineTextEditor(){
+    const session=this.inlineSession;if(!session)return false;
+    const text=session.getValue().trim();
+    if(!text){this.cancelInlineTextEditor();return false;}
+    if(!validInlineText(text)){
+      this.onWarning('El text ha de tindre com a màxim cinc línies.');
+      return false;
+    }
+    const currentPage=this.pageNumber;
+    if(session.draft.page!==currentPage){this.cancelInlineTextEditor();return false;}
+    const index=session.draft.index;
+    const success=this.saveTextAnnotation({...session.draft,text});
+    if(!success)return false;
+    session.destroy();this.inlineSession=null;
+    this.host.closest('.pf-reading-mode')?.classList.remove('inline-text-active');
+    this.setAnnotationTool('select');
+    this.selectedAnnotation=index==null?this.annotationsOnPage().length-1:index;
+    this.redrawAnnotations();this.notify();
+    return true;
   }
   discardPendingTextBox(){
     this.pendingTextBox=null;
