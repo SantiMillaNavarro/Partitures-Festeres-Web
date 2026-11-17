@@ -49,7 +49,7 @@ try{
  await page.goto('http://127.0.0.1:8765/',{waitUntil:'domcontentloaded'});
  if(await page.locator('[data-action="welcome-done"]').count())await page.locator('[data-action="welcome-done"]').click();
  await page.locator('.bottom-link[data-value="settings"]').click();
- assert.match(await page.locator('main.content').innerText(),/Partitures Festeres Web — W2\.4/);
+ assert.match(await page.locator('main.content').innerText(),/Partitures Festeres Web — W2\.4\.1/);
  await page.locator('.bottom-link[data-value="library"]').click();
  await page.locator('#import-input').setInputFiles({name:'MUSIC_W24.pdf',mimeType:'application/pdf',buffer:originalPdf});
  await page.locator('[data-action="open"][data-value="MUSIC_W24.pdf"]').waitFor();
@@ -140,6 +140,7 @@ try{
  await page.locator('[data-action="viewer-annotate"]').last().click();
  await page.locator('[data-action="viewer-rotate"]').click();
  assert.equal(await page.locator('.annotation-symbol').count(),5,'Symbols survive a manual PDF rotation');
+ assert.equal(await page.locator('.annotation-symbol').first().evaluate(el=>el.getAttribute('transform').includes('rotate(')),false,'Noteheads remain upright after PDF viewport rotation');
  await page.locator('[data-action="viewer-zoom-in"]').click();
  assert.equal(await page.locator('.annotation-symbol').count(),5,'Symbols survive zoom');
  await page.locator('[data-action="viewer-page-next"]').click();

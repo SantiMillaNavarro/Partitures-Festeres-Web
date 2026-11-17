@@ -1,4 +1,4 @@
-/* W2.4 — Anotacions musicals locals amb compatibilitat v1 per a traços, formes i text. */
+/* W2.4.1 — Text en quadres mesurables; símbols i anotacions anteriors compatibles. */
 import {isMusicalSymbol} from './musical-symbols.js';
 export const ANNOTATION_VERSION=1;
 export const ANNOTATION_SHAPES=Object.freeze(['line','rectangle','ellipse','arrow']);
@@ -42,12 +42,19 @@ export function normalizeAnnotations(input){
     if(typeof stroke.text!=='string'||stroke.text.length<1||stroke.text.length>280||
        !stroke.text.trim()||stroke.text.split('\n').length>5||
        /[\x00-\x08\x0b-\x1f\x7f]/.test(stroke.text)||
-       !between(stroke.fontSize,.012,.12)||typeof stroke.bold!=='boolean'||
+       !between(stroke.fontSize,.012,.12)||
+       ((stroke.boxWidth!==undefined||stroke.boxHeight!==undefined)&&
+        (!between(stroke.boxWidth,.03,.95)||!between(stroke.boxHeight,.03,.95)))||
+       typeof stroke.bold!=='boolean'||
        typeof stroke.underline!=='boolean'||!between(stroke.opacity,.2,1))
       throw new Error('Text d’anotació no vàlid.');
-    out.push({tool:'text',color:stroke.color,width:stroke.width,points:coords,
+    const record={tool:'text',color:stroke.color,width:stroke.width,points:coords,
       text:stroke.text,fontSize:stroke.fontSize,bold:stroke.bold,
-      underline:stroke.underline,opacity:stroke.opacity});
+      underline:stroke.underline,opacity:stroke.opacity};
+    // No afegir mesures als textos antics: la representació queda compatible.
+    if(stroke.boxWidth!==undefined)record.boxWidth=clean(stroke.boxWidth);
+    if(stroke.boxHeight!==undefined)record.boxHeight=clean(stroke.boxHeight);
+    out.push(record);
    }else if(stroke.tool==='symbol'){
     if(!isMusicalSymbol(stroke.symbolId)||!between(stroke.fontSize,.018,.16)||!between(stroke.opacity,.2,1))
       throw new Error('Símbol musical no vàlid.');
