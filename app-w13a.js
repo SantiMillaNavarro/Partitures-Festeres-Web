@@ -300,6 +300,21 @@ function renderSettings(){
 function renderModal(){if(!state.modal)return '';
  if(state.modal==='welcome')return `<div class="modal-backdrop" role="dialog" aria-modal="true"><div class="modal"><img src="./assets/icon-192.png" alt="Partitures Festeres"/><h2>Benvingut · Bienvenido</h2><p>Tria l’idioma · Elige el idioma</p><label><input type="radio" name="welcome-lang" value="va" ${state.lang==='va'?'checked':''}/> Valencià</label><label><input type="radio" name="welcome-lang" value="es" ${state.lang==='es'?'checked':''}/> Castellano</label><div class="modal-actions"><button class="primary" data-action="welcome-done">Començar · Empezar</button></div></div></div>`;
  if(state.modal==='restore-choice'&&state.restore){const m=state.restore.manifest;return `<div class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="restore-title"><div class="modal restore-modal"><h2 id="restore-title">${esc(tr('restoreChoice'))}</h2><p>${esc(tr('restoreExplain').replace('{count}',m.scoreCount).replace('{size}',bytes(m.totalBytes)))}</p><div class="restore-options"><div><strong>${esc(tr('restoreMerge'))}</strong><p>${esc(tr('restoreMergeHelp'))}</p><button class="primary" data-action="restore-merge">${icon('upload')}${esc(tr('restoreMerge'))}</button></div><div class="replace-option"><strong>${esc(tr('restoreReplace'))}</strong><p>${esc(tr('restoreReplaceHelp'))}</p><button class="danger" data-action="restore-replace">${icon('restore')}${esc(tr('restoreReplace'))}</button></div></div><div class="modal-actions"><button class="secondary" data-action="close-modal">${esc(tr('cancel'))}</button></div></div></div>`;}
+
+ if(state.modal==='rep-name'){
+  const r=findRepertoire(state.modalRepId);
+  return `<div class="modal-backdrop" role="dialog" aria-modal="true"><div class="modal"><h2>${esc(tr(r?'renameRepertoire':'createRepertoire'))}</h2><label class="rep-name-label">${esc(tr('repertoireName'))}<input id="rep-name-input" type="text" autocomplete="off" maxlength="60" value="${esc(r?.name||'')}" /></label>
+  <div class="modal-actions"><button class="secondary" data-action="close-modal">${esc(tr('cancel'))}</button><button class="primary" data-action="rep-save-name">${icon('check')}${esc(tr('repertoireSaved'))}</button></div></div></div>`;
+ }
+ if(state.modal==='rep-delete-confirm'){
+  const r=findRepertoire(state.modalRepId);
+  return `<div class="modal-backdrop" role="dialog" aria-modal="true"><div class="modal"><h2>${esc(tr('removeRepertoire'))}</h2><p>${esc(r?.name||'')}</p><p>${esc(tr('repertoireRemoveConfirm'))}</p><div class="modal-actions"><button class="secondary" data-action="close-modal">${esc(tr('cancel'))}</button><button class="danger" data-action="rep-confirm-delete">${esc(tr('deleteConfirm'))}</button></div></div></div>`;
+ }
+ if(state.modal==='rep-picker'){
+  return `<div class="modal-backdrop" role="dialog" aria-modal="true"><div class="modal"><h2>${esc(tr('chooseRepertoire'))}</h2><p>${esc(nice(parts(state.pickerPath||'').at(-1)||''))}</p>
+  <div class="rep-picker-list">${state.repertoires.map(r=>`<button class="secondary" data-action="rep-choose" data-id="${esc(r.id)}">${icon('list')}${esc(r.name)}</button>`).join('')}</div>
+  <div class="modal-actions"><button class="secondary" data-action="rep-create">${icon('plus')}${esc(tr('createRepertoire'))}</button><button class="secondary" data-action="close-modal">${esc(tr('cancel'))}</button></div></div></div>`;
+ }
  if(state.modal==='clear')return `<div class="modal-backdrop" role="dialog" aria-modal="true"><div class="modal"><h2>${esc(tr('warningTitle'))}</h2><p>${esc(tr('warningText'))}</p><div class="modal-actions"><button class="secondary" data-action="close-modal">${esc(tr('cancel'))}</button><button class="danger" data-action="confirm-clear">${esc(tr('deleteConfirm'))}</button></div></div></div>`;
  if(state.modal==='delete-one')return `<div class="modal-backdrop" role="dialog" aria-modal="true"><div class="modal"><h2>${esc(tr('warningTitle'))}</h2><p>${esc(tr('confirmOne'))}</p><p><strong>${esc(state.view?.path||'')}</strong></p><div class="modal-actions"><button class="secondary" data-action="close-modal">${esc(tr('cancel'))}</button><button class="danger" data-action="confirm-delete-one">${esc(tr('deleteConfirm'))}</button></div></div></div>`;
  return '';
@@ -516,6 +531,7 @@ async function doRestore(mode){
     const count=await restoreBackup(state.restore,mode,p=>updateProgress(`${tr('backupVerify')} ${p.done} / ${p.total}`));
     state.restore=null;
     state.scores=await getAllScores();
+    await reloadCollections();
     if(mode==='replace'){
       const lang=await getPref('lang',state.lang);state.lang=lang==='es'?'es':'va';
       state.paper=await getPref('paper','root');
@@ -556,12 +572,12 @@ async function handleClick(el){
   case 'viewer-external':if(state.blobUrl){const anchor=document.createElement('a');anchor.href=state.blobUrl;anchor.target='_blank';anchor.rel='noopener';anchor.click();}break;
   case 'delete-one':state.modal='delete-one';render();break;
   case 'clear':state.modal='clear';render();break;
-  case 'close-modal':state.modal=null;state.restore=null;render();break;
+  case 'close-modal':state.modal=null;state.modalRepId=null;state.pickerPath=null;state.restore=null;render();break;
   case 'confirm-delete-one':{
     const path=state.view?.path;if(path)await deleteScore(path);
-    state.scores=await getAllScores();state.modal=null;closeViewer();updateStorageInfo();toast(tr('removed'));break;
+    state.scores=await getAllScores();await reloadCollections();await persistCollections();state.modal=null;closeViewer();updateStorageInfo();toast(tr('removed'));break;
   }
-  case 'confirm-clear':await clearScores();state.scores=[];state.paper='root';state.cwd=[];await setPref('paper','root');state.modal=null;closeViewerIfNeeded();render();updateStorageInfo();toast(tr('allRemoved'));break;
+  case 'confirm-clear':await clearScores();state.scores=[];state.favorites=[];state.recents=[];state.repertoires=[];state.repertoireOpen=null;await persistCollections();state.paper='root';state.cwd=[];await setPref('paper','root');state.modal=null;closeViewerIfNeeded();render();updateStorageInfo();toast(tr('allRemoved'));break;
   case 'welcome-done':state.modal=null;await setPref('lang',state.lang);render();break;
  }
 }
@@ -577,6 +593,7 @@ async function init(){
   const configured=await getPref('lang');
   state.lang=configured==='es'?'es':'va';
   state.scores=await getAllScores();
+   await reloadCollections();
   state.paper=await getPref('paper','root');
   const papers=paperRoots();
   if(state.paper!=='root'&&!papers.includes(state.paper))state.paper=papers[0]||'root';
