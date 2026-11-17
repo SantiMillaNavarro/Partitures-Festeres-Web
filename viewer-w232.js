@@ -47,6 +47,7 @@ export class ScoreViewer {
     this.rotationMode=shouldKeepLegacyManual(initial)?'manual':'auto';
     this.rotation=[0,90,180,270].includes(initial.rotation)?initial.rotation:0;
     this.autoRotationByLayout=new Map();
+    this.autoRotationByPage=new Map();
     this.fit = initial.fit === 'width' ? 'width' : 'page';
     this.pageNumber = Math.max(1, Math.floor(Number(initial.page) || 1));
     this.numPages = 0;
@@ -142,13 +143,19 @@ export class ScoreViewer {
       const page = await this.getPage(this.pageNumber);
       if (this.closed || seq !== this.renderCount) return;
       if(this.rotationMode==='auto'){
-        const b=page.getViewport({scale:1,rotation:0});
-        const layoutKey=`${Math.round(b.width)}:${Math.round(b.height)}:${supportedRotation(page.rotate)}`;
-        const previous=this.autoRotationByLayout.get(layoutKey);
-        const result=await analyzePdfPageOrientation(page,{fallbackRotation:previous??null});
-        if(this.closed||seq!==this.renderCount)return;
-        this.rotation=result.rotation;
-        this.autoRotationByLayout.set(layoutKey,this.rotation);
+        let detected=this.autoRotationByPage.get(this.pageNumber);
+        if(detected===undefined){
+          const box=page.getViewport({scale:1,rotation:0});
+          const key=`${Math.round(box.width)}:${Math.round(box.height)}:${supportedRotation(page.rotate)}`;
+          const result=await analyzePdfPageOrientation(page,{
+            fallbackRotation:this.autoRotationByLayout.get(key)??null
+          });
+          if(this.closed||seq!==this.renderCount)return;
+          detected=result.rotation;
+          this.autoRotationByPage.set(this.pageNumber,detected);
+          this.autoRotationByLayout.set(key,detected);
+        }
+        this.rotation=detected;
       }
       this.page = page;
       if (reset) { this.panX = 0; this.panY = 0; }
@@ -288,6 +295,7 @@ export class ScoreViewer {
     this.selectedAnnotation=null;
     this.rotationMode='auto';
     this.autoRotationByLayout.clear(); // Torna a detectar i no utilitza el gir manual anterior.
+    this.autoRotationByPage.clear();
     this.panX=0;this.panY=0;
     await this.loadPage(true);
   }
@@ -300,7 +308,9 @@ export class ScoreViewer {
     this.pageNumber = next;
     this.panX = 0;
     this.panY = 0;
-    this.notify(true);
+    // Actualitzar els controls immediatament, però NO guardar la rotació de
+    // l'altra pàgina abans que acabe la detecció de la pàgina nova.
+    this.notify(false);
     await this.loadPage(true);
   }
   setAnnotationMode(enabled){
