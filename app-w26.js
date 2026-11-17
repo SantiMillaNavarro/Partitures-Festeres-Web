@@ -1237,11 +1237,16 @@ async function handleClick(el){
    case 'annotation-text-edit':{
      const item=scoreViewer?.getSelectedText();
      if(!item||!state.view)break;
-     state.textDraft={path:state.view.path,page:scoreViewer.pageNumber,index:item.index,
+     const draft={path:state.view.path,page:scoreViewer.pageNumber,index:item.index,
        point:item.points[0],text:item.text,fontSize:item.fontSize,color:item.color,
        boxWidth:item.boxWidth,boxHeight:item.boxHeight,
-       bold:item.bold,underline:item.underline,opacity:item.opacity};
-     state.modal='annotation-text';render();$('#annotation-text-value')?.focus();break;
+       bold:item.bold,italic:!!item.italic,underline:item.underline,
+       alignment:item.alignment||'left',backgroundEnabled:!!item.backgroundEnabled,
+       borderEnabled:!!item.borderEnabled,opacity:item.opacity};
+     if(state.rosetteLegacy){
+       state.textDraft=draft;state.modal='annotation-text';render();$('#annotation-text-value')?.focus();
+     }else scoreViewer.startInlineTextEditor(draft,{lang:state.lang});
+     break;
    }
    case 'annotation-text-cancel':scoreViewer?.discardPendingTextBox();state.textDraft=null;state.modal=null;render();break;
    case 'annotation-text-save':{
@@ -1255,6 +1260,7 @@ async function handleClick(el){
        fontSize:Number($('#annotation-font-size')?.value),
        opacity:Number($('#annotation-text-opacity')?.value),
        color,bold:!!$('#annotation-text-bold')?.checked,
+       italic:d.italic,alignment:d.alignment,backgroundEnabled:d.backgroundEnabled,borderEnabled:d.borderEnabled,
        underline:!!$('#annotation-text-underline')?.checked});
      if(done){state.textDraft=null;state.modal=null;render();}
      break;
