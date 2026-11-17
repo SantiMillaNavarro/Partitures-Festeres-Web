@@ -1,7 +1,8 @@
 import {normalizeScoreMetadata} from './metadata.js';
+import {emptyAnnotations,normalizeAnnotations} from './annotations.js';
 // Arxius PDF: IndexedDB privada, no s'envien a cap servidor.
 const DB_NAME = 'partitures-festeres-web-w1';
-const DB_VERSION = 2;
+const DB_VERSION = 3;
 let instance;
 
 export function openDB() {
@@ -14,6 +15,7 @@ export function openDB() {
       if (!db.objectStoreNames.contains('scores')) db.createObjectStore('scores', { keyPath: 'path' });
       if (!db.objectStoreNames.contains('prefs')) db.createObjectStore('prefs', { keyPath: 'key' });
       if (!db.objectStoreNames.contains('staging')) db.createObjectStore('staging', { keyPath: 'path' });
+      if (!db.objectStoreNames.contains('annotations')) db.createObjectStore('annotations', {keyPath:'path'});
     };
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);
@@ -90,8 +92,60 @@ export async function setScoreMetadata(path,fields){
   tx.onabort=()=>reject(tx.error||new Error('Partitura no disponible. No s’han guardat les metadades.'));
  });
 }
-export function deleteScore(path) { return run('scores','readwrite',s=>s.delete(path)); }
-export function clearScores() { return run('scores','readwrite',s=>s.clear()); }
+export async function deleteScore(path) {
+ const db=await openDB();
+ return new Promise((resolve,reject)=>{
+  const tx=db.transaction(['scores','annotations'],'readwrite');
+  tx.objectStore('scores').delete(path);
+  tx.objectStore('annotations').delete(path);
+  tx.oncomplete=()=>resolve();
+  tx.onerror=()=>reject(tx.error||new Error('No s’ha pogut esborrar la partitura'));
+  tx.onabort=()=>reject(tx.error||new Error('Eliminació cancel·lada'));
+ });
+}
+export async function clearScores(){
+ const db=await openDB();
+ return new Promise((resolve,reject)=>{
+  const tx=db.transaction(['scores','annotations'],'readwrite');
+  tx.objectStore('scores').clear();tx.objectStore('annotations').clear();
+  tx.oncomplete=()=>resolve();
+  tx.onerror=()=>reject(tx.error||new Error('No s’ha pogut esborrar la biblioteca'));
+  tx.onabort=()=>reject(tx.error||new Error('Eliminació cancel·lada'));
+ });
+}
+export async function getAnnotations(path){
+ const db=await openDB();
+ return new Promise((resolve,reject)=>{
+  const req=db.transaction('annotations','readonly').objectStore('annotations').get(path);
+  req.onsuccess=()=>{try{resolve(normalizeAnnotations(req.result?.document));}catch(err){reject(err);}};
+  req.onerror=()=>reject(req.error);
+ });
+}
+export async function getAllAnnotations(){
+ const db=await openDB();
+ return new Promise((resolve,reject)=>{
+  const req=db.transaction('annotations','readonly').objectStore('annotations').getAll();
+  req.onsuccess=()=>{try{resolve(req.result.map(r=>({path:r.path,document:normalizeAnnotations(r.document)})));}catch(err){reject(err);}};
+  req.onerror=()=>reject(req.error);
+ });
+}
+export async function setAnnotations(path,document){
+ const clean=normalizeAnnotations(document);
+ const db=await openDB();
+ return new Promise((resolve,reject)=>{
+  const tx=db.transaction(['scores','annotations'],'readwrite');
+  const req=tx.objectStore('scores').get(path);
+  req.onsuccess=()=>{
+   if(!req.result){tx.abort();return;}
+   if(Object.keys(clean.pages).length)tx.objectStore('annotations').put({path,document:clean});
+   else tx.objectStore('annotations').delete(path);
+  };
+  req.onerror=()=>{try{tx.abort();}catch{}};
+  tx.oncomplete=()=>resolve(clean);
+  tx.onerror=()=>reject(tx.error||new Error('No s’han pogut guardar les anotacions.'));
+  tx.onabort=()=>reject(tx.error||new Error('La partitura no està disponible.'));
+ });
+}
 export async function getPref(key, fallback=null) {
   const db = await openDB();
   return new Promise((resolve,reject) => {
@@ -134,17 +188,19 @@ export async function countStaging() {
 }
 // Esborrar o fusionar els arxius és una ÚNICA transacció, junt amb les preferències.
 // Davant un error (inclòs falta d'espai), la biblioteca original no es modifica a mitges.
-export async function commitStagedBackup(mode, prefs, expectedCount) {
+export async function commitStagedBackup(mode, prefs, expectedCount, annotationRecords=[]) {
   if (mode !== 'merge' && mode !== 'replace') throw new Error('Mode de restauració desconegut');
   const count = await countStaging();
   if (count !== expectedCount) throw new Error('La còpia preparada no està completa');
   const db = await openDB();
   return new Promise((resolve, reject) => {
-    const tx = db.transaction(['scores','prefs','staging'], 'readwrite');
+    const tx = db.transaction(['scores','prefs','staging','annotations'], 'readwrite');
     const scores = tx.objectStore('scores');
     const staging = tx.objectStore('staging');
     const preferences = tx.objectStore('prefs');
-    if (mode === 'replace') scores.clear();
+    const annotations = tx.objectStore('annotations');
+    if (mode === 'replace') {scores.clear();annotations.clear();}
+    for(const record of annotationRecords)annotations.put({path:record.path,document:normalizeAnnotations(record.document)});
     let copied=0;
     const cursor = staging.openCursor();
     cursor.onsuccess = () => {
