@@ -1,3 +1,4 @@
+import {normalizeScoreMetadata} from './metadata.js';
 // Arxius PDF: IndexedDB privada, no s'envien a cap servidor.
 const DB_NAME = 'partitures-festeres-web-w1';
 const DB_VERSION = 2;
@@ -36,7 +37,7 @@ export async function getAllScores() {
   return new Promise((resolve, reject) => {
     const tx = db.transaction('scores', 'readonly');
     const req = tx.objectStore('scores').getAll();
-    req.onsuccess = () => resolve(req.result.map(({path,size,added}) => ({path,size,added})));
+    req.onsuccess = () => resolve(req.result.map(({path,size,added,metadata}) => ({path,size,added,...(metadata?{metadata}:{})})));
     req.onerror = () => reject(req.error);
   });
 }
@@ -54,11 +55,40 @@ export async function saveBatch(records) {
   return new Promise((resolve, reject) => {
     const tx = db.transaction('scores', 'readwrite');
     const store = tx.objectStore('scores');
-    for (const item of records) store.put(item);
+    for(const item of records) {
+      if(Object.prototype.hasOwnProperty.call(item,'metadata'))store.put({...item,metadata:normalizeScoreMetadata(item.metadata)});
+      else {
+        const get=store.get(item.path);
+        get.onsuccess=()=>{
+          const prior=get.result;
+          store.put(prior?.metadata?{...item,metadata:prior.metadata}:item);
+        };
+        get.onerror=()=>{try{tx.abort();}catch{}};
+      }
+    }
     tx.oncomplete = () => resolve(records.length);
     tx.onerror = () => reject(tx.error || new Error('No hi ha prou espai per a guardar els PDF'));
     tx.onabort = () => reject(tx.error || new Error('S’ha interromput la importació'));
   });
+}
+export async function setScoreMetadata(path,fields){
+ const metadata=normalizeScoreMetadata(fields);
+ const db=await openDB();
+ return new Promise((resolve,reject)=>{
+  const tx=db.transaction('scores','readwrite'),store=tx.objectStore('scores');
+  const req=store.get(path);
+  req.onsuccess=()=>{
+   if(!req.result){tx.abort();return;}
+   const updated={...req.result};
+   if(Object.keys(metadata).length)updated.metadata=metadata;
+   else delete updated.metadata;
+   store.put(updated);
+  };
+  req.onerror=()=>{try{tx.abort();}catch{}};
+  tx.oncomplete=()=>resolve(metadata);
+  tx.onerror=()=>reject(tx.error||new Error('No s’han pogut guardar les metadades.'));
+  tx.onabort=()=>reject(tx.error||new Error('Partitura no disponible. No s’han guardat les metadades.'));
+ });
 }
 export function deleteScore(path) { return run('scores','readwrite',s=>s.delete(path)); }
 export function clearScores() { return run('scores','readwrite',s=>s.clear()); }

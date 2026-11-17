@@ -1,4 +1,5 @@
 import {getAllScores, getScore, getAllPrefs, clearStaging, stageBatch, commitStagedBackup} from './db.js';
+import {normalizeScoreMetadata} from './metadata.js';
 
 // Format obert (ZIP), sense servidor ni autoritzacions externes.
 export const BACKUP_MANIFEST = 'partitures-festeres-copia.json';
@@ -36,6 +37,10 @@ function assertManifest(m, zip) {
       !Number.isSafeInteger(f.added) || f.added<0 || seen.has(f.path) || !zip.file(PREFIX+f.path) ||
       (Number.isSafeInteger(zip.file(PREFIX+f.path)._data?.uncompressedSize) && zip.file(PREFIX+f.path)._data.uncompressedSize !== f.size))
       throw new Error('La còpia conté dades o rutes de PDF no vàlides.');
+    if(f.metadata!==undefined){
+      try{normalizeScoreMetadata(f.metadata);}
+      catch{throw new Error('La còpia conté metadades de partitura no vàlides.');}
+    }
     seen.add(f.path); total+=f.size;
   }
   if (total!==m.totalBytes || !Number.isSafeInteger(total)) throw new Error('La grandària declarada de la còpia no coincidix.');
@@ -60,12 +65,12 @@ export async function createBackup(onProgress=()=>{}) {
     if (!record?.blob || !(record.blob instanceof Blob) || !record.blob.size || record.blob.size>MAX_PDF_BYTES || !(await isPdf(record.blob)))
       throw new Error(`Partitura danyada: ${s.path}`);
     const size=record.blob.size;
-    files.push({path:s.path,size,added:Number.isSafeInteger(record.added)&&record.added>=0?record.added:Date.now(),sha256:await sha256(record.blob)});
+    files.push({path:s.path,size,added:Number.isSafeInteger(record.added)&&record.added>=0?record.added:Date.now(),sha256:await sha256(record.blob),...(record.metadata?{metadata:normalizeScoreMetadata(record.metadata)}:{})});
     totalBytes+=size;
     zip.file(PREFIX+s.path,record.blob,{compression:'STORE',binary:true});
     onProgress({phase:'read',done:i+1,total:scores.length});
   }
-  const manifest={kind:BACKUP_KIND,schemaVersion:1,appVersion:'W1.1',createdAt:new Date().toISOString(),scoreCount:files.length,totalBytes,files,preferences};
+  const manifest={kind:BACKUP_KIND,schemaVersion:1,appVersion:'W1.3B.1',createdAt:new Date().toISOString(),scoreCount:files.length,totalBytes,files,preferences};
   zip.file(BACKUP_MANIFEST,JSON.stringify(manifest,null,2));
   zip.file('LLEGIU-ME.txt',`PARTITURES FESTERES WEB - COPIA DE SEGURETAT\nData: ${manifest.createdAt}\nPartitures: ${files.length}\nRestaura esta copia des d'Ajustos > Restaurar copia en Partitures Festeres Web.\nNo es necessari publicar este ZIP en GitHub.\n`);
   const blob=await zip.generateAsync({type:'blob',compression:'STORE',streamFiles:true}, meta=>onProgress({phase:'zip',percent:meta.percent}));
@@ -95,12 +100,16 @@ export async function restoreBackup(prepared,mode,onProgress=()=>{}) {
   let success=false;
   try {
     let batch=[];
+    // En fusionar una còpia antiga, conservar les metadades locals si el ZIP no en du.
+    const previous=mode==='merge'?new Map((await getAllScores()).map(s=>[s.path,s.metadata])):null;
     for (let i=0;i<manifest.files.length;i++) {
       const meta=manifest.files[i];
       const pdf=await zip.file(PREFIX+meta.path).async('blob');
       if (pdf.size!==meta.size || !(await isPdf(pdf)) || (await sha256(pdf))!==meta.sha256)
         throw new Error(`PDF danyat o modificat: ${meta.path}`);
-      batch.push({path:meta.path,blob:new Blob([pdf],{type:'application/pdf'}),size:pdf.size,added:meta.added});
+      const fields=meta.metadata!==undefined?normalizeScoreMetadata(meta.metadata):
+        (previous?.get(meta.path)?normalizeScoreMetadata(previous.get(meta.path)):{});
+      batch.push({path:meta.path,blob:new Blob([pdf],{type:'application/pdf'}),size:pdf.size,added:meta.added,...(Object.keys(fields).length?{metadata:fields}:{})});
       if(batch.length>=8){await stageBatch(batch);batch=[];}
       onProgress({done:i+1,total:manifest.files.length,phase:'restore'});
     }
