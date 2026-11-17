@@ -46,7 +46,11 @@ export function normalizeAnnotations(input){
        ((stroke.boxWidth!==undefined||stroke.boxHeight!==undefined)&&
         (!between(stroke.boxWidth,.03,.95)||!between(stroke.boxHeight,.03,.95)))||
        typeof stroke.bold!=='boolean'||
-       typeof stroke.underline!=='boolean'||!between(stroke.opacity,.2,1))
+       typeof stroke.underline!=='boolean'||!between(stroke.opacity,.2,1)||
+       (stroke.italic!==undefined&&typeof stroke.italic!=='boolean')||
+       (stroke.alignment!==undefined&&!['left','center','right'].includes(stroke.alignment))||
+       (stroke.backgroundEnabled!==undefined&&typeof stroke.backgroundEnabled!=='boolean')||
+       (stroke.borderEnabled!==undefined&&typeof stroke.borderEnabled!=='boolean'))
       throw new Error('Text d’anotació no vàlid.');
     const record={tool:'text',color:stroke.color,width:stroke.width,points:coords,
       text:stroke.text,fontSize:stroke.fontSize,bold:stroke.bold,
@@ -54,6 +58,10 @@ export function normalizeAnnotations(input){
     // No afegir mesures als textos antics: la representació queda compatible.
     if(stroke.boxWidth!==undefined)record.boxWidth=clean(stroke.boxWidth);
     if(stroke.boxHeight!==undefined)record.boxHeight=clean(stroke.boxHeight);
+    // Camps nous opcionals: els textos de W2.3, W2.4 i W2.5 són idèntics.
+    for(const field of ['italic','alignment','backgroundEnabled','borderEnabled']){
+      if(stroke[field]!==undefined)record[field]=stroke[field];
+    }
     out.push(record);
    }else if(stroke.tool==='symbol'){
     if(!isMusicalSymbol(stroke.symbolId)||!between(stroke.fontSize,.018,.16)||!between(stroke.opacity,.2,1))

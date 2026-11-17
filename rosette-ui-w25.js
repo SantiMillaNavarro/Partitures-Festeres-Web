@@ -18,7 +18,8 @@ export function renderRosetteMarkup({viewer,state,icon,labels,width,height,langu
   annotationThickness:viewer.annotationThickness,musicalSymbol:viewer.musicalSymbol,
   symbolGroup:state.symbolGroup,symbolPage:state.rosetteSymbolPage,
   musicalSymbolSize:viewer.musicalSymbolSize,fontSize:viewer.textStyle.fontSize,
-  bold:viewer.textStyle.bold,underline:viewer.textStyle.underline};
+  bold:viewer.textStyle.bold,italic:viewer.textStyle.italic,
+  underline:viewer.textStyle.underline,alignment:viewer.textStyle.alignment||'left'};
  const selectedRoot=ROSETTE_ROOT.find(o=>o.tool===viewer.annotationTool||
    o.id==='shape'&&['line','rectangle','ellipse','arrow'].includes(viewer.annotationTool));
  const petals=(expanded?rosetteOptions(level,context):[]).map((o,i,arr)=>{

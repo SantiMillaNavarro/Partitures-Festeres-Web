@@ -47,8 +47,16 @@ export function rosetteOptions(level,ctx={}){
   option('open-color','Color','Color','edit',{level:'text-color'}),
   option('open-size','Grandària','Tamaño','textShape',{level:'text-size'}),
   option('text-bold','Negreta','Negrita','textShape',{toggle:'bold',active:!!ctx.bold}),
+  option('text-italic','Cursiva','Cursiva','textShape',{toggle:'italic',active:!!ctx.italic}),
   option('text-underline','Subratllat','Subrayado','textShape',{toggle:'underline',active:!!ctx.underline}),
+  option('open-align','Alineació','Alineación','textShape',{level:'text-align'}),
   back('root')
+ ];
+ if(base==='text-align')return [
+  option('align:left','Esquerra','Izquierda','textShape',{alignment:'left',active:(ctx.alignment||'left')==='left'}),
+  option('align:center','Centre','Centro','textShape',{alignment:'center',active:ctx.alignment==='center'}),
+  option('align:right','Dreta','Derecha','textShape',{alignment:'right',active:ctx.alignment==='right'}),
+  back('text')
  ];
  if(base==='shape')return [
   option('open-type','Forma','Forma','rectShape',{level:'shape-type'}),

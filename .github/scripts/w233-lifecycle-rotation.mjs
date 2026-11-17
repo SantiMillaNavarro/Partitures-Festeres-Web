@@ -67,7 +67,7 @@ try{
  assert.deepEqual(errors,[],'No errors on repeated orientation change');
  // A pull-to-refresh / browser reload keeps current PDF and page.
  await page.evaluate(async()=>{
-  const {ScoreViewer}=await import('./viewer-w241.js');
+  const {ScoreViewer}=await import('./viewer-w26.js');
   const original=ScoreViewer.prototype.close;
   ScoreViewer.prototype.close=function(...args){sessionStorage.setItem('w233:viewerClosed','true');return original.apply(this,args);};
  });
@@ -101,7 +101,10 @@ try{
  const nativeErrors=[];
  nativePage.on('pageerror',e=>nativeErrors.push(e.message));
  await nativePage.goto(url);
- if(await nativePage.locator('[data-action="welcome-done"]').count())await nativePage.locator('[data-action="welcome-done"]').click();
+ // Context nou sense idioma guardat: esperar el diàleg inicial abans d'importar.
+ await nativePage.locator('[data-action="welcome-done"]').waitFor({state:'visible',timeout:15000});
+ await nativePage.locator('[data-action="welcome-done"]').click();
+ await nativePage.locator('.modal-backdrop').waitFor({state:'detached'});
  await nativePage.locator('#import-input').setInputFiles({name:'NATIVE.pdf',mimeType:'application/pdf',buffer:pdf()});
  await nativePage.locator('[data-action="open"][data-value="NATIVE.pdf"]').waitFor();
  await nativePage.locator('[data-action="open"][data-value="NATIVE.pdf"]').click();

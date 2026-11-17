@@ -47,7 +47,7 @@ export function strokePath(stroke,w,h,rotation=0){
 }
 // El text es dibuixa amb un <text> SVG en la pàgina, orientat amb el PDF.
 // Les mides són relatives a la part visible de la pàgina, no al zoom del navegador.
-export const STANDARD_TEXT_BOX=Object.freeze({width:.38,height:.15});
+export const STANDARD_TEXT_BOX=Object.freeze({width:.28,height:.10});
 const glyphUnits=line=>Array.from(line).reduce((n,c)=>n+(/[\u2e80-\uffff]/u.test(c)?1.05:.58),0);
 export function wrapTextInBox(text,fontPx,width){
  const maxUnits=Math.max(1,(Math.max(1,width)-fontPx*.35)/Math.max(1,fontPx));
