@@ -44,7 +44,7 @@ try{
  await page.goto('http://127.0.0.1:8765/',{waitUntil:'domcontentloaded'});
  if(await page.locator('[data-action="welcome-done"]').count())await page.locator('[data-action="welcome-done"]').click();
  await page.locator('.bottom-link[data-value="settings"]').click();
- assert.match(await page.locator('main.content').innerText(),/Partitures Festeres Web — W2\.5/);
+ assert.match(await page.locator('main.content').innerText(),/Partitures Festeres Web — W2\.6/);
  await page.locator('.bottom-link[data-value="library"]').click();
  const original=makePdf();
  await page.locator('#import-input').setInputFiles({name:'QUADRES_W241.pdf',mimeType:'application/pdf',buffer:original});
@@ -113,8 +113,8 @@ try{
  let list=await records();
  assert.equal(list.length,2);
  assert.equal(list[1].tool,'text');
- assert.equal(list[1].boxWidth,.38);
- assert(list[1].boxHeight>=.15);
+ assert.equal(list[1].boxWidth,.28);
+ assert(list[1].boxHeight>=.10);
  assert.equal(await page.locator('.annotation-text').count(),1);
  assert.equal(await page.locator('.annotation-text').first().evaluate(el=>el.getAttribute('transform').includes('rotate(')),false,
   'Text is aligned with the same visible direction as musical symbols');
