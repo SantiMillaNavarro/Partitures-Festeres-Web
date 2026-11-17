@@ -108,6 +108,8 @@ try{
  await page.locator('[data-action="annotation-text-cancel"]').click();
  assert.equal(await page.locator('.annotation-text-preview').count(),0,'Cancel discards unsaved box');
  assert.equal((await records()).length,1,'Cancel does not create annotation');
+ // En W2.7 Cancel·lar torna a Seleccionar; s'ha de reactivar Text.
+ await tool('text');
  await tap(.34,.24);
  await editText('D.C. al Fine');
  let list=await records();
@@ -118,6 +120,8 @@ try{
  assert.equal(await page.locator('.annotation-text').count(),1);
  assert.equal(await page.locator('.annotation-text').first().evaluate(el=>el.getAttribute('transform').includes('rotate(')),false,
   'Text is aligned with the same visible direction as musical symbols');
+ // Guardar també torna a Seleccionar; s'ha de reactivar Text.
+ await tool('text');
  // Draw a custom size by dragging a rectangle instead of tapping.
  await drag(.23,.57,.51,.73);
  await page.locator('.annotation-text-modal').waitFor();
