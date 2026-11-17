@@ -393,7 +393,7 @@ export class ScoreViewer {
   canUndoAnnotation(){return (this.annotationHistory.get(this.pageNumber)?.length||0)>0||this.hasPageAnnotations();}
   cancelAnnotationStroke(){
     const id=this.annotationPointer,layer=this.annotationLayer;
-    this.annotationPointer=null;this.annotationGesture=null;this.activeAnnotation=null;this.previewAnnotation=null;
+    this.annotationPointer=null;this.annotationGesture=null;this.activeAnnotation=null;this.previewAnnotation=null;this.textBoxPreview=null;
     if(id!=null&&layer?.hasPointerCapture?.(id))try{layer.releasePointerCapture(id);}catch{}
     this.redrawAnnotations();
   }
@@ -652,7 +652,12 @@ export class ScoreViewer {
     if(this.annotationPointer!==null||(e.pointerType==='mouse'&&e.button!==0))return;
     const point=this.annotationPoint(e);if(!point)return;
     if(this.annotationTool==='text'){
-      this.onTextPlacement(point);return;
+      this.textBoxPreview=textBoxFromGesture(point,point,this.rotation,this.pageW,this.pageH);
+      this.annotationGesture={kind:'text-box',start:point};
+      this.annotationPointer=e.pointerId;
+      try{this.annotationLayer.setPointerCapture(e.pointerId);}catch{}
+      this.redrawAnnotations();
+      return;
     }
     if(this.annotationTool==='symbol'){
       this.addMusicalSymbolAt(point);return;
@@ -665,7 +670,14 @@ export class ScoreViewer {
       this.selectedAnnotation=index<0?null:index;
       this.previewAnnotation=null;
       if(index<0){this.redrawAnnotations();this.notify();return;}
-      this.annotationGesture={kind:'move',start:point,original:this.annotationsOnPage()[index]};
+      const original=this.annotationsOnPage()[index];
+      const bounds=original.tool==='text'&&original.boxWidth!=null?
+        textBounds(original,this.pageW,this.pageH):null;
+      const corner=bounds?projectPoint(original.points[0],this.rotation):null;
+      const touch=projectPoint(point,this.rotation);
+      const isResize=!!(bounds&&Math.hypot((touch[0]-corner[0])*this.pageW-bounds.width,
+       (touch[1]-corner[1])*this.pageH-bounds.height)<=19);
+      this.annotationGesture={kind:isResize?'resize-text':'move',start:point,original};
     }else{
       const stroke={tool:this.annotationTool,color:this.annotationColor,
         width:strokeWidth(this.annotationTool,this.annotationThickness),points:[point]};
@@ -685,6 +697,16 @@ export class ScoreViewer {
     if(g.kind==='move'){
       const point=this.annotationPoint(e);
       if(point)this.previewAnnotation=translatedStroke(g.original,point[0]-g.start[0],point[1]-g.start[1]);
+    }else if(g.kind==='resize-text'){
+      const point=this.annotationPoint(e);
+      if(point){
+        const target=projectPoint(point,this.rotation),anchor=projectPoint(g.original.points[0],this.rotation);
+        this.previewAnnotation={...g.original,boxWidth:Math.max(.03,Math.min(.95,Math.abs(target[0]-anchor[0]))),
+          boxHeight:Math.max(.03,Math.min(.95,Math.abs(target[1]-anchor[1])))};
+      }
+    }else if(g.kind==='text-box'){
+      const pt=this.annotationPoint(e);
+      if(pt)this.textBoxPreview=textBoxFromGesture(g.start,pt,this.rotation,this.pageW,this.pageH);
     }else if(g.kind==='shape'){
       const pt=this.annotationPoint(e);
       if(pt)this.activeAnnotation.points=[g.start,pt];
@@ -704,9 +726,15 @@ export class ScoreViewer {
     e.preventDefault();e.stopPropagation();
     if(this.annotationPointer!==e.pointerId)return;
     const g=this.annotationGesture,stroke=this.activeAnnotation,preview=this.previewAnnotation;
-    this.annotationPointer=null;this.annotationGesture=null;this.activeAnnotation=null;this.previewAnnotation=null;
-    if(!cancel&&g?.kind==='move'&&this.hasSelectedAnnotation()&&preview){
-      if(JSON.stringify(preview.points)!==JSON.stringify(g.original.points)){
+    const box=this.textBoxPreview;
+    this.annotationPointer=null;this.annotationGesture=null;this.activeAnnotation=null;this.previewAnnotation=null;this.textBoxPreview=null;
+    if(!cancel&&g?.kind==='text-box'){
+      const point=this.annotationPoint(e);
+      const shape=point?textBoxFromGesture(g.start,point,this.rotation,this.pageW,this.pageH):box;
+      this.redrawAnnotations();
+      if(shape)this.onTextPlacement(shape.point,{boxWidth:shape.boxWidth,boxHeight:shape.boxHeight});
+    }else if(!cancel&&(g?.kind==='move'||g?.kind==='resize-text')&&this.hasSelectedAnnotation()&&preview){
+      if(JSON.stringify(preview)!==JSON.stringify(g.original)){
         const next=[...this.annotationsOnPage()];next[this.selectedAnnotation]=preview;
         this.commitAnnotationPage(next);
       }
