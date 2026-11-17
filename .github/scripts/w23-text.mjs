@@ -81,6 +81,13 @@ try{
  await tool('text');
  await tap(.23,.24);
  await page.locator('.annotation-text-modal').waitFor();
+ await page.locator('#annotation-text-value').fill('Sense guardar');
+ await page.keyboard.press('Escape');
+ await page.locator('.annotation-text-modal').waitFor({state:'detached'});
+ assert.equal(await page.locator('.viewer-canvas').count(),1,'Escape cancels text without closing the PDF');
+ assert.equal((await records()).length,0,'Cancelled text is not persisted');
+ await tap(.23,.24);
+ await page.locator('.annotation-text-modal').waitFor();
  assert.equal(await page.locator('#annotation-text-value').inputValue(),'');
  await page.locator('#annotation-text-value').fill('D.C. al Fine\nTornada');
  await page.locator('#annotation-font-size').selectOption('0.06');
