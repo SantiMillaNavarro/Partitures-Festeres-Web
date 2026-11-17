@@ -93,10 +93,10 @@ try{
  assert.equal((await pref('ARCUM.pdf')).rotation,270,'Page without text reuses the first page orientation');
  await page.locator('[data-action="viewer-page-next"]').click();
  await page.waitForFunction(()=>document.querySelector('#viewer-page-counter')?.textContent.includes('3 / 3'));
- await page.waitForFunction(async()=>{const {getPref}=await import('./db.js');return (await getPref('viewer:ARCUM.pdf'))?.rotation===0;},{timeout:10000});
- console.log('W232 PAGE3 NOW',JSON.stringify(await pref('ARCUM.pdf')));
- await page.waitForTimeout(350);
- console.log('W232 PAGE3 STABLE',JSON.stringify(await pref('ARCUM.pdf')));
+ await page.waitForFunction(async()=>{
+  const {getPref}=await import('./db.js');const p=await getPref('viewer:ARCUM.pdf');
+  return p?.page===3&&p?.rotation===0&&p?.rotationMode==='auto';
+ },null,{timeout:10000});
  assert.equal((await pref('ARCUM.pdf')).rotation,0,'Portrait text content stays upright within mixed document');
  assert((await dims()).height>(await dims()).width);
  await page.locator('[data-action="viewer-rotate"]').click();
@@ -108,12 +108,16 @@ try{
  assert.equal((await pref('ARCUM.pdf')).rotation,90);
  await page.locator('[data-action="viewer-auto-rotate"]').click();
  await page.waitForFunction(async()=>{
-  const {getPref}=await import('./db.js');return (await getPref('viewer:ARCUM.pdf'))?.rotationMode==='auto';
- });
+  const {getPref}=await import('./db.js');const p=await getPref('viewer:ARCUM.pdf');
+  return p?.rotationMode==='auto'&&p?.page===3&&p?.rotation===0;
+ },null,{timeout:10000});
  assert.equal((await pref('ARCUM.pdf')).rotation,0);
  await page.locator('[data-action="viewer-page-prev"]').click();
  await page.locator('[data-action="viewer-page-prev"]').click();
- await page.waitForFunction(()=>document.querySelector('#viewer-page-counter')?.textContent.includes('1 / 3'));
+ await page.waitForFunction(async()=>{
+  const {getPref}=await import('./db.js');const p=await getPref('viewer:ARCUM.pdf');
+  return p?.page===1&&p?.rotation===270;
+ },null,{timeout:10000});
  assert.equal((await pref('ARCUM.pdf')).rotation,270);
  await page.reload();
  await page.locator('.viewer-canvas').waitFor({timeout:20000});
