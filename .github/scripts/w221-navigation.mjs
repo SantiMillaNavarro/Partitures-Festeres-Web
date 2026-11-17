@@ -6,7 +6,7 @@ const items=[{path:'1er/Marxes/A.pdf'},{path:'1er/Marxes/ALT.pdf'},{path:'1er/Pa
 const repertoires=[{id:'rep_test123',name:'Actuació',paths:['1er/Marxes/A.pdf']}];
 const sample={version:1,page:'library',paper:'1er',cwd:['Marxes'],repertoireId:'rep_test123',view:{path:'1er/Marxes/A.pdf',page:2},scrollY:476};
 const valid=validateNavigation(sample,{scores:items,repertoires,paper:'1er'});
-assert.deepEqual(valid,sample,'Library, folder, repertoire and PDF page can be restored');
+assert.deepEqual(valid,{page:sample.page,paper:sample.paper,cwd:sample.cwd,repertoireId:sample.repertoireId,view:sample.view,scrollY:sample.scrollY},'Library, folder, repertoire and PDF page can be restored');
 assert.equal(validateNavigation({...sample,cwd:['Pasdobles','Inexistent']},{scores:items,repertoires,paper:'1er'}).cwd.join('/'),'Pasdobles','Keeps existing parent of a removed folder');
 assert.deepEqual(validateNavigation(sample,{scores:items,repertoires,paper:'2n'}).cwd,[],'Paper change invalidates previous folder route');
 assert.equal(validateNavigation({...sample,view:{path:'1er/Marxes/GONE.pdf',page:9}},{scores:items,repertoires,paper:'1er'}).view,null,'Missing PDF is not reopened');
