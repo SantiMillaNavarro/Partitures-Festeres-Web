@@ -165,10 +165,11 @@ let scoreViewer=null;
 let viewerRequest=0;
 let navigationReady=false;
 let lastContentScrollY=0;
+const navigationStorage=(()=>{try{return window.localStorage;}catch{return null;}})();
 function rememberNavigation(){
  if(!navigationReady)return;
  // No guardem PDF ni anotacions en localStorage, només la ubicació de la pantalla.
- writeNavigation(window.localStorage,snapshotNavigation(state,lastContentScrollY));
+ writeNavigation(navigationStorage,snapshotNavigation(state,lastContentScrollY));
 }
 function rememberScroll(){
  if(state.view)return;
@@ -953,7 +954,7 @@ async function init(){
   const papers=paperRoots();
   if(state.paper!=='root'&&!papers.includes(state.paper))state.paper=papers[0]||'root';
   if(state.paper==='root'&&papers.length&&!(await getPref('paper')))state.paper=papers[0];
-  const savedLocation=validateNavigation(readNavigation(window.localStorage),{
+  const savedLocation=validateNavigation(readNavigation(navigationStorage),{
    scores:state.scores,repertoires:state.repertoires,paper:state.paper
   });
   if(savedLocation){
