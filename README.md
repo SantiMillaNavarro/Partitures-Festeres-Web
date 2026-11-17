@@ -1,25 +1,28 @@
-# Partitures Festeres Web — W2.1 · Primeres anotacions
+# Partitures Festeres Web — W2.2 · Ferramentes d'anotació avançades
 
-La fase W2 inicia les anotacions sobre les partitures en el visor d'iPhone, iPad i ordinador, sense modificar els arxius PDF originals.
+Esta fase amplia el sistema d'anotacions W2.1 i manté les seues partitures, preferències, anotacions i còpies ZIP.
 
-## Què es pot fer
-- Toca **Anotar** al visor per a activar l'edició; toca **Acabar** per a tornar a navegar normalment.
-- Traça línies amb el **Llapis** o usa el **Ressaltador** semitransparent. Tria un color de la paleta.
-- **Desfer** l'últim traç o **Esborrar** els traços de la pàgina actual després de confirmar. Les altres pàgines no canvien.
-- Els traços estan vinculats a una **partitura i pàgina**; es mantenen al canviar de pàgina, ampliar, girar o tornar a obrir el PDF.
-- Els tocs durant el mode Anotar dibuixen; per a fer gestos de zoom o canvi de pàgina, finalitza l'edició. Els botons del visor continuen disponibles.
+## Novetats del visor
 
-## Dades locals i còpies de seguretat
-- Les anotacions es guarden en una taula local nova d'IndexedDB (actualització no destructiva de v2 a v3). No van a GitHub, Drive ni als PDF originals.
-- El ZIP de còpia inclou cada document d'anotacions en un arxiu JSON verificat mitjançant SHA-256. El manifest manté `schemaVersion:1` amb el camp opcional `annotations` per a conservar compatibilitat amb les còpies antigues.
-- Restaurar una còpia moderna recupera les anotacions; substituir amb una còpia antiga sense anotacions no les pot recuperar. Fusionar una còpia antiga conserva les anotacions locals.
-- Esborrar una partitura elimina també les seues anotacions locals; buidar la biblioteca també les elimina. **Guarda una còpia ZIP fora de l'app**, especialment en iOS.
-- L'emmagatzematge i la sincronització entre dispositius encara no estan disponibles en W2.1; estos passos arribaran en fases posteriors.
+- **Llapis i ressaltador:** ara tenen cinc nivells de grossor independents; els traços antics mantenen el seu grossor.
+- **Goma:** toca un traç per a esborrar només eixe element, sense afectar la resta.
+- **Formes geomètriques:** línia recta, rectangle, cercle/el·lipse i fletxa, arrossegant des de l'inici fins al final.
+- **Seleccionar:** toca una anotació i arrossega-la a una altra posició; la selecció es mostra amb un contorn ressaltat. Es pot esborrar amb el botó **Esborrar seleccionada**.
+- **Desfer:** recupera els últims canvis de la pàgina, inclòs el moviment i l'esborrat, en una sessió d'edició; continua permetent llevar l'últim traç després de reobrir.
+- **Mòbils:** les ferramentes estan en una fila amb desplaçament horitzontal; els colors, el grossor i les accions es mostren baix.
+- **Navegació:** en mode Anotar es dibuixa o edita; fes **Acabar** per a recuperar els gestos normals de zoom i navegació.
 
-## Com provar
-Importa un PDF de diverses pàgines, anota amb el llapis i el ressaltador, comprova que els traços no es desplacen amb la rotació o el zoom i que persisteixen en reobrir-lo. Crea una còpia ZIP, elimina un traç i restaura la còpia. Fes la prova en iPhone/iPad i en navegador d'escriptori, especialment amb Apple Pencil si en tens.
+## Dades i compatibilitat
 
-## Desplegament
-La fase es prepara en una branca separada amb PR. La web pública no canvia fins que autoritzes la fusió. Les proves de Chromium i les proves de regressió de fases anteriors s'executen al PR.
+- El PDF original no es modifica. Tots els elements d'anotació utilitzen coordenades de pàgina independents del zoom i de la rotació.
+- Es conserva el format d'anotacions `version:1` de W2.1, ampliat amb quatre tipus de forma opcionals. No hi ha migració de la biblioteca ni d'anotacions antigues.
+- Les anotacions es guarden automàticament en IndexedDB local. Les còpies ZIP mantenen el format existent, incorporen els nous tipus d'anotació i permeten recuperar-los.
+- Sense sincronització entre dispositius en esta fase. Conserva una còpia ZIP fora de l'app.
 
-**No esborres les dades del navegador ni desinstal·les l'app sense guardar abans una còpia.**
+## Proves
+
+Les proves automàtiques cobrixen retrocompatibilitat de les anotacions, geometria, selecció, moviment limitat a la pàgina, grossors, goma, historial de desfer, rotació, zoom, multipàgina, persistència, integritat dels PDF i còpia/restauració ZIP. A més, es passen les comprovacions de les fases prèvies.
+
+La implementació es prepara en una branca independent i **no apareixerà en la web pública fins a fusionar el PR**. Abans d'emprar-la en actuacions, prova-la en l'iPhone/iPad i amb els PDF que utilitzes normalment.
+
+**No esborres la informació del navegador ni desinstal·les l'app sense guardar abans una còpia ZIP.**

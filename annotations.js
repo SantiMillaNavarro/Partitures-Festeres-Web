@@ -1,6 +1,7 @@
-/* W2.1 — Model d'anotacions locals independents del PDF. Coordenades en la pàgina original [0,1]. */
+/* W2.2 — Anotacions locals, compatibles amb els traços i còpies ZIP de W2.1. */
 export const ANNOTATION_VERSION=1;
-export const ANNOTATION_TOOLS=Object.freeze(['pen','highlighter']);
+export const ANNOTATION_SHAPES=Object.freeze(['line','rectangle','ellipse','arrow']);
+export const ANNOTATION_TOOLS=Object.freeze(['pen','highlighter',...ANNOTATION_SHAPES]);
 export const ANNOTATION_COLORS=Object.freeze(['#242424','#b51f34','#1b58a7','#21824f','#f0cf35','#f28b30']);
 export const MAX_ANNOTATION_BYTES=512*1024;
 const MAX_PAGES=500;
@@ -25,7 +26,8 @@ export function normalizeAnnotations(input){
   const out=[];
   for(const stroke of list){
    if(!isPlain(stroke)||!ANNOTATION_TOOLS.includes(stroke.tool)||!ANNOTATION_COLORS.includes(stroke.color)||
-      !between(stroke.width,.001,.12)||!Array.isArray(stroke.points)||stroke.points.length<1||stroke.points.length>MAX_POINTS)
+      !between(stroke.width,.001,.12)||!Array.isArray(stroke.points)||stroke.points.length<1||stroke.points.length>MAX_POINTS||
+      (ANNOTATION_SHAPES.includes(stroke.tool)&&stroke.points.length!==2))
      throw new Error('Traç d’anotació no vàlid.');
    const coords=stroke.points.map(point=>{
     if(!Array.isArray(point)||point.length!==2||!between(point[0],0,1)||!between(point[1],0,1))

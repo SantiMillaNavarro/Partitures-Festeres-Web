@@ -1,0 +1,28 @@
+name: W2.2 advanced annotations
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+jobs:
+  annotation-tools:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install Chromium
+        run: |
+          npm install --no-save playwright
+          npx playwright install chromium --with-deps
+      - name: Start HTTP server
+        run: python3 -m http.server 8765 --bind 127.0.0.1 > /tmp/partitures.log 2>&1 &
+      - name: Check JS syntax
+        run: |
+          node --check annotations.js
+          node --check annotation-geometry.js
+          node --check viewer-w2b.js
+          node --check app-w2b.js
+          node --check .github/scripts/w2b-annotations.mjs
+      - name: Check editing and backup roundtrip
+        run: node .github/scripts/w2b-annotations.mjs
