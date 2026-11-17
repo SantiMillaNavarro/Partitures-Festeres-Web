@@ -118,7 +118,8 @@ try{
  saved=await records();
  assert.equal(saved[0].text,'Text modificat amb cursiva');
  assert.equal(saved[0].italic,true);assert.equal(saved[0].underline,true);
- // Touch to create a second box; cancel must not create an annotation.
+ // Touch to create a second box; center returns from Text submenu to the eight main petals.
+ await page.locator('.pf-rosette-core').click();
  await selectTool('text');
  await tap(.55,.62);
  await page.locator('.pf-inline-input').waitFor();
