@@ -668,23 +668,30 @@ const ANNOTATION_GROUP_TOOLS={
  strokes:[['pen','annotationPen','edit'],['highlighter','annotationHighlight','edit']],
  shapes:[['line','annotationLine','lineShape'],['rectangle','annotationRectangle','rectShape'],
          ['ellipse','annotationEllipse','ellipseShape'],['arrow','annotationArrow','arrowShape']],
- edit:[['text','annotationText','textShape'],['select','annotationSelect','move'],['eraser','annotationEraser','erase']]
+ edit:[['text','annotationText','textShape'],['select','annotationSelect','move'],['eraser','annotationEraser','erase']],
+ symbols:[['symbol','annotationSymbolTool','musicSymbol']]
 };
 function renderAnnotationToolbar(v){
  if(!state.annotating)return '';
- const groupLabels=[['strokes','annotationGroupStrokes','edit'],['shapes','annotationGroupShapes','rectShape'],['edit','annotationGroupEdit','textShape']];
+ const groupLabels=[['strokes','annotationGroupStrokes','edit'],['shapes','annotationGroupShapes','rectShape'],['edit','annotationGroupEdit','textShape'],['symbols','annotationGroupMusic','musicSymbol']];
  const tabs=groupLabels.map(([id,label,ico])=>`<button class="annotation-petal ${state.annotationGroup===id?'selected':''}" data-action="annotation-group" data-value="${id}" aria-pressed="${state.annotationGroup===id}">${icon(ico)}${esc(tr(label))}</button>`).join('');
  const tools=ANNOTATION_GROUP_TOOLS[state.annotationGroup]||ANNOTATION_GROUP_TOOLS.strokes;
- const buttons=tools.map(([id,label,ico])=>`<button data-action="annotation-tool" data-value="${id}" class="annotation-tool ${v?.annotationTool===id?'selected':''}" aria-pressed="${v?.annotationTool===id}" title="${esc(tr(label))}">${icon(ico)}<span>${esc(tr(label))}</span></button>`).join('');
+ const buttons=state.annotationGroup==='symbols'
+    ?`<button data-action="annotation-symbol-picker" class="annotation-tool annotation-symbol-picker-trigger selected" title="${esc(tr('annotationChooseSymbol'))}" aria-label="${esc(tr('annotationChooseSymbol'))}">${musicalSymbolIcon(v?.musicalSymbol||'quarter')}<span>${esc(MUSICAL_SYMBOLS[v?.musicalSymbol||'quarter']?.name[state.lang]||tr('annotationChooseSymbol'))}</span>${icon('down')}</button>`
+    :tools.map(([id,label,ico])=>`<button data-action="annotation-tool" data-value="${id}" class="annotation-tool ${v?.annotationTool===id?'selected':''}" aria-pressed="${v?.annotationTool===id}" title="${esc(tr(label))}">${icon(ico)}<span>${esc(tr(label))}</span></button>`).join('');
  const drawing=['pen','highlighter','line','rectangle','ellipse','arrow'].includes(v?.annotationTool);
- const colors=ANNOTATION_COLORS.map(color=>`<button class="annotation-swatch ${v?.annotationColor===color?'selected':''}" data-action="annotation-color" data-value="${color}" style="--swatch:${color}" title="${esc(tr('annotationColor'))}" aria-label="${esc(tr('annotationColor'))} ${color}" aria-pressed="${v?.annotationColor===color}" ${drawing?'':'disabled'}></button>`).join('');
+ const symbolic=v?.annotationTool==='symbol';
+ const colorable=drawing||symbolic;
+ const colors=ANNOTATION_COLORS.map(color=>`<button class="annotation-swatch ${v?.annotationColor===color?'selected':''}" data-action="annotation-color" data-value="${color}" style="--swatch:${color}" title="${esc(tr('annotationColor'))}" aria-label="${esc(tr('annotationColor'))} ${color}" aria-pressed="${v?.annotationColor===color}" ${colorable?'':'disabled'}></button>`).join('');
  const sizes=[1,2,3,4,5].map(n=>`<option value="${n}" ${v?.annotationThickness===n?'selected':''}>${n}</option>`).join('');
+ const stampSizes=SYMBOL_SIZES.map(n=>`<option value="${n}" ${v?.musicalSymbolSize===n?'selected':''}>${Math.round(n*1000)/10}%</option>`).join('');
  return `<div class="viewer-annotation-toolbar w22-annotation-toolbar w23-annotation-toolbar" role="toolbar" aria-label="${esc(tr('annotationEdit'))}">
    <div class="annotation-rosette" role="group" aria-label="${esc(tr('annotationEdit'))}">${tabs}</div>
    <div class="annotation-tool-scroll" aria-label="${esc(tr('annotationEdit'))}">${buttons}</div>
    <div class="annotation-settings-row">
      ${drawing?`<label class="annotation-width-label">${esc(tr('annotationThickness'))}<select id="annotation-width" aria-label="${esc(tr('annotationThickness'))}">${sizes}</select></label>`:''}
-     ${drawing?`<span class="annotation-colors" aria-label="${esc(tr('annotationColor'))}">${colors}</span>`:''}
+     ${symbolic?`<label class="annotation-width-label">${esc(tr('annotationSymbolSize'))}<select id="annotation-symbol-size" aria-label="${esc(tr('annotationSymbolSize'))}">${stampSizes}</select></label>`:''}
+     ${colorable?`<span class="annotation-colors" aria-label="${esc(tr('annotationColor'))}">${colors}</span>`:''}
      <div class="annotation-edit-actions">
        <button data-action="annotation-undo" title="${esc(tr('annotationUndo'))}" aria-label="${esc(tr('annotationUndo'))}">${icon('back')}</button>
        <button data-action="annotation-text-edit" title="${esc(tr('annotationTextEdit'))}" aria-label="${esc(tr('annotationTextEdit'))}" ${v?.getSelectedText()?'':'disabled'}>${icon('textShape')}</button>
@@ -693,7 +700,7 @@ function renderAnnotationToolbar(v){
        <button data-action="viewer-annotate" class="annotation-done">${esc(tr('annotationDone'))}</button>
      </div>
    </div>
-   <small>${esc(v?.annotationTool==='text'?tr('annotationTextHint'):v?.annotationTool==='select'?tr('annotationTextSelectHelp'):tr('annotationHelp'))}</small>
+   <small>${esc(v?.annotationTool==='text'?tr('annotationTextHint'):v?.annotationTool==='symbol'?tr('annotationSymbolHint'):v?.annotationTool==='select'?tr('annotationTextSelectHelp'):tr('annotationHelp'))}</small>
  </div>`;
 }
 function renderViewer(){if(!state.view)return '';
