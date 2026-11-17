@@ -1,29 +1,24 @@
-# Partitures Festeres Web — W2.3.3 · Gir estable i reobertura neta
+# Partitures Festeres Web — W2.3.4 · Bloqueig horitzontal fix del visor
 
-Esta actualització corregix les transicions de pantalla que, en girar un Android/iPhone amb una partitura oberta, mostraven moments en negre, canvis de grandària bruscos i la pàgina de Biblioteca intermitentment.
+Esta fase respon a una petició sobre el comportament d'Android: **en obrir una partitura, el visor ha d'entrar en horitzontal i romandre fix**, sense reaccionar als sensors de gir mentre es consulta el PDF. En tancar-lo, la resta de l'app ha de recuperar la seua orientació habitual.
 
-## 1. Gir horitzontal estable
+## Comportament per plataforma
 
-- El visor utilitza **una sola estratègia de gir per sessió**: el bloqueig d'orientació nadiu del navegador si està permés, o el gir visual CSS de tota la interfície si no ho està.
-- La transformació visual només s'aplica amb la classe `landscape-css-fallback` quan l'API de bloqueig no està disponible, falla o excedix un temps de resposta raonable. No se superposa a un bloqueig nadiu reeixit.
-- En els girs successius es deixa estabilitzar el nou grandària del visor uns instants abans de tornar a renderitzar el PDF; es manté la imatge anterior estirada durant eixa transició en lloc de deixar zones buides.
-- El zoom, la rotació automàtica del contingut, el botó Girar, les anotacions i els controls tàctils es mantenen independents del gir del dispositiu.
+- **Android / navegadors compatibles:** el visor prova d'entrar en pantalla completa en el mateix gest d'obrir la partitura (quan és necessari per al navegador) i després sol·licita `screen.orientation.lock('landscape-primary')`. El valor `landscape-primary` impedix, si el navegador accepta el bloqueig, tant els canvis a vertical com els girs 180° cap a l'altra posició horitzontal. En eixir del PDF, s'allibera el bloqueig i la pantalla completa sol·licitada.
+- **Safari en iPhone i iPad:** no admet este bloqueig nadiu. El visor manté la presentació horitzontal visual de W2.3.3, però **no és possible garantir que el sistema iOS deixe de girar**; eixa limitació no es pot eliminar únicament amb HTML/JavaScript.
+- **Navegador que rebutja pantalla completa o bloqueig:** continua funcionant la presentació horitzontal CSS sense destruir les partitures ni fer canvis a la Biblioteca.
+- **Biblioteca, Repertoris, Índex i Ajustos:** continuen amb orientació lliure. No s'afegix `"orientation":"landscape"` al manifest global per a no forçar tota l'aplicació a horitzontal.
 
-## 2. Sessió nova sense una partitura oberta
+El bloqueig només depén del navegador, de les polítiques de pantalla completa i del sistema operatiu. Per això és important provar-ho en Chrome Android instal·lat com a PWA i no confondre'l amb una pestanya ordinària de navegador.
 
-- **Recàrrega explícita** (actualitzar o lliscar cap avall): continua obrint la mateixa partitura i pàgina, com en W2.2.1.
-- **Nova obertura de la web-app**: recupera la secció on estaves, però no obri el PDF. El visor comença tancat i no es carreguen innecessàriament el document PDF, la seua renderització i els seus controls. Si estaves en Biblioteca o Repertoris, tornes a eixa secció.
-- Quan el navegador emet l'esdeveniment `pagehide`, es guarda primer la ubicació de la sessió per si estaves refrescant i **després** es tanquen les tasques de PDF.js, els temporitzadors, els listeners i les URLs temporals. Això no implica eliminar processos del sistema operatiu, que són responsabilitat de l'OS.
-- Safari/iOS i alguns navegadors poden suspendre i recuperar la mateixa pàgina en lloc de crear-ne una de nova; l'app no pot distingir sempre de manera fiable un tancament total d'una suspensió breu. El comportament de nova obertura s'aplica quan es crea un nou document de navegació.
+## Conservació de la feina feta
 
-## Compatibilitat de les dades
+- Continua l'orientació **automàtica del contingut PDF** de W2.3.2, independent del bloqueig de la pantalla.
+- Es mantenen el zoom, el botó de gir manual del PDF, els gestos, les anotacions, l'última pantalla de Biblioteca o Repertoris i el tancament net del visor.
+- No es modifiquen PDFs, anotacions, IndexedDB ni format ZIP. La versió visible a Ajustos i a les còpies és **W2.3.4**.
 
-- Cap canvi en les dades IndexedDB ni en el format ZIP; els PDF, les anotacions i les preferències guardades no es modifiquen.
-- No cal reimportar les partitures i **no s'han d'esborrar les dades de l'app** per actualitzar.
-- Ajustos i identificació de les còpies de seguretat: **W2.3.3**.
+## Verificació
 
-## Proves
+Les proves automàtiques incorporen un navegador que exigix pantalla completa per a autoritzar `landscape-primary`, comproven l'ordre de la petició, la inexistència de gir CSS simultani i l'alliberament del bloqueig i pantalla completa en tancar el visor. Es mantenen els tests de les fases anteriors.
 
-Nova bateria automàtica Playwright amb sis girs seguits en un navegador tàctil, lectura i canvas estables, bloqueig nadiu simulat, bloqueig no disponible, recàrrega amb PDF recuperat, alliberament dels recursos en `pagehide`, nova navegació sense PDF i conservació de la biblioteca. Es mantenen les regressions de les fases anteriors.
-
-**Pendent de validar en dispositius reals:** el comportament final quan Android o iOS canvien l'orientació, així com la manera concreta de suspendre o tancar completament la web-app en el sistema.
+**Validació real pendent:** confirmar en el dispositiu Android que el navegador concedix el bloqueig. Safari d'iOS només disposa del mode de presentació horitzontal simulat, sense capacitat de bloqueig físic.

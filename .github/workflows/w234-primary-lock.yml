@@ -1,0 +1,25 @@
+name: W2.3.4 Fixed landscape orientation
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+jobs:
+  fixed-landscape:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install Chromium
+        run: |
+          npm install --no-save playwright
+          npx playwright install chromium --with-deps
+      - name: Start local HTTP server
+        run: python3 -m http.server 8765 --bind 127.0.0.1 >/tmp/partitures-w234.log 2>&1 &
+      - name: Check JavaScript syntax
+        run: |
+          node --check app-w234.js
+          node --check .github/scripts/w234-primary-lock.mjs
+      - name: Verify fullscreen lock and cleanup
+        run: node .github/scripts/w234-primary-lock.mjs

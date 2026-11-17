@@ -106,7 +106,7 @@ try{
  await nativePage.locator('[data-action="open"][data-value="NATIVE.pdf"]').waitFor();
  await nativePage.locator('[data-action="open"][data-value="NATIVE.pdf"]').click();
  await nativePage.locator('.viewer-canvas').waitFor({timeout:15000});
- await nativePage.waitForFunction(()=>window.__nativeLockCalls?.includes('landscape'));
+ await nativePage.waitForFunction(()=>window.__nativeLockCalls?.includes('landscape-primary'));
  assert.equal(await nativePage.locator('.pf-reading-mode.landscape-css-fallback').count(),0);
  const transform=await nativePage.locator('.pf-reading-mode').evaluate(n=>getComputedStyle(n).transform);
  assert.equal(transform,'none','A successful native orientation lock is never combined with CSS rotation');

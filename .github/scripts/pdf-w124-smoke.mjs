@@ -25,6 +25,14 @@ for(const [name,engine] of [['chromium',chromium],['webkit',webkit]]){
  const browser=await engine.launch({headless:true,args:name==='chromium'?['--no-sandbox']:[]});
  try{
   const ctx=await browser.newContext({viewport:{width:390,height:844},deviceScaleFactor:2,isMobile:true,hasTouch:true});
+  // W1.2.4 verifica el visor en una pantalla mòbil que pot canviar de mida;
+  // W2.3.4 té una altra prova que verifica el bloqueig nadiu horitzontal.
+  await ctx.addInitScript(()=>{
+   Object.defineProperty(Element.prototype,'requestFullscreen',{configurable:true,value:()=>Promise.reject(new DOMException('Responsive fallback test','NotAllowedError'))});
+   if(screen.orientation)try{
+    Object.defineProperty(screen.orientation,'lock',{configurable:true,value:()=>Promise.reject(new DOMException('Orientation unavailable','NotSupportedError'))});
+   }catch{}
+  });
   const page=await ctx.newPage(),errors=[];
   page.on('pageerror',e=>errors.push(String(e)));
   await page.goto('http://127.0.0.1:8765/',{waitUntil:'domcontentloaded'});
