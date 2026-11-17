@@ -45,7 +45,7 @@ try{
  await page.goto('http://127.0.0.1:8765/',{waitUntil:'domcontentloaded'});
  if(await page.locator('[data-action="welcome-done"]').count())await page.locator('[data-action="welcome-done"]').click();
  await page.locator('.bottom-link[data-value="settings"]').click();
- assert.match(await page.locator('main.content').innerText(),/Partitures Festeres Web — W2\.3/);
+ assert.match(await page.locator('main.content').innerText(),/Partitures Festeres Web — W2\.4/);
  await page.locator('.bottom-link[data-value="library"]').click();
  await page.locator('#import-input').setInputFiles({name:'TEXT_W23.pdf',mimeType:'application/pdf',buffer:pdf});
  await page.locator('.score-row').first().waitFor();
@@ -77,7 +77,7 @@ try{
  };
  await open();await page.locator('[data-action="viewer-annotate"]').click();
  await page.locator('.w23-annotation-toolbar').waitFor();
- assert.equal(await page.locator('.annotation-rosette .annotation-petal').count(),3,'Grouped annotation control');
+ assert.equal(await page.locator('.annotation-rosette .annotation-petal').count(),4,'Grouped annotation control');
  await tool('text');
  await tap(.23,.24);
  await page.locator('.annotation-text-modal').waitFor();

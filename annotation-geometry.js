@@ -1,6 +1,7 @@
 /* W2.2 — Geometria de formes i selecció en coordenades locals del PDF.
    Funcions pures: els fitxers W2.1 es continuen llegint sense migració. */
 import {projectPoint} from './annotations.js';
+import {musicalSymbolBounds} from './musical-symbols.js';
 
 const clamp=(n,a,b)=>Math.min(b,Math.max(a,n));
 const r4=v=>Math.round(v*10000)/10000;
@@ -53,13 +54,19 @@ export function textBounds(stroke,w,h){
  const width=Math.max(size*.65,...lines.map(line=>glyphLength(line)*size));
  return {width,height:lines.length*size*1.26,fontPx:size,lines};
 }
-function textDistance(stroke,point,w,h,rotation){
+function anchoredStampDistance(stroke,point,w,h,rotation,bounds){
  const anchor=projectPoint(stroke.points[0],rotation),touch=projectPoint(point,rotation);
  const dx=(touch[0]-anchor[0])*w,dy=(touch[1]-anchor[1])*h;
  const rot=((rotation%360)+360)%360;
  const local=rot===90?[dy,-dx]:rot===180?[-dx,-dy]:rot===270?[-dy,dx]:[dx,dy];
- const {width,height}=textBounds(stroke,w,h);
+ const {width,height}=bounds;
  return Math.hypot(Math.max(0,-local[0],local[0]-width),Math.max(0,-local[1],local[1]-height));
+}
+function textDistance(stroke,point,w,h,rotation){
+ return anchoredStampDistance(stroke,point,w,h,rotation,textBounds(stroke,w,h));
+}
+function symbolDistance(stroke,point,w,h,rotation){
+ return anchoredStampDistance(stroke,point,w,h,rotation,musicalSymbolBounds(stroke,w,h));
 }
 function segmentDistance(point,a,b){
  const dx=b[0]-a[0],dy=b[1]-a[1],den=dx*dx+dy*dy;
@@ -71,6 +78,7 @@ export function strokeDistance(stroke,point,w,h,rotation=0){
  const q=projectPoint(point,rotation);const target=[q[0]*w,q[1]*h];
  if(!p.length)return Infinity;
  if(stroke.tool==='text')return textDistance(stroke,point,w,h,rotation);
+ if(stroke.tool==='symbol')return symbolDistance(stroke,point,w,h,rotation);
  if(p.length===1)return dist(target,p[0]);
  if(stroke.tool==='rectangle'){
   const [a,b]=p,minx=Math.min(a[0],b[0]),maxx=Math.max(a[0],b[0]),miny=Math.min(a[1],b[1]),maxy=Math.max(a[1],b[1]);
