@@ -1,21 +1,25 @@
-# Partitures Festeres Web — W1.3B.2 · Busca avançada
+# Partitures Festeres Web — W1.3C · Índex organitzat
 
-Nou desplegable **Busca avançada** al costat de la busca senzilla, sense substituir-la.
+Esta fase amplia l’**Índex** de la biblioteca local amb controls opcionals, sense alterar les partitures ni la resta de funcions.
 
-## Filtres
-- Compositor / autoria (accepta fragments del nom; no distingix majúscules ni accents)
-- Tipus de composició (accepta fragments i suggerix tipus ja utilitzats)
-- Any des de / Any fins a (interval inclusiu; per a un any concret, posa el mateix en els dos camps)
-- Combinació dels filtres amb el text de la busca senzilla (tots els criteris han de coincidir)
+## Novetats
 
-Es pot obrir i ocultar el desplegable sense perdre els filtres. El botó mostra el recompte de camps actius i «Netejar filtres» els buida sense esborrar el text de busca senzill. En canviar de secció es netegen els filtres per a evitar resultats inesperats.
+- **Agrupar per** carpeta (com fins ara), compositor/autoria, tipus de composició o any.
+- **Ordenar obres per** títol, compositor, any o carpeta/ruta, amb criteris estables en cas d’empat.
+- Plegar/desplegar cada grup, o tots alhora, per a consultar biblioteques grans amb més comoditat.
+- Cada grup mostra el nombre d’obres; el resum indica quantes obres coincidixen amb la busca i quants grups hi ha.
+- Els compositors i tipus escrits amb accents o majúscules diferents s’agrupen conjuntament. Les obres sense metadades apareixen en **Sense dades** i les de l’arrel en **Sense carpeta**.
+- El paper triat (1er, 2n, etc.) continua delimitant l’Índex; la busca normal i avançada continua funcionant dins de totes les agrupacions.
+- Es recorden l’agrupació i l’ordenació triades en les preferències locals d’este dispositiu.
 
-Disponible en Biblioteca, Índex, Favorits, Recents i dins de cada repertori. La selecció ràpida «Afegir partitures» conserva la seua busca pròpia. Les partitures sense metadades es mostren habitualment; quan s’aplica un filtre a un camp buit no coincidixen.
+## Seguretat i compatibilitat
 
-## Seguretat
-No canvia ni el model de dades, ni el PDF, ni les metadades desades, ni el format ZIP, ni el visor. És una proposta separada de `main`: només es publica després de la teua autorització.
+Les metadades continuen sent opcionals. No hi ha migració de dades ni modificacions dels PDF, de la biblioteca, dels repertoris, del visor, de l'IndexedDB de partitures o del format de les còpies ZIP. L’Índex només consulta i presenta la informació local.
+
+La implementació es prova en una branca separada; **la web pública no canvia fins a fusionar el PR amb main**.
 
 ## Proves
-Test d'extrem a extrem en Chromium, amb diferents compositors, accents, tipus, anys i obres sense metadades. També s'executen totes les proves anteriors de visor, biblioteca, selector, metadades i còpies.
 
-No esborres les dades del navegador ni desinstal·les l'app web.
+La nova prova Playwright verifica carpetes i papers, compositors amb accents, tipus, anys, obres sense metadades, ordenació, grups plegables, busca normal i avançada i persistència de preferències. Les proves de fases anteriors continuen executant-se en els PR.
+
+No esborres les dades del navegador ni desinstal·les l’aplicació web sense guardar primer una còpia ZIP.
