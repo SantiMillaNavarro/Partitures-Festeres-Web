@@ -1,0 +1,25 @@
+name: W1.3A library integration
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+jobs:
+  browser:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install Chromium
+        run: |
+          npm install --no-save playwright
+          npx playwright install chromium --with-deps
+      - name: Start server
+        run: python3 -m http.server 8765 --bind 127.0.0.1 > /tmp/pf.log 2>&1 &
+      - name: Check scripts
+        run: |
+          node --check app-w13a.js
+          node --check viewer-w124.js
+      - name: Integration test
+        run: node .github/scripts/w13a-library.mjs
