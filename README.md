@@ -1,24 +1,26 @@
-# Partitures Festeres Web — W2.3.4 · Bloqueig horitzontal fix del visor
+# Partitures Festeres Web — W2.3.5 · Gest «Enrere» al visor PDF
 
-Esta fase respon a una petició sobre el comportament d'Android: **en obrir una partitura, el visor ha d'entrar en horitzontal i romandre fix**, sense reaccionar als sensors de gir mentre es consulta el PDF. En tancar-lo, la resta de l'app ha de recuperar la seua orientació habitual.
+Esta correcció apropa la navegació del lector de partitures a l'app Android: **quan una partitura està oberta en mode horitzontal, el gest del sistema «Enrere» ha de tornar al menú que havies consultat, no tancar tota l'aplicació.**
 
-## Comportament per plataforma
+## Funcionament
 
-- **Android / navegadors compatibles:** el visor prova d'entrar en pantalla completa en el mateix gest d'obrir la partitura (quan és necessari per al navegador) i després sol·licita `screen.orientation.lock('landscape-primary')`. El valor `landscape-primary` impedix, si el navegador accepta el bloqueig, tant els canvis a vertical com els girs 180° cap a l'altra posició horitzontal. En eixir del PDF, s'allibera el bloqueig i la pantalla completa sol·licitada.
-- **Safari en iPhone i iPad:** no admet este bloqueig nadiu. El visor manté la presentació horitzontal visual de W2.3.3, però **no és possible garantir que el sistema iOS deixe de girar**; eixa limitació no es pot eliminar únicament amb HTML/JavaScript.
-- **Navegador que rebutja pantalla completa o bloqueig:** continua funcionant la presentació horitzontal CSS sense destruir les partitures ni fer canvis a la Biblioteca.
-- **Biblioteca, Repertoris, Índex i Ajustos:** continuen amb orientació lliure. No s'afegix `"orientation":"landscape"` al manifest global per a no forçar tota l'aplicació a horitzontal.
+- Obrir un PDF des de **Biblioteca, Repertoris, Índex, Recents o Favorits** crea una entrada d'historial del navegador per a eixa sessió de lectura, sense canviar la URL ni enviar dades a internet.
+- En tocar **Enrere** (gest natiu del mòbil o botó Atrás del navegador), es tanca el visor, es desbloqueja l'orientació horitzontal i es torna **a la mateixa secció, carpeta o repertori** des d'on s'ha obert.
+- El botó de tornada del visor i la tecla **Escape** reutilitzen la mateixa entrada d'historial. No s'acumulen passos de tornada si canvies de PDF dins de la mateixa sessió de lectura.
+- En alguns mòbils Android, el primer gest del sistema pot consumir-se únicament en eixir de pantalla completa. Ara es detecta `fullscreenchange` i, si el navegador no ha navegat encara, es tanca la partitura i es torna al menú **sense generar un doble pas enrere**.
+- Una **recàrrega explícita** de la web seguix restaurant la mateixa partitura i pàgina; el gest «Enrere» continua tornant a la secció anterior fins i tot després de refrescar.
+- Una **obertura nova** de l'app continua sense recuperar automàticament el PDF (com en W2.3.3).
 
-El bloqueig només depén del navegador, de les polítiques de pantalla completa i del sistema operatiu. Per això és important provar-ho en Chrome Android instal·lat com a PWA i no confondre'l amb una pestanya ordinària de navegador.
+## Compatibilitat
 
-## Conservació de la feina feta
+L'historial és propi del navegador i només afecta a la navegació de la pantalla. No modifica els arxius, les anotacions, els repertoris ni els ajustos persistents. No cal reimportar cap PDF ni netejar les dades del navegador.
 
-- Continua l'orientació **automàtica del contingut PDF** de W2.3.2, independent del bloqueig de la pantalla.
-- Es mantenen el zoom, el botó de gir manual del PDF, els gestos, les anotacions, l'última pantalla de Biblioteca o Repertoris i el tancament net del visor.
-- No es modifiquen PDFs, anotacions, IndexedDB ni format ZIP. La versió visible a Ajustos i a les còpies és **W2.3.4**.
+El suport de gestos del sistema varia segons Android, Chrome i el mode d'instal·lació de la PWA. En Safari iPad/iPhone també s'utilitza l'entrada d'historial quan el navegador notifica el retrocés, sense prometre interceptar gestos reservats pel sistema.
 
-## Verificació
+La versió d'Ajustos i còpies ZIP és **W2.3.5**.
 
-Les proves automàtiques incorporen un navegador que exigix pantalla completa per a autoritzar `landscape-primary`, comproven l'ordre de la petició, la inexistència de gir CSS simultani i l'alliberament del bloqueig i pantalla completa en tancar el visor. Es mantenen els tests de les fases anteriors.
+## Proves
 
-**Validació real pendent:** confirmar en el dispositiu Android que el navegador concedix el bloqueig. Safari d'iOS només disposa del mode de presentació horitzontal simulat, sense capacitat de bloqueig físic.
+Prova nova en Chromium tàctil per a: tornada mitjançant historial, recuperació de Biblioteca i Recents, canvi entre partituras sense acumular passos d'historial, sortida de fullscreen sense `popstate`, fletxa del visor, recàrrega amb PDF obert i inici net de l'app. Se sumen els tests existents per a orientació, anotacions, cercador, Index, Repertoris i integritat de PDF/ZIP.
+
+**Prova final en mòbil Android:** obri una partitura, fes el gest **Enrere** i verifica que torna al menú. Repetix-lo després de passar a una altra partitura i amb l'app en pantalla completa.
