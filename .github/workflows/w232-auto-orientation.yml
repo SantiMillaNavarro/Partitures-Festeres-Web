@@ -1,0 +1,27 @@
+name: W2.3.2 PDF content auto orientation
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+jobs:
+  score-orientation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install Chromium
+        run: |
+          npm install --no-save playwright
+          npx playwright install chromium --with-deps
+      - name: Start local HTTP server
+        run: python3 -m http.server 8765 --bind 127.0.0.1 > /tmp/partitures-w232.log 2>&1 &
+      - name: Check JavaScript syntax
+        run: |
+          node --check score-orientation.js
+          node --check viewer-w232.js
+          node --check app-w232.js
+          node --check .github/scripts/w232-auto-orientation.mjs
+      - name: Test PDF orientation, legacy preferences and manual overrides
+        run: node .github/scripts/w232-auto-orientation.mjs
