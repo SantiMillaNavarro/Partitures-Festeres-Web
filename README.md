@@ -1,26 +1,34 @@
-# Partitures Festeres Web — W2.4.1 · Símbols alineats i quadres de text
+# Partitures Festeres Web — W2.5 · Rosetó ornamental d'Android
 
-Actualització correctiva de W2.4 arran de proves reals en Android amb partitures girades automàticament. Els símbols musicals havien aparegut de costat: el visor ja havia girat la pàgina PDF, però els segells SVG rebien un **segon gir** independent de 90°/270°.
+Esta fase és el primer pas per a reconstruir la interfície web a partir del projecte font **Android v1.11.15** i, concretament, de `QuickAnnotationRosette` a `PdfViewerScreen.kt`. L'objectiu és igualar el comportament real de l'app sense trencar la biblioteca, les anotacions ni l'estabilitat del visor.
 
-## Canvis
+## Novetats W2.5
 
-- **Símbols musicals:** es dibuixen en la direcció visual de la partitura sense aplicar el segon gir. Les figures, silencis, signes, matisos i indicacions de tempo es mantenen llegibles quan el PDF és obert en horitzontal amb rotació automàtica o manual. La zona per seleccionar-los també seguix el dibuix real. No es modifiquen les anotacions que ja s'havien guardat.
-- **Text amb quadre propi:** la ferramenta **Text** permet **tocar per crear un quadre estàndard** o **arrossegar sobre la partitura per definir-ne l'amplària i altura**. Durant el gest es mostra el rectangle provisional; en soltar s'obri el diàleg de text i format i el quadre provisional es manté visible darrere.
-- **Format i extensió del quadre:** el text escriu línies dins l'amplària definida i passa a la línia següent si cal. L'altura augmenta quan és necessari per contindre les línies (fins al límit de la pàgina). L'usuari pot canviar font, grandària, color, negreta, subratllat i opacitat amb el diàleg ja existent.
-- **Moure i redimensionar:** tria **Text i edició → Seleccionar**, toca el quadre i mou-lo. Per canviar-ne la mida, arrossega el punt de la seua cantonada inferior dreta. Els canvis admeten **Desfer** i la goma, igual que els altres traços.
-- **Cancel·lar:** si tanques el diàleg o prems Escape, un quadre nou no es guarda; el PDF i les anotacions anteriors queden intactes.
+- En entrar a **Anotar**, apareix un rosetó de **huit pètals, en dues corones**, amb el granat, blau fosc, or i el motiu ogival ornamental d'Android.
+- Les eines principals segueixen l'ordre d'Android: **Seleccionar, Llapis, Ressaltador, Text, Formes, Símbols, Retall i Goma**.
+- El **centre del rosetó** obri la flor si està tancada; si està oberta, retrocedix al menú anterior; a l'arrel, la tanca. El centre es pot **arrossegar amb el dit** i queda limitat a l'àrea visible. Les coordenades de moviment tenen en compte el gir visual d'iOS.
+- També es pot mostrar el rosetó amb un **doble toc al centre de la partitura** quan el visor no està en mode d'anotació.
+- El submenú de **Llapis i Ressaltador** permet triar color i grossor; el de **Text**, color, grandària, negreta i subratllat; el de **Formes**, tipus, color i grossor; i el de **Símbols**, famílies, segells, color i grandària.
+- En les opcions de símbols, els pètals es paginen quan una família conté molts elements, seguint el mecanisme de la versió Android.
+- Els controls de **Desfer, Editar text, Eliminar seleccionada i Acabar** continuen accessibles des d'una barra compacta.
+- La barra anterior de W2.4.1 no desapareix: **«Més opcions»** la desplega si encara necessites utilitzar controls detallats no incorporats al rosetó.
 
-## Compatibilitat
+## Diferències deliberades respecte a Android
 
-- Les anotacions mantenen el format `version:1`. Els quadres nous utilitzen dos camps opcionals, `boxWidth` i `boxHeight`, en coordenades relatives. Els textos de W2.3 i anteriors **sense dimensions** continuen llegint-se sense modificació.
-- Els PDF originals mai es modifiquen. Es mantenen el zoom, la rotació del PDF, el bloqueig horitzontal i els gestos Android de tornar al menú.
-- Les còpies ZIP continuen contenint les anotacions; no cal importar de nou res ni netejar les dades de l'app.
-- La versió d'Ajustos i el manifest ZIP és **W2.4.1**.
+- **Retall** ocupa el pètal original, però encara no modifica el PDF ni executa un retall. Informa explícitament que la ferramenta s'implementarà en W2.8.
+- Android té sis famílies de símbols, però W2.5 conserva les cinc que estan disponibles a la web; les articulacions i els reguladors especialitzats s'ampliaran en W2.7.
+- Els menús de text encara no inclouen cursiva i alineació exactes de la versió Android; s'afegiran amb l'editor integrat en W2.6.
+- El rosetó web utilitza el catàleg de colors, grossors i figures *ja validats* a la web, sense crear configuracions que l'emmagatzematge actual no suportaria.
+
+## Estabilitat
+
+Els mecanismes de PDF, IndexedDB, anotacions, repertoris, biblioteca, orientació horitzontal, gest «Enrere» i el format ZIP es mantenen. No hi ha migracions de dades, canvis en les rutes PDF, ni eliminacions. **No cal reimportar fitxers ni esborrar les dades de l'app.**
+
+Ajustos i còpies ZIP indiquen **W2.5**. La caché offline inclou els nous mòduls del rosetó.
 
 ## Proves
 
-Una nova prova Chromium cobreix la direcció d'una negra a 270°, la col·locació de quadres amb un toc i amb arrossegament, les dimensions guardades, el redimensionament, selecció, editar, Desfer, cancel·lar, zoom, canvi de rotació i persistència. Les regressions de W2.1 a W2.4 continuen verificant la compatibilitat dels altres traços i les còpies ZIP.
+- Nova prova Playwright: huit pètals i dues corones, navegació de submenús, canvi de color/grossor, categories musicals, pètal Retall pendent, inserció de matisos sobre PDF, centre mòbil, tecla Escape i barra de compatibilitat.
+- Les proves anteriors continuen cobrint llapis, formes, text, símbols, zoom, gir, anotacions, còpies ZIP, repertoris, navegació Android i recuperació després d'actualitzar.
 
-**Nota sobre paritat amb Android:** el quadre ja naix sobre la partitura, però la introducció del text i els ajustos tipogràfics mantenen en W2.4.1 el diàleg del visor web. Quan es dispose del projecte font d'Android, es podrà afinar el comportament exacte del teclat, la barra de format i la interacció directa amb el quadre.
-
-La fase està en una branca i PR independents; no altera la web publicada fins que es fusiona. **No esborres dades del navegador sense una còpia ZIP externa.**
+**Validació en dispositiu real:** comprova que els pètals es poden tocar amb comoditat, que el centre es desplaça sense crear traços i que «Més opcions» permet continuar treballant mentre completem la paritat d'Android.
