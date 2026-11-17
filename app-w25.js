@@ -9,6 +9,7 @@ import {INDEX_GROUP_MODES,INDEX_SORT_MODES,buildIndexGroups} from './index-group
 import {readNavigation,writeNavigation,validateNavigation,snapshotNavigation} from './navigation-state.js';
 import {rosetteOptions,rosetteParent,rosettePetalPosition,clampRosetteCenter,ROSETTE_ROOT} from './rosette-w25.js';
 import {clientToViewerPoint,isViewerCssRotated} from './viewer-orientation.js';
+import {renderRosetteMarkup} from './rosette-ui-w25.js';
 
 // Font única de la versió visible tant en Ajustos com al peu de la navegació.
 const APP_VERSION='W2.5';
@@ -686,6 +687,24 @@ const ANNOTATION_GROUP_TOOLS={
  edit:[['text','annotationText','textShape'],['select','annotationSelect','move'],['eraser','annotationEraser','erase']],
  symbols:[['symbol','annotationSymbolTool','musicSymbol']]
 };
+function renderRosette(v){
+ if(!state.annotating)return '';
+ const previous=$('.pf-reading-mode');
+ const rotated=viewerCssFallback&&window.innerHeight>window.innerWidth;
+ const width=previous?.clientWidth||(rotated?window.innerHeight:window.innerWidth);
+ const height=previous?.clientHeight||(rotated?window.innerWidth:window.innerHeight);
+ return renderRosetteMarkup({
+  viewer:v,state,icon,
+  width,height,language:state.lang==='es'?'es':'va',
+  labels:{
+   edit:tr('annotationEdit'),undo:tr('annotationUndo'),
+   editText:tr('annotationTextEdit'),deleteSelected:tr('annotationDeleteSelected'),
+   done:tr('annotationDone'),
+   advanced:state.lang==='va'?'Més opcions':'Más opciones'
+  }
+ });
+}
+
 function renderAnnotationToolbar(v){
  if(!state.annotating||!state.rosetteLegacy)return '';
  const groupLabels=[['strokes','annotationGroupStrokes','edit'],['shapes','annotationGroupShapes','rectShape'],['edit','annotationGroupEdit','textShape'],['symbols','annotationGroupMusic','musicSymbol']];
