@@ -81,7 +81,7 @@ export function selectRotationByStaffs(page,analysis){
  return candidate.includes(native)?native:
    analysis.axis==='horizontal'?0:270;
 }
-export async function analyzePdfPageOrientation(page,{maxDimension=700}={}){
+export async function analyzePdfPageOrientation(page,{maxDimension=700,fallbackRotation=null}={}){
  // Text real del PDF (títols i autoria) permet decidir també entre 90°/270°
  // i identificar pàgines amb contingut cap per avall.
  try{
@@ -89,6 +89,9 @@ export async function analyzePdfPageOrientation(page,{maxDimension=700}={}){
   const result=scoreReadableTextRotation(page,text);
   if(result!==null)return {rotation:result,source:'text'};
  }catch(e){console.warn('Orientació: lectura de text no disponible',e);}
+ // Les pàgines següents amb el mateix format poden reutilitzar la decisió
+ // si no tenen text llegible: evita rasteritzar desenes de pàgines.
+ if(RIGHT_ANGLE_ROTATIONS.includes(fallbackRotation))return {rotation:fallbackRotation,source:'cached'};
  // Per a escanejos sense capa de text, detectar la direcció dels pentagrames
  // mitjançant un render menut en memòria; no s'aplica OCR ni s'envia cap PDF.
  const base=page.getViewport({scale:1,rotation:0});
