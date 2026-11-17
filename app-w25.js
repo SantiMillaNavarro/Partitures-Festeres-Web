@@ -1352,8 +1352,9 @@ document.addEventListener('keydown',e=>{
  switch(e.key){
   case 'Escape':
    if(state.annotating&&state.rosetteExpanded){
-    state.rosetteLevel=rosetteParent(state.rosetteLevel)||'root';
-    if(state.rosetteLevel==='root')state.rosetteExpanded=false;
+    const parent=rosetteParent(state.rosetteLevel);
+    if(parent)state.rosetteLevel=parent;
+    else state.rosetteExpanded=false;
     render();
    }else closeViewer();break;
   case 'ArrowRight':case 'PageDown': scoreViewer.turnPage(1);break;
@@ -1489,6 +1490,7 @@ window.addEventListener('pagehide',()=>{
  },{passive:true});
 window.addEventListener('offline',()=>{state.online=false;if(state.page==='settings'&&!state.view)render();});
 document.addEventListener('keydown',e=>{
+ if(e.defaultPrevented)return; // Evita una segona navegació o eixida del visor.
  if(e.key==='Escape'&&state.modal&&state.modal!=='welcome'){scoreViewer?.discardPendingTextBox();state.modal=null;state.textDraft=null;render();}
  else if(e.key==='Escape'&&state.view)closeViewer();
  else if(e.key==='ArrowRight'&&state.view){scoreViewer?.turnPage(1);}
