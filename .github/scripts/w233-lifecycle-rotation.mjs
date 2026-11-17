@@ -67,7 +67,7 @@ try{
  assert.deepEqual(errors,[],'No errors on repeated orientation change');
  // A pull-to-refresh / browser reload keeps current PDF and page.
  await page.evaluate(async()=>{
-  const {ScoreViewer}=await import('./viewer-w261.js');
+  const {ScoreViewer}=await import('./viewer-w27.js');
   const original=ScoreViewer.prototype.close;
   ScoreViewer.prototype.close=function(...args){sessionStorage.setItem('w233:viewerClosed','true');return original.apply(this,args);};
  });
