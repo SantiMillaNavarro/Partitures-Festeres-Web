@@ -1,26 +1,21 @@
-# Partitures Festeres Web — W1.3B.1 · Metadades opcionals
+# Partitures Festeres Web — W1.3B.2 · Busca avançada
 
-Esta versió incorpora un editor de metadades independent dels PDF, amb accés des de Biblioteca, Repertoris, Recents, Favorits i Índex.
+Nou desplegable **Busca avançada** al costat de la busca senzilla, sense substituir-la.
 
-## Camps
-- Títol
-- Compositor / autoria
-- Tipus de composició
-- Any (quatre xifres)
-- Observacions
+## Filtres
+- Compositor / autoria (accepta fragments del nom; no distingix majúscules ni accents)
+- Tipus de composició (accepta fragments i suggerix tipus ja utilitzats)
+- Any des de / Any fins a (interval inclusiu; per a un any concret, posa el mateix en els dos camps)
+- Combinació dels filtres amb el text de la busca senzilla (tots els criteris han de coincidir)
 
-**Tot és opcional.** No es demana cap dada al pujar PDF. El títol opcional es pot mostrar en les llistes i buscar amb la cerca senzilla, però la ruta i el nom físic del PDF **no canvien**.
+Es pot obrir i ocultar el desplegable sense perdre els filtres. El botó mostra el recompte de camps actius i «Netejar filtres» els buida sense esborrar el text de busca senzill. En canviar de secció es netegen els filtres per a evitar resultats inesperats.
 
-## Emmagatzematge
-Les metadades es guarden junt amb cada registre PDF d'IndexedDB, sense alterar els bytes del document ni canviar la versió de la base de dades. Quan s'importa de nou un PDF que ja existix amb la mateixa ruta, es conserven les metadades.
+Disponible en Biblioteca, Índex, Favorits, Recents i dins de cada repertori. La selecció ràpida «Afegir partitures» conserva la seua busca pròpia. Les partitures sense metadades es mostren habitualment; quan s’aplica un filtre a un camp buit no coincidixen.
 
-El manifest de les còpies ZIP completa inclou les metadades opcionalment a cada arxiu. Les còpies W1.1 sense metadades seguixen admeses:
-- **Fusionar** amb una còpia antiga conserva les metadades locals de les obres sense metadades de la còpia.
-- **Substituir** recupera el que hi havia en la còpia; si és una còpia antiga, no contindrà metadades.
-
-Manté la biblioteca, el visor W1.2.4, els repertoris, favorits, recents i papers. La cerca avançada amb filtres combinats arribarà en W1.3B.2.
+## Seguretat
+No canvia ni el model de dades, ni el PDF, ni les metadades desades, ni el format ZIP, ni el visor. És una proposta separada de `main`: només es publica després de la teua autorització.
 
 ## Proves
-CI comprova edició i cancel·lació, any invàlid, cerca per títol, integritat PDF, persistència, importació de PDF repetit, exportació ZIP, restauració nova i compatibilitat amb ZIP antic. També s'executen les proves heretades del visor i repertoris.
+Test d'extrem a extrem en Chromium, amb diferents compositors, accents, tipus, anys i obres sense metadades. També s'executen totes les proves anteriors de visor, biblioteca, selector, metadades i còpies.
 
-**Esta PR no canvia la web pública fins que l'usuari accepte la fusió.** No neteges les dades del navegador ni desinstal·les la PWA.
+No esborres les dades del navegador ni desinstal·les l'app web.
