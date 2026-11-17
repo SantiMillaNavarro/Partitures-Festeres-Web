@@ -55,7 +55,7 @@ try{
  });
  await page.locator('[data-action="open"][data-value="QUADRES_W241.pdf"]').click();
  await page.locator('.viewer-canvas').waitFor({timeout:16000});
- await page.locator('#viewer-stage').click({position:{x:350,y:270}});
+ await page.locator('#viewer-stage').click({position:{x:190,y:330}});
  await page.locator('[data-action="viewer-annotate"]').click();
  await page.locator('.w23-annotation-toolbar').waitFor();
  const records=()=>page.evaluate(async()=>{
