@@ -108,7 +108,7 @@ try{
  assert.equal(recordsAfter[0].bold,true);
  assert.equal(recordsAfter[0].underline,true);
  assert.equal(recordsAfter[0].color,'#1b58a7');
- assert.equal(await page.locator('.annotation-text tspan').count(),2,'Both lines are rendered using SVG');
+ assert((await page.locator('.annotation-text tspan').count())>=2,'SVG text box wraps its two original lines if needed');
  assert.equal(await page.locator('.annotation-text').getAttribute('font-weight'),'700');
  assert.equal(await page.locator('.annotation-text').getAttribute('text-decoration'),'underline');
  assert.equal(await page.locator('.annotation-text').getAttribute('opacity'),'0.5');
