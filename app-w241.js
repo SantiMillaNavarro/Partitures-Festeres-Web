@@ -1152,7 +1152,7 @@ async function handleClick(el){
        bold:item.bold,underline:item.underline,opacity:item.opacity};
      state.modal='annotation-text';render();$('#annotation-text-value')?.focus();break;
    }
-   case 'annotation-text-cancel':state.textDraft=null;state.modal=null;render();break;
+   case 'annotation-text-cancel':scoreViewer?.discardPendingTextBox();state.textDraft=null;state.modal=null;render();break;
    case 'annotation-text-save':{
      const d=state.textDraft;
      if(!d||state.modal!=='annotation-text'||!scoreViewer?.annotationMode||
@@ -1188,7 +1188,7 @@ async function handleClick(el){
   case 'viewer-external':if(state.blobUrl){const anchor=document.createElement('a');anchor.href=state.blobUrl;anchor.target='_blank';anchor.rel='noopener';anchor.click();}break;
   case 'delete-one':state.modal='delete-one';render();break;
   case 'clear':state.modal='clear';render();break;
-  case 'close-modal':state.modal=null;state.textDraft=null;state.metaPath=null;state.modalRepId=null;state.pickerPath=null;state.repAddSearch='';state.repAddChosen=[];state.restore=null;render();break;
+  case 'close-modal':scoreViewer?.discardPendingTextBox();state.modal=null;state.textDraft=null;state.metaPath=null;state.modalRepId=null;state.pickerPath=null;state.repAddSearch='';state.repAddChosen=[];state.restore=null;render();break;
   case 'confirm-delete-one':{
     const path=state.view?.path;if(path)await deleteScore(path);
     state.scores=await getAllScores();await reloadCollections();await persistCollections();state.modal=null;closeViewer();updateStorageInfo();toast(tr('removed'));break;
@@ -1346,7 +1346,7 @@ window.addEventListener('pagehide',()=>{
  },{passive:true});
 window.addEventListener('offline',()=>{state.online=false;if(state.page==='settings'&&!state.view)render();});
 document.addEventListener('keydown',e=>{
- if(e.key==='Escape'&&state.modal&&state.modal!=='welcome'){state.modal=null;state.textDraft=null;render();}
+ if(e.key==='Escape'&&state.modal&&state.modal!=='welcome'){scoreViewer?.discardPendingTextBox();state.modal=null;state.textDraft=null;render();}
  else if(e.key==='Escape'&&state.view)closeViewer();
  else if(e.key==='ArrowRight'&&state.view){scoreViewer?.turnPage(1);}
  else if(e.key==='ArrowLeft'&&state.view){scoreViewer?.turnPage(-1);}
