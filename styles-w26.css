@@ -830,7 +830,10 @@ html.reading-pdf,body.reading-pdf{background:#fff!important;background-image:non
 .pf-reading-mode.inline-text-active .pf-rosette,
 .pf-reading-mode.inline-text-active .pf-rosette-dock,
 .pf-reading-mode.inline-text-active .w23-annotation-toolbar{display:none!important}
-.pf-reading-mode.inline-text-active .viewer-sheet{overflow:visible}
+.pf-reading-mode.inline-text-active .viewer-sheet{overflow:visible;z-index:8}
+.pf-reading-mode.inline-text-active .viewer-top,
+.pf-reading-mode.inline-text-active .viewer-bottom{pointer-events:none;opacity:.36}
+.pf-reading-mode.inline-text-active .viewer-toolbar{z-index:10}
 .pf-reading-mode .pf-inline-text-editor{
  position:absolute;z-index:30;box-sizing:border-box;pointer-events:auto;
  user-select:text;-webkit-user-select:text;touch-action:auto;
