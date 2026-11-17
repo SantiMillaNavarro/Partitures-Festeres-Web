@@ -295,3 +295,45 @@ html.reading-pdf,body.reading-pdf{background:#fff!important;background-image:non
 .pf-reading-mode .viewer-bottom{background:rgba(24,24,24,.87);border-color:rgba(255,255,255,.15)}
 .pf-reading-mode .viewer-top .quiet,.pf-reading-mode .viewer-toolbar .quiet{color:#fff}
 .pf-reading-mode .viewer-intro{background:rgba(25,25,25,.72)}
+
+/* W1.3A: cartes de partitures, favorits, recents i repertoris */
+.cards.score-list{display:flex;flex-direction:column;gap:9px}
+.score-row{display:flex;align-items:stretch;gap:5px;min-width:0}
+.score-row .entry{flex:1;min-width:0;display:flex;flex-direction:row;align-items:center;text-align:left;min-height:66px;padding:9px 11px;gap:10px}
+.score-row .entry-text{flex:1;min-width:0;overflow-wrap:anywhere}
+.score-row .entry-ico{flex-shrink:0}
+.score-row .entry-title{font-size:.92rem}
+.score-tool,.repertoire-order button{border:1px solid #dbc49e;background:#fff8e8e8;color:#775637;border-radius:11px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer}
+.score-tool{flex:0 0 40px;width:40px;min-height:54px}
+.score-tool .icon{width:19px;height:19px}
+.score-tool.active{color:#a67c20;background:#fff0c7;border-color:#c79e46}
+.score-tool.active .icon svg,.viewer-favorite.active .icon svg{fill:currentColor}
+.viewer-favorite.active{color:#ffdf8c!important}
+.repertoire-order{display:flex;flex-direction:column;gap:3px;flex:0 0 33px}
+.repertoire-order button{height:29px;min-height:29px;padding:2px}
+.repertoire-order button .icon{width:17px;height:17px}
+.rep-actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:12px 0 15px}
+.rep-head{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px}
+.rep-head h3{margin:0}
+.rep-entry{min-height:84px}
+.rep-name-label{display:flex;flex-direction:column;gap:9px;font-weight:700;color:#694533;margin:15px 0}
+.rep-name-label input{height:47px;padding:9px;border-radius:10px;border:1px solid #ceb489;background:#fffdf6;color:#40291f}
+.rep-picker-list{display:flex;flex-direction:column;gap:10px;max-height:40vh;overflow-y:auto}
+.rep-picker-list button{justify-content:flex-start;min-height:44px;white-space:normal;text-align:left}
+@media(max-width:800px){
+ .bottom-nav{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));justify-content:stretch;padding-left:max(2px,env(safe-area-inset-left));padding-right:max(2px,env(safe-area-inset-right))}
+ .bottom-link{flex:initial;width:100%;min-width:0;font-size:.61rem;line-height:1.12;gap:2px;padding:3px 1px;overflow:hidden}
+ .bottom-link .icon{width:20px;height:20px}
+ .cards.score-list{grid-template-columns:none;gap:7px}
+ .score-row .entry{min-height:61px;flex-direction:row;text-align:left;padding:8px;gap:8px}
+ .score-row .entry .entry-note{font-size:.7rem}
+ .score-tool{flex-basis:35px;width:35px}
+ .rep-head{display:block}
+ .rep-head .rep-actions button{font-size:.79rem;padding:7px}
+}
+@media(max-width:355px){
+ .bottom-link{font-size:.55rem}
+ .bottom-link .icon{height:18px;width:18px}
+ .score-tool{flex-basis:32px;width:32px}
+ .score-row .entry-title{font-size:.83rem}
+}

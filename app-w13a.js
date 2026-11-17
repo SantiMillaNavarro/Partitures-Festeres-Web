@@ -557,6 +557,64 @@ async function handleClick(el){
   case 'backup-share':await shareBackup();break;
   case 'restore-merge':await doRestore('merge');break;
   case 'restore-replace':await doRestore('replace');break;
+
+  case 'favorite':{
+   if(!scorePaths().has(val))break;
+   state.favorites=state.favorites.includes(val)?state.favorites.filter(p=>p!==val):[...state.favorites,val];
+   await setPref('w13:favorites',state.favorites);render();break;
+  }
+  case 'rep-create':state.modal='rep-name';state.modalRepId=null;render();$('#rep-name-input')?.focus();break;
+  case 'rep-back':state.repertoireOpen=null;state.search='';render();break;
+  case 'rep-open':state.repertoireOpen=el.dataset.id;state.search='';render();break;
+  case 'rep-rename':state.modalRepId=el.dataset.id;state.modal='rep-name';render();$('#rep-name-input')?.focus();break;
+  case 'rep-delete':state.modalRepId=el.dataset.id;state.modal='rep-delete-confirm';render();break;
+  case 'rep-save-name':{
+   const name=($('#rep-name-input')?.value||'').trim().replace(/\s+/g,' ');
+   if(!name||name.length>60){toast(tr('repertoireInvalid'),true);break;}
+   if(state.repertoires.some(r=>r.name.toLocaleLowerCase()===name.toLocaleLowerCase()&&r.id!==state.modalRepId)){toast(tr('repertoireExists'),true);break;}
+   const r=findRepertoire(state.modalRepId);
+   if(r)r.name=name;
+   else {
+    const uid=typeof crypto.randomUUID==='function'?crypto.randomUUID().replace(/-/g,'').slice(0,24):Date.now().toString(36)+Math.random().toString(36).slice(2);
+    const id='rep_'+uid,created={id,name,paths:[]};
+    if(state.pickerPath&&scorePaths().has(state.pickerPath))created.paths.push(state.pickerPath);
+    state.repertoires.push(created);state.repertoireOpen=id;
+   }
+   await setPref('w13:repertoires',state.repertoires);
+   state.modal=null;state.modalRepId=null;state.pickerPath=null;render();toast(tr('repertoireSaved'));break;
+  }
+  case 'rep-confirm-delete':{
+   state.repertoires=state.repertoires.filter(r=>r.id!==state.modalRepId);
+   if(state.repertoireOpen===state.modalRepId)state.repertoireOpen=null;
+   state.modalRepId=null;state.modal=null;await setPref('w13:repertoires',state.repertoires);render();toast(tr('repertoireRemoved'));break;
+  }
+  case 'rep-pick':{
+   if(!scorePaths().has(val))break;
+   state.pickerPath=val;
+   if(state.repertoires.length===1){
+    const r=state.repertoires[0];
+    if(!r.paths.includes(val)){r.paths.push(val);await setPref('w13:repertoires',state.repertoires);toast(tr('repertoireAdded'));}
+    state.pickerPath=null;render();break;
+   }
+   state.modal=state.repertoires.length?'rep-picker':'rep-name';state.modalRepId=null;
+   render();if(state.modal==='rep-name')$('#rep-name-input')?.focus();break;
+  }
+  case 'rep-choose':{
+   const r=findRepertoire(el.dataset.id),path=state.pickerPath;
+   if(r&&scorePaths().has(path)&&!r.paths.includes(path)){r.paths.push(path);await setPref('w13:repertoires',state.repertoires);toast(tr('repertoireAdded'));}
+   state.pickerPath=null;state.modal=null;render();break;
+  }
+  case 'rep-remove-score':{
+   const r=findRepertoire(el.dataset.id);if(!r)break;
+   r.paths=r.paths.filter(p=>p!==val);await setPref('w13:repertoires',state.repertoires);render();toast(tr('repertoireRemovedScore'));break;
+  }
+  case 'rep-up':case 'rep-down':{
+   const r=findRepertoire(el.dataset.id);if(!r)break;
+   const i=r.paths.indexOf(val),j=i+(action==='rep-up'?-1:1);
+   if(i<0||j<0||j>=r.paths.length)break;
+   [r.paths[i],r.paths[j]]=[r.paths[j],r.paths[i]];
+   await setPref('w13:repertoires',state.repertoires);render();break;
+  }
   case 'open':await openPdf(val);break;
   case 'viewer-close':closeViewer();break;
   case 'viewer-page-prev':await scoreViewer?.turnPage(-1);break;
