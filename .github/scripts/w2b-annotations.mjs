@@ -11,6 +11,7 @@ for(const tool of ANNOTATION_SHAPES){
  const shape={...base,tool};
  assert.deepEqual(normalizeAnnotations({version:1,pages:{1:[shape]}}).pages['1'][0],shape);
  assert(strokePath(shape,400,500).startsWith('M'));
+ assert(strokePath({...shape,points:[shape.points[0]]},400,500).startsWith('M'),'Incomplete shape preview must not crash');
  assert(strokePath(shape,500,400,90).startsWith('M'));
  assert.throws(()=>normalizeAnnotations({version:1,pages:{1:[{...shape,points:[[.5,.5]]}]}}));
 }
