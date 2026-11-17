@@ -1,23 +1,17 @@
-# Partitures Festeres Web W1.2.4 — Experiència de lectura
+# Partitures Festeres Web — W1.3A
 
-Versió de prova. La web pública **no canvia fins que es fusione esta proposta**.
+Rama de prueba. La web pública sigue intacta hasta que el usuario apruebe la Pull Request.
 
-## Canvis
-- Visor blanc a pantalla completa, sense barres fixes que lleven espai a la partitura.
-- Encaix inicial de la pàgina a tota l'àrea útil, tant en vertical com en horitzontal.
-- Un toc central mostra/amaga els controls. Un toc als laterals passa la pàgina.
-- Zoom immediat amb dos dits centrat en el punt del gest, arrossegament i doble toc central.
-- Zoom, pàgina, gir i preferència d'ajust recordats per obra.
-- Al canviar l'orientació, encaix recalculat automàticament.
-- PDF.js local i millora de la nitidesa després del gest, amb límit de memòria de canvas.
-- Controls compactes superposats: gir 90°, ajust de pàgina/amplària, avanç i retrocés de pàgines/obres.
-- Els PDF es queden en IndexedDB; no es toquen db.js ni backup.js.
+## Novedades
+- Visor PDF con fondo blanco y barras neutras; evita las franjas granates hasta donde el sistema operativo lo permite.
+- Favoritos, recientes (últimas 45 obras) y repertorios: crear, renombrar, borrar, añadir/quitar partituras y ordenarlas con flechas.
+- Todos los datos permanecen en IndexedDB local y entran en las copias ZIP mediante las preferencias.
+- No se cambian db.js, backup.js ni los PDF existentes. Se conservan los papeles.
 
-## Proves
-La PR executa proves en Chromium i WebKit: PDF real de dues pàgines, zoom, gir, canvi de pàgina, persistència i vista vertical/horitzontal. Linux WebKit és una aproximació, no una certificació d'iPhone real.
+## Pruebas
+Una prueba automatizada comprueba importación, visualización PDF, tema claro del visor, favoritos, recientes, orden de repertorios, persistencia y preparación de copia ZIP.
 
-## Instal·lació
-Quan la PR passe les proves i s'accepte, fusiona-la a main. **No esborres mai les dades del navegador ni la PWA:** això podria eliminar les partitures locals. Conserva sempre la teua còpia ZIP.
+## Pendiente
+W1.3B incorporará metadatos y búsqueda avanzada. Safari iPhone/iPad necesita validación real de las barras del sistema.
 
-## Límits
-Aquesta fase només perfecciona la lectura; encara no incorpora anotacions, metadades avançades, Drive ni el visor natiu d'Android. L'ús real en un iPhone/iPad continua pendent de validació.
+No borrar los datos del navegador ni desinstalar la PWA. Conservar siempre copia ZIP.
