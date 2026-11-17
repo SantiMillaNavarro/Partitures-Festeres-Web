@@ -48,8 +48,8 @@ export function strokePath(stroke,w,h,rotation=0){
 // Les mides són relatives a la part visible de la pàgina, no al zoom del navegador.
 export function textBounds(stroke,w,h){
  const size=stroke.fontSize*Math.min(w,h);
- const lines=stroke.text.split('\\n');
- const glyphLength=line=>Array.from(line).reduce((n,c)=>n+(/[\\u2e80-\\uffff]/u.test(c)?1.05:.58),0);
+ const lines=stroke.text.split('\n');
+ const glyphLength=line=>Array.from(line).reduce((n,c)=>n+(/[\u2e80-\uffff]/u.test(c)?1.05:.58),0);
  const width=Math.max(size*.65,...lines.map(line=>glyphLength(line)*size));
  return {width,height:lines.length*size*1.26,fontPx:size,lines};
 }
