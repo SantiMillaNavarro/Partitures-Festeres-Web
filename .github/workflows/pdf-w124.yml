@@ -1,0 +1,26 @@
+name: W1.2.4 viewer regression test
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+jobs:
+  browser:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install browsers
+        run: |
+          npm install --no-save playwright
+          npx playwright install chromium webkit --with-deps
+      - name: Start HTTP server
+        run: python3 -m http.server 8765 --bind 127.0.0.1 > /tmp/pfweb.log 2>&1 &
+      - name: Run viewer tests
+        run: node .github/scripts/pdf-w124-smoke.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: viewer-w124-screenshots
+          path: w124-screenshots/
