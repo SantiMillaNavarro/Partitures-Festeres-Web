@@ -669,7 +669,8 @@ export class ScoreViewer {
         const pos=projectPoint(stroke.points[0],this.rotation);
         const x=pos[0]*w,y=pos[1]*h;
         const bounds=musicalSymbolBounds(stroke,w,h);
-        const transform=`translate(${x.toFixed(2)} ${y.toFixed(2)})`;
+        const r=stroke.rotationDegrees||0;
+        const transform=`translate(${x.toFixed(2)} ${y.toFixed(2)})`+(r?` rotate(${r} ${bounds.width/2} ${bounds.height/2})`:'');
         if(index===this.selectedAnnotation&&this.annotationMode&&this.annotationTool==='select'){
           const outline=document.createElementNS(SVG_NS,'rect');
           outline.setAttribute('x','-4');outline.setAttribute('y','-4');
@@ -700,7 +701,8 @@ export class ScoreViewer {
         const pos=projectPoint(stroke.points[0],this.rotation);
         const x=pos[0]*w,y=pos[1]*h;
         const {width,height,fontPx,lines}=textBounds(stroke,w,h);
-        const transform=`translate(${x.toFixed(2)} ${y.toFixed(2)})`;
+        const r=stroke.rotationDegrees||0;
+        const transform=`translate(${x.toFixed(2)} ${y.toFixed(2)})`+(r?` rotate(${r} ${width/2} ${height/2})`:'');
         if(index===this.selectedAnnotation&&this.annotationMode&&this.annotationTool==='select'){
           const outline=document.createElementNS(SVG_NS,'rect');
           outline.setAttribute('x','-3');outline.setAttribute('y','-3');
@@ -761,9 +763,11 @@ export class ScoreViewer {
         return;
       }
       const d=strokePath(stroke,w,h,this.rotation);
+      const rotated=stroke.rotationDegrees ? objectBounds(stroke,w,h,this.rotation) : null;
       const addPath=(color,width,attrs={})=>{
         const path=document.createElementNS(SVG_NS,'path');
         path.setAttribute('d',d);path.setAttribute('fill','none');
+        if(rotated)path.setAttribute('transform',`rotate(${stroke.rotationDegrees} ${rotated.cx} ${rotated.cy})`);
         path.setAttribute('stroke',color);path.setAttribute('stroke-width',String(width));
         path.setAttribute('stroke-linecap','round');path.setAttribute('stroke-linejoin','round');
         for(const [key,val] of Object.entries(attrs))path.setAttribute(key,val);
@@ -817,8 +821,10 @@ export class ScoreViewer {
         textBounds(original,this.pageW,this.pageH):null;
       const corner=bounds?projectPoint(original.points[0],this.rotation):null;
       const touch=projectPoint(point,this.rotation);
-      const isResize=!!(bounds&&Math.hypot((touch[0]-corner[0])*this.pageW-bounds.width,
-       (touch[1]-corner[1])*this.pageH-bounds.height)<=19);
+      const obj=original.tool==='text'&&original.boxWidth!=null?objectBounds(original,this.pageW,this.pageH,this.rotation):null;
+      const resizePoint=obj?rotateScreenPoint([obj.left+obj.width,obj.top+obj.height],obj.cx,obj.cy,original.rotationDegrees||0):null;
+      const isResize=!!(resizePoint&&Math.hypot(touch[0]*this.pageW-resizePoint[0],
+        touch[1]*this.pageH-resizePoint[1])<=19);
       this.annotationGesture={kind:isResize?'resize-text':'move',start:point,original};
     }else{
       const stroke={tool:this.annotationTool,color:this.annotationColor,
@@ -842,7 +848,9 @@ export class ScoreViewer {
     }else if(g.kind==='resize-text'){
       const point=this.annotationPoint(e);
       if(point){
-        const target=projectPoint(point,this.rotation),anchor=projectPoint(g.original.points[0],this.rotation);
+        const raw=projectPoint(point,this.rotation),obj=objectBounds(g.original,this.pageW,this.pageH,this.rotation);
+        const unrotated=rotateScreenPoint([raw[0]*this.pageW,raw[1]*this.pageH],obj.cx,obj.cy,-(g.original.rotationDegrees||0));
+        const target=[unrotated[0]/this.pageW,unrotated[1]/this.pageH],anchor=projectPoint(g.original.points[0],this.rotation);
         this.previewAnnotation={...g.original,boxWidth:Math.max(.03,Math.min(.95,Math.abs(target[0]-anchor[0]))),
           boxHeight:Math.max(.03,Math.min(.95,Math.abs(target[1]-anchor[1])))};
       }
