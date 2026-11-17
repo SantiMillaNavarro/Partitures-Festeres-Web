@@ -77,7 +77,7 @@ try{
  };
  await open();await page.locator('[data-action="viewer-annotate"]').click();
  await page.locator('.w23-annotation-toolbar').waitFor();
- assert.equal(await page.locator('.annotation-rosette .annotation-petal').count(),3,'Grouped annotation control');
+ assert.equal(await page.locator('.annotation-rosette .annotation-petal').count(),4,'Grouped annotation control');
  await tool('text');
  await tap(.23,.24);
  await page.locator('.annotation-text-modal').waitFor();
