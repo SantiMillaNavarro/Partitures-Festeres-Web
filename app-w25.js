@@ -749,6 +749,7 @@ function renderViewer(){if(!state.view)return '';
    <div class="viewer-intro">${esc(nice(parts(state.view.path).at(-1)))}<small>${esc(tr('viewerStageHint'))}</small></div>
   </div>`;
 }
+let rosetteIgnoreClickUntil=0;
 let viewerMenuTimer = 0;
 function showViewerMenu(show){
  const view=$('.pf-reading-mode'); if(!view)return;
@@ -1012,9 +1013,74 @@ async function doRestore(mode){
   }catch(e){console.error(e);state.scores=await getAllScores().catch(()=>state.scores);render();toast(`${tr('restoreError')} ${e?.message||''}`,true);}
   finally{state.loading=false;progress(false);}
 }
-async function handleClick(el){
+async function applyRosetteOption(id){
+ if(!state.annotating||!scoreViewer||state.modal)return;
+ const v=scoreViewer,level=state.rosetteLevel;
+ const ctx={annotationTool:v.annotationTool,annotationColor:v.annotationColor,
+  annotationThickness:v.annotationThickness,musicalSymbol:v.musicalSymbol,
+  musicalSymbolSize:v.musicalSymbolSize,symbolGroup:state.symbolGroup,
+  symbolPage:state.rosetteSymbolPage,fontSize:v.textStyle.fontSize,
+  bold:v.textStyle.bold,underline:v.textStyle.underline};
+ const option=rosetteOptions(level,ctx).find(o=>o.id===id);
+ if(!option)return;
+ if(option.unavailable){
+  toast(state.lang==='va'?'El retall avançat arribarà en una pròxima fase.':'El recorte avanzado llegará en una próxima fase.');
+  return;
+ }
+ if(option.back){state.rosetteLevel=option.back;}
+ else if(option.id==='back'){state.rosetteLevel=rosetteParent(level)||'root';}
+ else if(option.category){
+  state.symbolGroup=option.category;
+  state.rosetteSymbolPage=0;
+  state.rosetteLevel='symbol-picker';
+  v.setAnnotationTool('symbol');
+ }else if(option.page!==undefined){state.rosetteSymbolPage=option.page;}
+ else if(option.level){
+  if(option.tool)v.setAnnotationTool(option.tool);
+  state.rosetteLevel=option.level;
+ }else if(option.symbol){
+  v.setMusicalSymbol(option.symbol);
+  state.rosetteLevel='symbols';
+ }else if(option.color){
+  v.setAnnotationColor(option.color);
+  if(level.startsWith('text-'))v.textStyle={...v.textStyle,color:option.color};
+  state.rosetteLevel=rosetteParent(level)||'root';
+ }else if(option.width){
+  v.setAnnotationThickness(option.width);
+  state.rosetteLevel=rosetteParent(level)||'root';
+ }else if(option.textSize){
+  v.textStyle={...v.textStyle,fontSize:option.textSize};
+  state.rosetteLevel='text';
+ }else if(option.symbolSize){
+  v.setMusicalSymbolSize(option.symbolSize);
+  state.rosetteLevel='symbols';
+ }else if(option.toggle){
+  v.textStyle={...v.textStyle,[option.toggle]:!v.textStyle[option.toggle]};
+ }else if(option.tool){
+  v.setAnnotationTool(option.tool);
+  if(level==='shape-type')state.rosetteLevel='shape';
+ }
+ render();
+}
+
+function handleClick(el){
  const action=el.dataset.action,val=el.dataset.value;
  switch(action){
+  case 'rosette-core':{
+   if(Date.now()<rosetteIgnoreClickUntil)break;
+   if(!state.annotating)break;
+   if(!state.rosetteExpanded){state.rosetteExpanded=true;state.rosetteLevel='root';}
+   else {const parent=rosetteParent(state.rosetteLevel);
+    if(parent)state.rosetteLevel=parent;else state.rosetteExpanded=false;}
+   render();break;
+  }
+  case 'rosette-option':applyRosetteOption(val);break;
+  case 'rosette-legacy':{
+   if(!state.annotating)break;
+   state.rosetteLegacy=!state.rosetteLegacy;
+   if(state.rosetteLegacy)state.rosetteExpanded=false;
+   render();break;
+  }
   case 'advanced-toggle':state.advancedOpen=!state.advancedOpen;render();break;
   case 'advanced-clear':state.advanced=blankAdvancedFilters();render();break;
   case 'index-group-toggle':if(state.indexCollapsed.has(val))state.indexCollapsed.delete(val);else state.indexCollapsed.add(val);render();break;
@@ -1284,7 +1350,12 @@ document.addEventListener('keydown',e=>{
  if(!state.view||!scoreViewer||state.modal||e.target?.matches('input,textarea,select,[contenteditable]'))return;
  let used=true;
  switch(e.key){
-  case 'Escape': closeViewer();break;
+  case 'Escape':
+   if(state.annotating&&state.rosetteExpanded){
+    state.rosetteLevel=rosetteParent(state.rosetteLevel)||'root';
+    if(state.rosetteLevel==='root')state.rosetteExpanded=false;
+    render();
+   }else closeViewer();break;
   case 'ArrowRight':case 'PageDown': scoreViewer.turnPage(1);break;
   case 'ArrowLeft':case 'PageUp': scoreViewer.turnPage(-1);break;
   case '+':case '=': scoreViewer.setZoom(scoreViewer.zoom*1.25);break;
