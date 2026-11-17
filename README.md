@@ -1,17 +1,23 @@
-# Partitures Festeres Web — W1.3A
+# Partitures Festeres Web W1.3A.1
 
-Rama de prueba. La web pública sigue intacta hasta que el usuario apruebe la Pull Request.
+Corregix l'ús dels **Repertoris** perquè es puguen incorporar partitures sense eixir de la secció.
 
-## Novedades
-- Visor PDF con fondo blanco y barras neutras; evita las franjas granates hasta donde el sistema operativo lo permite.
-- Favoritos, recientes (últimas 45 obras) y repertorios: crear, renombrar, borrar, añadir/quitar partituras y ordenarlas con flechas.
-- Todos los datos permanecen en IndexedDB local y entran en las copias ZIP mediante las preferencias.
-- No se cambian db.js, backup.js ni los PDF existentes. Se conservan los papeles.
+- Nou botó **Afegir partitures** dins de cada repertori.
+- Selector amb **cerca immediata per nom o ruta de carpeta**, sobre tota la biblioteca, independent del filtre actual.
+- Selecció de múltiples obres, fins i tot fent cerques diferents, i confirmació conjunta.
+- Les partitures ja incloses es mostren com a afegides i no poden duplicar-se.
+- En tancar amb Cancel·lar, no es modifica el repertori.
+- La nova incorporació va al final del repertori, conservant l'orde previ.
+- Manté PDF.js, el visor W1.2.4, els papers, els PDF en IndexedDB i el sistema de còpies.
+- **W1.3A.1** apareix en Ajustos; manté els textos en valencià i castellà.
 
-## Pruebas
-Una prueba automatizada comprueba importación, visualización PDF, tema claro del visor, favoritos, recientes, orden de repertorios, persistencia y preparación de copia ZIP.
+## Prova ràpida
+1. Obrir un repertori amb o sense partitures.
+2. Polsar **Afegir partitures**.
+3. Escriure una cerca (per exemple, *Alm*), marcar una obra, buscar una altra i marcar-la.
+4. Polsar **Afegir seleccionades**.
+5. Comprovar que totes apareixen, conservant l'orde de les obres que ja hi havia.
+6. Tancar/reobrir l'app i verificar persistència. Repetir amb Cancel·lar.
 
-## Pendiente
-W1.3B incorporará metadatos y búsqueda avanzada. Safari iPhone/iPad necesita validación real de las barras del sistema.
-
-No borrar los datos del navegador ni desinstalar la PWA. Conservar siempre copia ZIP.
+## Seguretat
+És una PR independent; **main no es modificarà fins que l'usuari l'aprove**. No s'altera `db.js`, `backup.js` ni s'esborren PDFs. No desinstal·lar la PWA ni netejar dades del navegador.
