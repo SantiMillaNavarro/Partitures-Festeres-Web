@@ -108,6 +108,15 @@ try{
  const middle=await layerPoint(.28,.285);
  await page.mouse.click(middle.x,middle.y);
  assert.equal(await page.locator('.annotation-selection').count(),1,'Selection works on rotated viewer');
+ // The annotation text dialog must overlay the rotated PDF instead of appearing underneath it.
+ await page.locator('[data-action="annotation-tool"][data-value="text"]').click();
+ const textPoint=await layerPoint(.64,.24);
+ await page.mouse.click(textPoint.x,textPoint.y);
+ await page.locator('.annotation-text-modal').waitFor({state:'visible'});
+ await page.locator('#annotation-text-value').fill('Entrada');
+ await page.locator('[data-action="annotation-text-save"]').click();
+ await page.locator('.annotation-text-modal').waitFor({state:'detached'});
+ assert.equal(await page.locator('.annotation-text').count(),1,'Text editor stays accessible above rotated viewer');
  await page.locator('[data-action="viewer-annotate"]').last().click();
  const d1=await page.locator('.annotation-stroke').first().getAttribute('d');
  await page.locator('[data-action="viewer-rotate"]').click();
@@ -115,14 +124,15 @@ try{
  const d2=await page.locator('.annotation-stroke').first().getAttribute('d');
  assert.notEqual(d1,d2,'Manual PDF rotation remains independent');
  await page.locator('[data-action="viewer-zoom-in"]').click();
- assert.equal(await page.locator('.annotation-stroke').count(),1,'Zoom preserves rotated annotation');
+ assert.equal(await page.locator('.annotation-stroke').count(),2,'Zoom preserves pen and text annotations');
 
  // Repeated refresh still restores this exact PDF, and uses landscape presentation.
  await page.reload();
  await page.locator('.viewer-canvas').waitFor({timeout:15000});
  orientation=await readOrientation();
  assert.match(orientation.transform,/matrix\(/,'Landscape view returns after refresh');
- assert.equal(await page.locator('.annotation-stroke').count(),1);
+ assert.equal(await page.locator('.annotation-stroke').count(),2);
+ assert.equal(await page.locator('.annotation-text').count(),1,'Text survives rotated viewer reload');
  await page.mouse.click(...Object.values(await localClick(.5,.5)));
  await page.locator('[data-action="viewer-close"]').click();
  assert.equal(await page.locator('.pf-reading-mode').count(),0,'Closing PDF restores normal Library');
