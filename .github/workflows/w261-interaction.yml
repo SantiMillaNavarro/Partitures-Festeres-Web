@@ -1,0 +1,29 @@
+name: W2.6.1 - Roseto, desplacament i focus del teclat
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+jobs:
+  w261-interaction:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install Chromium
+        run: |
+          npm install --no-save playwright
+          npx playwright install chromium --with-deps
+      - name: Start local server
+        run: python3 -m http.server 8765 --bind 127.0.0.1 >/tmp/pf-w261.log 2>&1 &
+      - name: Verify source syntax
+        run: |
+          node --check app-w261.js
+          node --check viewer-w261.js
+          node --check inline-text-w261.js
+          node --check rosette-ui-w261.js
+          node --check sw.js
+          node --check .github/scripts/w261-interaction.mjs
+      - name: Check double tap, panning and inline keyboard focus
+        run: node .github/scripts/w261-interaction.mjs
