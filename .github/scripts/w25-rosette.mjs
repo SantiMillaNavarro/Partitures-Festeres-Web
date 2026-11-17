@@ -39,6 +39,7 @@ try{
  await page.goto('http://127.0.0.1:8765/',{waitUntil:'domcontentloaded'});
  await page.waitForTimeout(250);
  console.log('W25 INITIAL APP',JSON.stringify((await page.locator('#app').innerText()).slice(0,350)));
+ console.log('W25 MODULE DIAG',JSON.stringify(await page.evaluate(async()=>{const out=[];for(const f of ['./rosette-w25.js','./rosette-ui-w25.js','./app-w25.js']){try{await import(f);out.push({file:f,result:'ok'});}catch(e){out.push({file:f,result:e.stack||String(e)});}}return out;})));
  if(await page.locator('[data-action="welcome-done"]').count())await page.locator('[data-action="welcome-done"]').click();
  await page.locator('#import-input').setInputFiles({name:'ROSETTE25.pdf',mimeType:'application/pdf',buffer:makePdf()});
  await page.locator('[data-action="open"][data-value="ROSETTE25.pdf"]').waitFor();
