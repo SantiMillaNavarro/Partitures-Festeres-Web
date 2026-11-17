@@ -1,0 +1,25 @@
+name: W1.3A.1 repertoire picker
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+jobs:
+  repertoire-picker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install Chromium
+        run: |
+          npm install --no-save playwright
+          npx playwright install chromium --with-deps
+      - name: Start web server
+        run: python3 -m http.server 8765 --bind 127.0.0.1 > /tmp/partitures.log 2>&1 &
+      - name: Check JavaScript syntax
+        run: |
+          node --check app-w13a1.js
+          node --check .github/scripts/w13a1-picker.mjs
+      - name: Test direct search and multiple selection
+        run: node .github/scripts/w13a1-picker.mjs
