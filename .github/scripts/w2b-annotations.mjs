@@ -52,7 +52,7 @@ try{
  if(await page.locator('[data-action="welcome-done"]').count())await page.locator('[data-action="welcome-done"]').click();
  await page.locator('.bottom-link[data-value="settings"]').click();
  const settings=await page.locator('main.content').innerText();
- assert.match(settings,/Partitures Festeres Web — W2\.4\.1/,'The version is updated in Ajustos');
+ assert.match(settings,/Partitures Festeres Web — W2\.5/,'The version is updated in Ajustos');
  await page.locator('.bottom-link[data-value="library"]').click();
  await page.locator('#import-input').setInputFiles({name:'W22.pdf',mimeType:'application/pdf',buffer});
  await page.locator('.score-row').waitFor();
@@ -60,12 +60,13 @@ try{
   await page.locator('.score-row [data-action="open"]').first().click();
   await page.locator('.viewer-canvas').waitFor({timeout:15000});
   await page.locator('#viewer-stage').click({position:{x:190,y:350}});
-  await page.locator('[data-action="viewer-annotate"]').waitFor({state:'visible'});
+  await page.locator('[data-action="viewer-annotate"]').first().waitFor({state:'visible'});
  };
  const data=async()=>page.evaluate(async()=>{const {getAnnotations}=await import('./db.js');return await getAnnotations('W22.pdf');});
  const points=async()=>((await data()).pages['1']||[]);
  await open();
- await page.locator('[data-action="viewer-annotate"]').click();
+ await page.locator('[data-action="viewer-annotate"]').first().click();
+ await page.locator('[data-action="rosette-legacy"]').click();
  await page.locator('.w22-annotation-toolbar').waitFor();
  const selectTool=async tool=>{
   const group=['pen','highlighter'].includes(tool)?'strokes':

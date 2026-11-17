@@ -109,7 +109,7 @@ try{
   await page.locator('.bottom-link.selected[data-value="'+tab+'"]').waitFor({timeout:15000});
   assert.equal(await page.locator('.bottom-link.selected').getAttribute('data-value'),tab,tab+' remains active');
  }
- assert.match(await page.locator('main.content').innerText(),/W2\.4\.1/,'Updated version appears in Ajustos');
+ assert.match(await page.locator('main.content').innerText(),/W2\.5/,'Updated version appears in Ajustos');
 
  // If a score was removed while the app was not in use, the old view is not reopened.
  await page.locator('.bottom-link[data-value="library"]').click();

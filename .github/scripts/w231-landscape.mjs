@@ -76,8 +76,9 @@ try{
  assert.match(await page.locator('#viewer-page-counter').innerText(),/1 \/ 2/);
  // Show controls at the center, enable annotations and draw using rotated touch positions.
  await page.mouse.click(...Object.values(await localClick(.5,.5)));
- await page.locator('[data-action="viewer-annotate"]').waitFor({state:'visible'});
- await page.locator('[data-action="viewer-annotate"]').click();
+ await page.locator('[data-action="viewer-annotate"]').first().waitFor({state:'visible'});
+ await page.locator('[data-action="viewer-annotate"]').first().click();
+ await page.locator('[data-action="rosette-legacy"]').click();
  await page.locator('.w23-annotation-toolbar').waitFor();
  await page.locator('[data-action="annotation-group"][data-value="strokes"]').click();
  await page.locator('[data-action="annotation-tool"][data-value="pen"]').click();
