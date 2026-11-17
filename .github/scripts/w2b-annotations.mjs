@@ -52,7 +52,7 @@ try{
  if(await page.locator('[data-action="welcome-done"]').count())await page.locator('[data-action="welcome-done"]').click();
  await page.locator('.bottom-link[data-value="settings"]').click();
  const settings=await page.locator('main.content').innerText();
- assert.match(settings,/Partitures Festeres Web — W2\.2/,'The version is updated in Ajustos');
+ assert.match(settings,/Partitures Festeres Web — W2\.3/,'The version is updated in Ajustos');
  await page.locator('.bottom-link[data-value="library"]').click();
  await page.locator('#import-input').setInputFiles({name:'W22.pdf',mimeType:'application/pdf',buffer});
  await page.locator('.score-row').waitFor();
@@ -67,7 +67,12 @@ try{
  await open();
  await page.locator('[data-action="viewer-annotate"]').click();
  await page.locator('.w22-annotation-toolbar').waitFor();
- const selectTool=async tool=>page.locator('[data-action="annotation-tool"][data-value="'+tool+'"]').click();
+ const selectTool=async tool=>{
+  const group=['pen','highlighter'].includes(tool)?'strokes':
+     ['line','rectangle','ellipse','arrow'].includes(tool)?'shapes':'edit';
+  await page.locator('[data-action="annotation-group"][data-value="'+group+'"]').click();
+  await page.locator('[data-action="annotation-tool"][data-value="'+tool+'"]').click();
+ };
  const xy=async(x,y)=>{
   const b=await page.locator('.viewer-annotation-layer').boundingBox();
   assert(b&&b.width>60&&b.height>60);
