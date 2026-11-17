@@ -203,6 +203,9 @@ function requestViewerLandscape(){
  clearTimeout(landscapeAttemptTimer);
  viewerOrientationLocked=false;
  setViewerCssFallback(false);
+ // Només mòbils i tauletes tàctils han d'intentar bloqueig o fullscreen.
+ // En ordinador, fullscreen impediria redimensionar la finestra del visor.
+ if(!window.matchMedia?.('(pointer:coarse)').matches)return;
  const orientation=screen.orientation;
  if(!orientation||typeof orientation.lock!=='function'){
   setViewerCssFallback(true);
