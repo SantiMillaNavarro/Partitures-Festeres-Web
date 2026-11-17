@@ -6,6 +6,9 @@ import {ANNOTATION_COLORS} from './annotations.js';
 import {blankAdvancedFilters,countAdvancedFilters,matchesScoreSearch} from './search-filters.js';
 import {INDEX_GROUP_MODES,INDEX_SORT_MODES,buildIndexGroups} from './index-groups.js';
 
+// Font única de la versió visible tant en Ajustos com al peu de la navegació.
+const APP_VERSION='W2.1';
+
 const I = {
   library:'<svg viewBox="0 0 24 24"><path d="M3 6h6l2 2h10v12H3z"/><path d="M3 8V5h6l2 3"/></svg>',
   folder:'<svg viewBox="0 0 24 24"><path d="M3 6h7l2.2 3H21v11H3z"/></svg>',
@@ -51,7 +54,7 @@ const L = {
   deleteAll:'Esborrar biblioteca',deleteThis:'Esborrar esta partitura',installTitle:'Instal·lar a iPhone / iPad',
   installText:'Obri esta pàgina en Safari, toca Compartir i selecciona «Afegir a la pantalla d’inici». Activa «Obrir com a app».',
   offlineTitle:'Ús sense connexió',offlineText:'Quan hages obert l’aplicació per primera vegada amb Internet, torna-la a obrir sense connexió. Les partitures ja importades es recuperen del dispositiu. iOS pot eliminar dades del navegador si falta espai: guarda sempre una còpia del ZIP.',
-  statusOnline:'Connexió disponible',statusOffline:'Sense connexió',disk:'Espai aproximat',dev:'Versió de prova W2.1',
+  statusOnline:'Connexió disponible',statusOffline:'Sense connexió',disk:'Espai aproximat',dev:'Versió de prova',
   warningTitle:'Confirmar eliminació',warningText:'S’esborraran totes les partitures guardades en este dispositiu. Esta acció no es pot desfer.',
   deleteConfirm:'Sí, esborrar',cancel:'Cancel·lar',back:'Tornar',openExternal:'Obrir en un altre visor',
   viewerHint:'Si el PDF no es mostra correctament, toca «Obrir en un altre visor». El visor mostra les pàgines directament, sense dependre del navegador.',
@@ -70,11 +73,11 @@ const L = {
   errorStorage:'No s’ha pogut obrir l’emmagatzematge local.',
   restore:'Recuperar còpia',saveZip:'Conserva una còpia del ZIP original fora de l’app.',
   installStatus:'App instal·lable',network:'Estat',about:'Sobre esta versió',
-  limitations:'Esta versió inclou repertoris, favorits i recents. Les anotacions, Drive i les ferramentes musicals continuen pendents.',
+  limitations:'Esta versió inclou biblioteca, repertoris, índex, favorits, recents, metadades i anotacions bàsiques amb llapis i ressaltador. La sincronització amb Drive i les ferramentes musicals continuen pendents.',
   help:'Ajuda',openPdf:'Obrir PDF',fileNumber:'Partitura',zipError:'ZIP no vàlid o protegit.',tooBig:'El PDF excedix el límit de prova de 100 MB.',
   browserNote:'No obris l’HTML com a fitxer local: publica’l en HTTPS o usa un servidor local per a les proves.',
   confirmOne:'Vols esborrar esta partitura del dispositiu?',
-  backupTitle:'Còpies de seguretat',backupDesc:'Exporta les partitures i les preferències en un ZIP complet, que podràs guardar en Fitxers o en un disc extern.',
+  backupTitle:'Còpies de seguretat',backupDesc:'Exporta les partitures, les preferències i les anotacions en un ZIP complet, que podràs guardar en Fitxers o en un disc extern.',
   createBackup:'Preparar còpia ZIP',restoreBackup:'Restaurar còpia ZIP',backupPrepared:'Còpia preparada',saveBackup:'Guardar ZIP',shareBackup:'Compartir / Guardar en Fitxers',
   backupTip:'Guardar la còpia fora de l’app és essencial: iOS pot esborrar les dades web si falta espai.',
   backupCreating:'Preparant la còpia de seguretat…',backupRestoring:'Restaurant biblioteca…',backupExported:'La còpia ZIP està preparada. Guarda-la fora de l’aplicació.',
@@ -103,7 +106,7 @@ const L = {
   deleteAll:'Borrar biblioteca',deleteThis:'Eliminar esta partitura',installTitle:'Instalar en iPhone / iPad',
   installText:'Abre esta página en Safari, toca Compartir y elige «Añadir a pantalla de inicio». Activa «Abrir como app».',
   offlineTitle:'Uso sin conexión',offlineText:'Tras abrir la aplicación por primera vez con Internet, vuelve a abrirla sin conexión. Las partituras importadas se recuperan del dispositivo. iOS puede eliminar datos del navegador ante falta de espacio: guarda siempre una copia del ZIP.',
-  statusOnline:'Conexión disponible',statusOffline:'Sin conexión',disk:'Espacio aproximado',dev:'Versión de prueba W2.1',
+  statusOnline:'Conexión disponible',statusOffline:'Sin conexión',disk:'Espacio aproximado',dev:'Versión de prueba',
   warningTitle:'Confirmar eliminación',warningText:'Se borrarán todas las partituras guardadas en este dispositivo. Esta acción no se puede deshacer.',
   deleteConfirm:'Sí, borrar',cancel:'Cancelar',back:'Volver',openExternal:'Abrir en otro visor',
   viewerHint:'Si el PDF no se muestra correctamente, pulsa «Abrir en otro visor». El visor muestra las páginas directamente, sin depender del navegador.',
@@ -122,11 +125,11 @@ const L = {
   errorStorage:'No se pudo abrir el almacenamiento local.',
   restore:'Recuperar copia',saveZip:'Conserva una copia del ZIP original fuera de la app.',
   installStatus:'App instalable',network:'Estado',about:'Sobre esta versión',
-  limitations:'Esta versión incluye repertorios, favoritos y recientes. Las anotaciones, Drive y las herramientas musicales siguen pendientes.',
+  limitations:'Esta versión incluye biblioteca, repertorios, índice, favoritos, recientes, metadatos y anotaciones básicas con lápiz y resaltador. La sincronización con Drive y las herramientas musicales siguen pendientes.',
   help:'Ayuda',openPdf:'Abrir PDF',fileNumber:'Partitura',zipError:'ZIP inválido o protegido.',tooBig:'El PDF excede el límite de prueba de 100 MB.',
   browserNote:'No abras el HTML como archivo local: publícalo en HTTPS o usa un servidor local para las pruebas.',
   confirmOne:'¿Quieres borrar esta partitura del dispositivo?',
-  backupTitle:'Copias de seguridad',backupDesc:'Exporta las partituras y las preferencias en un ZIP completo, que podrás guardar en Archivos o en un disco externo.',
+  backupTitle:'Copias de seguridad',backupDesc:'Exporta las partituras, las preferencias y las anotaciones en un ZIP completo, que podrás guardar en Archivos o en un disco externo.',
   createBackup:'Preparar copia ZIP',restoreBackup:'Restaurar copia ZIP',backupPrepared:'Copia preparada',saveBackup:'Guardar ZIP',shareBackup:'Compartir / Guardar en Archivos',
   backupTip:'Guardar la copia fuera de la app es esencial: iOS puede borrar los datos web si falta espacio.',
   backupCreating:'Preparando la copia de seguridad…',backupRestoring:'Restaurando biblioteca…',backupExported:'La copia ZIP está preparada. Guárdala fuera de la aplicación.',
@@ -405,7 +408,7 @@ function renderSettings(){
  <div class="panel"><h3>${icon('share')} ${esc(tr('installTitle'))}</h3><p>${esc(tr('installText'))}</p>
    <p class="help">${esc(tr('offlineText'))}</p>
  </div>
- <div class="panel"><h3>${icon('info')} ${esc(tr('about'))}</h3><p>${esc(tr('limitations'))}</p><p>${esc(tr('intro'))}</p><div class="line"><strong>Partitures Festeres Web — W1.3B.2</strong><span>© SMN Systems</span></div></div>`;
+ <div class="panel"><h3>${icon('info')} ${esc(tr('about'))}</h3><p>${esc(tr('limitations'))}</p><p>${esc(tr('intro'))}</p><div class="line"><strong>Partitures Festeres Web — ${esc(APP_VERSION)}</strong><span>© SMN Systems</span></div></div>`;
 }
 function renderModal(){if(!state.modal)return '';
  if(state.modal==='welcome')return `<div class="modal-backdrop" role="dialog" aria-modal="true"><div class="modal"><img src="./assets/icon-192.png" alt="Partitures Festeres"/><h2>Benvingut · Bienvenido</h2><p>Tria l’idioma · Elige el idioma</p><label><input type="radio" name="welcome-lang" value="va" ${state.lang==='va'?'checked':''}/> Valencià</label><label><input type="radio" name="welcome-lang" value="es" ${state.lang==='es'?'checked':''}/> Castellano</label><div class="modal-actions"><button class="primary" data-action="welcome-done">Començar · Empezar</button></div></div></div>`;
@@ -538,7 +541,7 @@ function render(){
  document.title='Partitures Festeres Web';
  const page=state.page==='index'?renderIndex():state.page==='settings'?renderSettings():state.page==='favorites'||state.page==='recents'?renderCollectionPage(state.page):state.page==='repertoires'?renderRepertoires():renderLibrary();
  $('#app').innerHTML = `<header class="topbar"><div class="brand"><img src="./assets/icon-192.png" alt=""/><div><h1>Partitures Festeres</h1><small>${esc(tr('subtitle'))}</small></div></div><div class="top-actions"><button class="primary" data-action="import">${icon('upload')} ${esc(tr('import'))}</button></div></header>
- <div class="main-layout"><aside class="sidebar"><span class="side-caption">Partitures Festeres Web</span>${nav('library','library')}${nav('list','repertoires')}${nav('book','index')}${nav('clock','recents')}${nav('star','favorites')}${nav('settings','settings')}<div class="side-bottom">${esc(tr('dev'))}<p>${esc(tr('offlineReady'))}</p></div></aside><main class="content">${page}</main></div>
+ <div class="main-layout"><aside class="sidebar"><span class="side-caption">Partitures Festeres Web</span>${nav('library','library')}${nav('list','repertoires')}${nav('book','index')}${nav('clock','recents')}${nav('star','favorites')}${nav('settings','settings')}<div class="side-bottom">${esc(tr('dev'))} ${esc(APP_VERSION)}<p>${esc(tr('offlineReady'))}</p></div></aside><main class="content">${page}</main></div>
  <nav class="bottom-nav" aria-label="Navegació">${tabsMobile('library','library')}${tabsMobile('list','repertoires')}${tabsMobile('book','index')}${tabsMobile('clock','recents')}${tabsMobile('star','favorites')}${tabsMobile('settings','settings')}</nav>${renderViewer()}${renderModal()}`;
  if(oldStage && state.view?.path===oldPath && scoreViewer){
   $('#viewer-stage')?.replaceWith(oldStage);
