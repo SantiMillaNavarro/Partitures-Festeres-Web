@@ -1469,6 +1469,8 @@ window.addEventListener('online',()=>{state.online=true;if(state.page==='setting
 // Si també hi ha popstate, el comprovem abans de navegar per a no retrocedir dues vegades.
 document.addEventListener('fullscreenchange',()=>{
  if(document.fullscreenElement||!viewerFullscreenOwned||!(state.view||viewerPendingOpen))return;
+ // El teclat virtual pot traure el navegador de fullscreen: no tanquem el PDF.
+ if(scoreViewer?.inlineSession){viewerFullscreenOwned=false;return;}
  viewerFullscreenOwned=false;
  clearTimeout(fullscreenExitTimer);
  fullscreenExitTimer=setTimeout(()=>{
