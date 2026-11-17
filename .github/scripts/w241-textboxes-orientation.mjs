@@ -44,7 +44,7 @@ try{
  await page.goto('http://127.0.0.1:8765/',{waitUntil:'domcontentloaded'});
  if(await page.locator('[data-action="welcome-done"]').count())await page.locator('[data-action="welcome-done"]').click();
  await page.locator('.bottom-link[data-value="settings"]').click();
- assert.match(await page.locator('main.content').innerText(),/Partitures Festeres Web — W2\.4\.1/);
+ assert.match(await page.locator('main.content').innerText(),/Partitures Festeres Web — W2\.5/);
  await page.locator('.bottom-link[data-value="library"]').click();
  const original=makePdf();
  await page.locator('#import-input').setInputFiles({name:'QUADRES_W241.pdf',mimeType:'application/pdf',buffer:original});
@@ -56,7 +56,8 @@ try{
  await page.locator('[data-action="open"][data-value="QUADRES_W241.pdf"]').click();
  await page.locator('.viewer-canvas').waitFor({timeout:16000});
  await page.locator('#viewer-stage').click({position:{x:190,y:330}});
- await page.locator('[data-action="viewer-annotate"]').click();
+ await page.locator('[data-action="viewer-annotate"]').first().click();
+ await page.locator('[data-action="rosette-legacy"]').click();
  await page.locator('.w23-annotation-toolbar').waitFor();
  const records=()=>page.evaluate(async()=>{
   const {getAnnotations}=await import('./db.js');
