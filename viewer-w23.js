@@ -367,7 +367,7 @@ export class ScoreViewer {
   }
   saveTextAnnotation(draft){
     if(!this.annotationMode||!this.page||this.native)return false;
-    const text=typeof draft.text==='string'?draft.text.replace(/\\r\\n?/g,'\\n').trim():'';
+    const text=typeof draft.text==='string'?draft.text.replace(/\r\n?/g,'\n').trim():'';
     const fontSize=Number(draft.fontSize),opacity=Number(draft.opacity);
     const color=ANNOTATION_COLORS.includes(draft.color)?draft.color:this.annotationColor;
     const value={tool:'text',width:.0055,color,points:[draft.point],
