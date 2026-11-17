@@ -1013,7 +1013,7 @@ async function doRestore(mode){
   }catch(e){console.error(e);state.scores=await getAllScores().catch(()=>state.scores);render();toast(`${tr('restoreError')} ${e?.message||''}`,true);}
   finally{state.loading=false;progress(false);}
 }
-async function applyRosetteOption(id){
+function applyRosetteOption(id){
  if(!state.annotating||!scoreViewer||state.modal)return;
  const v=scoreViewer,level=state.rosetteLevel;
  const ctx={annotationTool:v.annotationTool,annotationColor:v.annotationColor,
@@ -1063,7 +1063,7 @@ async function applyRosetteOption(id){
  render();
 }
 
-function handleClick(el){
+async function handleClick(el){
  const action=el.dataset.action,val=el.dataset.value;
  switch(action){
   case 'rosette-core':{
