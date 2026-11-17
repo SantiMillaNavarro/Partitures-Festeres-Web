@@ -1,0 +1,25 @@
+name: W2.3.5 Android Back gesture and PDF navigation
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+jobs:
+  android-back:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install Chromium
+        run: |
+          npm install --no-save playwright
+          npx playwright install chromium --with-deps
+      - name: Start local HTTP server
+        run: python3 -m http.server 8765 --bind 127.0.0.1 >/tmp/partitures-w235.log 2>&1 &
+      - name: Check JavaScript syntax
+        run: |
+          node --check app-w235.js
+          node --check .github/scripts/w235-android-back.mjs
+      - name: Verify Back and fullscreen without exiting app
+        run: node .github/scripts/w235-android-back.mjs
