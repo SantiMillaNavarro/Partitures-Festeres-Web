@@ -1022,7 +1022,8 @@ function applyRosetteOption(id){
   annotationThickness:v.annotationThickness,musicalSymbol:v.musicalSymbol,
   musicalSymbolSize:v.musicalSymbolSize,symbolGroup:state.symbolGroup,
   symbolPage:state.rosetteSymbolPage,fontSize:v.textStyle.fontSize,
-  bold:v.textStyle.bold,underline:v.textStyle.underline};
+  bold:v.textStyle.bold,italic:v.textStyle.italic,underline:v.textStyle.underline,
+  alignment:v.textStyle.alignment||'left'};
  const option=rosetteOptions(level,ctx).find(o=>o.id===id);
  if(!option)return;
  if(option.unavailable){
@@ -1047,6 +1048,9 @@ function applyRosetteOption(id){
   v.setAnnotationColor(option.color);
   if(level.startsWith('text-'))v.textStyle={...v.textStyle,color:option.color};
   state.rosetteLevel=rosetteParent(level)||'root';
+ }else if(option.alignment){
+  v.textStyle={...v.textStyle,alignment:option.alignment};
+  state.rosetteLevel='text';
  }else if(option.width){
   v.setAnnotationThickness(option.width);
   state.rosetteLevel=rosetteParent(level)||'root';
