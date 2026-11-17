@@ -20,7 +20,7 @@ assert.equal(drag90.drawn,true);
 assert(drag90.boxWidth>=.35&&drag90.boxHeight>=.25);
 assert(wrapTextInBox('Paràgraf amb moltes paraules',20,100).length>1);
 const sym={tool:'symbol',symbolId:'quarter',color:'#b51f34',width:.0055,points:[[.2,.2]],fontSize:.07,opacity:1};
-assert.equal(hitTestStroke([sym],[.22,.23],600,800,270),0,
+assert.equal(hitTestStroke([sym],[.17,.23],600,800,270),0,
  'Note can be selected in upright displayed rectangle on rotated PDF');
 assert(musicalSymbolBounds(sym,600,800).height>0);
 
