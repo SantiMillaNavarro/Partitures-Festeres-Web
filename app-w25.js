@@ -1368,6 +1368,55 @@ document.addEventListener('keydown',e=>{
  }
  if(used)e.preventDefault();
 });
+let rosetteDragging=null;
+document.addEventListener('pointerdown',e=>{
+ const core=e.target.closest?.('.pf-rosette-core');
+ const root=core?.closest('.pf-reading-mode');
+ if(!core||!root||!state.annotating)return;
+ const mapped=clientToViewerPoint(e.clientX,e.clientY,root.getBoundingClientRect(),isViewerCssRotated(root));
+ const width=root.clientWidth,height=root.clientHeight;
+ rosetteDragging={id:e.pointerId,core,root,width,height,
+  pointer:mapped,start:{x:state.rosetteX*width,y:state.rosetteY*height},moved:false};
+ try{core.setPointerCapture(e.pointerId);}catch{}
+ e.stopPropagation();
+});
+document.addEventListener('pointermove',e=>{
+ const g=rosetteDragging;
+ if(!g||g.id!==e.pointerId)return;
+ const point=clientToViewerPoint(e.clientX,e.clientY,g.root.getBoundingClientRect(),isViewerCssRotated(g.root));
+ const dx=point.x-g.pointer.x,dy=point.y-g.pointer.y;
+ if(Math.hypot(dx,dy)>7)g.moved=true;
+ if(!g.moved)return;
+ const c=clampRosetteCenter(g.start.x+dx,g.start.y+dy,g.width,g.height,state.rosetteExpanded);
+ const node=g.core.closest('.pf-rosette');
+ if(node){node.style.left=c.x+'px';node.style.top=c.y+'px';}
+ e.preventDefault();
+});
+function endRosetteDrag(e){
+ const g=rosetteDragging;
+ if(!g||g.id!==e.pointerId)return;
+ rosetteDragging=null;
+ if(!g.moved)return;
+ const point=clientToViewerPoint(e.clientX,e.clientY,g.root.getBoundingClientRect(),isViewerCssRotated(g.root));
+ const c=clampRosetteCenter(g.start.x+point.x-g.pointer.x,g.start.y+point.y-g.pointer.y,
+  g.width,g.height,state.rosetteExpanded);
+ state.rosetteX=c.x/g.width;state.rosetteY=c.y/g.height;
+ rosetteIgnoreClickUntil=Date.now()+400;
+ render();
+}
+document.addEventListener('pointerup',endRosetteDrag);
+document.addEventListener('pointercancel',e=>{if(rosetteDragging?.id===e.pointerId)rosetteDragging=null;});
+document.addEventListener('dblclick',e=>{
+ // Com a Android: doble toc sobre el PDF per a mostrar el rosetó.
+ if(!e.target.closest?.('#viewer-stage')||!state.view||state.modal||!scoreViewer?.page||scoreViewer.native)return;
+ e.preventDefault();
+ if(!state.annotating){state.annotating=true;scoreViewer.setAnnotationMode(true);}
+ state.rosetteLegacy=false;
+ state.rosetteLevel='root';state.rosetteExpanded=!state.rosetteExpanded;
+ state.zen=false;
+ render();
+});
+
 document.addEventListener('click',e=>{const b=e.target.closest('[data-action]');if(b){e.preventDefault();handleClick(b).catch(err=>{console.error(err);toast(`${tr('error')} ${err.message}`,true);});}});
 document.addEventListener('input',e=>{
  if(e.target?.dataset?.advField){
