@@ -184,7 +184,8 @@ let viewerRequest=0;
 // els canvis de pàgina/rotació; una operació antiga no pot sobreescriure la nova.
 let viewerPreferencesQueue=Promise.resolve();
 function persistViewerSnapshot(path,value){
-  const saved=viewerPreferencesQueue.catch(()=>{}).then(()=>setPref('viewer:'+path,value));
+  console.debug('W232 PREF QUEUE',path,JSON.stringify(value));
+  const saved=viewerPreferencesQueue.catch(()=>{}).then(()=>setPref('viewer:'+path,value)).then(v=>{console.debug('W232 PREF SAVED',path,JSON.stringify(value));return v;});
   viewerPreferencesQueue=saved;
   return saved;
 }
