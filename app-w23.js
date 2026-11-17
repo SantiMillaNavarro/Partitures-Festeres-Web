@@ -955,7 +955,12 @@ async function handleClick(el){
     scoreViewer.setAnnotationMode(state.annotating);
     clearTimeout(viewerMenuTimer);state.zen=false;render();break;
    }
-   case 'annotation-group':if(scoreViewer?.annotationMode&&ANNOTATION_GROUP_TOOLS[val]){state.annotationGroup=val;render();}break;
+   case 'annotation-group':if(scoreViewer?.annotationMode&&ANNOTATION_GROUP_TOOLS[val]){
+     state.annotationGroup=val;
+     const tools=ANNOTATION_GROUP_TOOLS[val];
+     if(!tools.some(([id])=>id===scoreViewer.annotationTool))scoreViewer.setAnnotationTool(tools[0][0]);
+     render();
+   }break;
    case 'annotation-tool':if(scoreViewer?.annotationMode){scoreViewer.setAnnotationTool(val);render();}break;
    case 'annotation-text-edit':{
      const item=scoreViewer?.getSelectedText();
@@ -1064,7 +1069,7 @@ async function init(){
  }catch(e){console.error(e);$('#app').innerHTML=`<div class="empty"><h3>Partitures Festeres</h3><p>${esc(L.va.errorStorage)}: ${esc(e.message)}</p></div>`;}
 }
 document.addEventListener('keydown',e=>{
- if(!state.view||!scoreViewer||e.target?.matches('input,textarea,select,[contenteditable]'))return;
+ if(!state.view||!scoreViewer||state.modal||e.target?.matches('input,textarea,select,[contenteditable]'))return;
  let used=true;
  switch(e.key){
   case 'Escape': closeViewer();break;
@@ -1127,7 +1132,7 @@ window.addEventListener('pagehide',()=>{
  },{passive:true});
 window.addEventListener('offline',()=>{state.online=false;if(state.page==='settings'&&!state.view)render();});
 document.addEventListener('keydown',e=>{
- if(e.key==='Escape'&&state.modal&&state.modal!=='welcome'){state.modal=null;render();}
+ if(e.key==='Escape'&&state.modal&&state.modal!=='welcome'){state.modal=null;state.textDraft=null;render();}
  else if(e.key==='Escape'&&state.view)closeViewer();
  else if(e.key==='ArrowRight'&&state.view){scoreViewer?.turnPage(1);}
  else if(e.key==='ArrowLeft'&&state.view){scoreViewer?.turnPage(-1);}
