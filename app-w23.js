@@ -608,6 +608,7 @@ function syncViewerControls(){
  const annotate=$('[data-action="viewer-annotate"]');if(annotate)annotate.disabled=v.native||!v.page;
  const undo=$('[data-action="annotation-undo"]');if(undo)undo.disabled=!v.canUndoAnnotation();
  const selectedDelete=$('[data-action="annotation-delete-selected"]');if(selectedDelete)selectedDelete.disabled=!v.hasSelectedAnnotation();
+ const editText=$('[data-action="annotation-text-edit"]');if(editText)editText.disabled=!v.getSelectedText();
  const clearAnn=$('[data-action="annotation-clear"]');if(clearAnn)clearAnn.disabled=!v.hasPageAnnotations();
  for(const act of ['viewer-zoom-out','viewer-zoom-in','viewer-fit','viewer-rotate']){
   const btn=$(`[data-action="${act}"]`);if(btn)btn.disabled=v.native;
@@ -710,7 +711,7 @@ async function openPdf(path,requestedPage=null){
   setPref('w13:recents',state.recents).catch(e=>console.warn('Recents:',e));
  closeViewerIfNeeded();
  state.blobUrl=URL.createObjectURL(record.blob);
- state.view={path,page:1};state.zen=true;state.annotating=false;setReadingColors(true);
+ state.view={path,page:1};state.zen=true;state.annotating=false;state.annotationGroup='strokes';setReadingColors(true);
  const saved=await getPref('viewer:'+path,{});
  const pageToOpen=Number.isInteger(requestedPage)&&requestedPage>0?requestedPage:saved?.page;
  state.view.page=Number.isInteger(pageToOpen)&&pageToOpen>0?pageToOpen:1;
@@ -720,6 +721,12 @@ async function openPdf(path,requestedPage=null){
  const host=$('#viewer-stage');
  scoreViewer=new ScoreViewer({
   host,blob:record.blob,fallbackUrl:state.blobUrl,initial:{...saved,page:state.view.page},annotations,
+   onTextPlacement:point=>{
+     if(!state.view||!scoreViewer?.annotationMode||state.modal)return;
+     state.textDraft={path:state.view.path,page:scoreViewer.pageNumber,index:null,point,text:'',
+       ...scoreViewer.textStyle,color:scoreViewer.annotationColor};
+     state.modal='annotation-text';render();$('#annotation-text-value')?.focus();
+   },
    onAnnotationsChange:document=>{
     if(state.backup?.url)URL.revokeObjectURL(state.backup.url);
     state.backup=null;
@@ -968,7 +975,7 @@ async function handleClick(el){
   case 'viewer-external':if(state.blobUrl){const anchor=document.createElement('a');anchor.href=state.blobUrl;anchor.target='_blank';anchor.rel='noopener';anchor.click();}break;
   case 'delete-one':state.modal='delete-one';render();break;
   case 'clear':state.modal='clear';render();break;
-  case 'close-modal':state.modal=null;state.metaPath=null;state.modalRepId=null;state.pickerPath=null;state.repAddSearch='';state.repAddChosen=[];state.restore=null;render();break;
+  case 'close-modal':state.modal=null;state.textDraft=null;state.metaPath=null;state.modalRepId=null;state.pickerPath=null;state.repAddSearch='';state.repAddChosen=[];state.restore=null;render();break;
   case 'confirm-delete-one':{
     const path=state.view?.path;if(path)await deleteScore(path);
     state.scores=await getAllScores();await reloadCollections();await persistCollections();state.modal=null;closeViewer();updateStorageInfo();toast(tr('removed'));break;
@@ -981,6 +988,8 @@ function closeViewerIfNeeded(){
  setReadingColors(false);
  scoreViewer?.close();scoreViewer=null;
  state.annotating=false;
+ if(state.modal==='annotation-text')state.modal=null;
+ state.textDraft=null;
  if(state.blobUrl){URL.revokeObjectURL(state.blobUrl);state.blobUrl=null;}
  state.view=null;state.zen=false;
 }
