@@ -153,6 +153,13 @@ const scoreSearch = s => norm(s.path+' '+(s.metadata?.title||''));
 const state={lang:'va',page:'library',paper:'root',cwd:[],scores:[],search:'',view:null,blobUrl:null,modal:null,toastTimer:null,loading:false,online:navigator.onLine,storage:null,backup:null,restore:null,zen:false,favorites:[],recents:[],repertoires:[],repertoireOpen:null,modalRepId:null,pickerPath:null,repAddSearch:'',repAddChosen:[],metaPath:null,annotating:false,advanced:blankAdvancedFilters(),advancedOpen:false,indexGroupBy:'folder',indexSortBy:'title',indexCollapsed:new Set()};
 let scoreViewer=null;
 let viewerRequest=0;
+// Les còpies i restauracions esperen sempre les escriptures d'anotacions pendents.
+let annotationSaveQueue=Promise.resolve();
+function savePdfAnnotations(path,document){
+ const write=annotationSaveQueue.catch(()=>{}).then(()=>setAnnotations(path,document));
+ annotationSaveQueue=write;
+ return write;
+}
 const tr = key => L[state.lang][key]||key;
 const nice = value => value.replace(/\.pdf$/i,'');
 const topDir = path => path.split('/')[0];
@@ -629,7 +636,7 @@ async function openPdf(path){
    onAnnotationsChange:document=>{
     if(state.backup?.url)URL.revokeObjectURL(state.backup.url);
     state.backup=null;
-    return setAnnotations(path,document);
+    return savePdfAnnotations(path,document);
    },
   labels:{loading:tr('viewerLoading'),page:tr('viewerPage'),fallback:tr('viewerFallback'),native:tr('openPdf'),external:tr('openExternal')},
   onChange:value=>setPref('viewer:'+path,value).catch(e=>console.warn('Desament del visor:',e)),
@@ -665,6 +672,7 @@ async function doBackup(){
   if(!state.scores.length){toast(tr('backupNoScores'),true);return;}
   state.loading=true;progress(true,tr('backupCreating'));
   try{
+    await annotationSaveQueue;
     const backup=await createBackup(p=>{
       if(p.phase==='read') updateProgress(`${p.done} / ${p.total} ${tr('scoreCount')}`);
       if(p.phase==='zip') updateProgress(`${tr('backupCreating')} ${Math.round(p.percent||0)} %`);
@@ -700,6 +708,7 @@ async function doRestore(mode){
   if(state.loading||!state.restore)return;
   state.loading=true;state.modal=null;render();progress(true,tr('backupVerify'));
   try{
+    await annotationSaveQueue;
     const count=await restoreBackup(state.restore,mode,p=>updateProgress(`${tr('backupVerify')} ${p.done} / ${p.total}`));
     state.restore=null;
     state.scores=await getAllScores();
