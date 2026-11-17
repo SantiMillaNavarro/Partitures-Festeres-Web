@@ -126,6 +126,12 @@ try{
  await page.locator('.pf-inline-input').fill('No guardar');
  await page.locator('[data-inline="cancel"]').click();
  assert.equal((await records()).length,1);
+ // Ara Cancel·lar torna a Seleccionar: tocar en un altre lloc no crea un altre text.
+ await tap(.60,.75);
+ assert.equal(await page.locator('.pf-inline-input').count(),0,'Cancel returns to selection');
+ // Cal tornar a triar Text per a dibuixar un segon quadre.
+ await page.locator('.pf-rosette-core').click();
+ await selectTool('text');
  // Drawing a new box by drag keeps its dimensions; switching page commits automatically.
  await drag(.22,.56,.55,.70);
  await page.locator('.pf-inline-input').waitFor();

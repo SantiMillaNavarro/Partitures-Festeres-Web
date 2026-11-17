@@ -1,4 +1,4 @@
-/* W2.4.1 — Text en quadres mesurables; símbols i anotacions anteriors compatibles. */
+/* W2.7 compatible W2.4.1 — Text en quadres mesurables; símbols i anotacions anteriors compatibles. */
 import {isMusicalSymbol} from './musical-symbols.js';
 export const ANNOTATION_VERSION=1;
 export const ANNOTATION_SHAPES=Object.freeze(['line','rectangle','ellipse','arrow']);
@@ -31,7 +31,8 @@ export function normalizeAnnotations(input){
    if(!isPlain(stroke)||!ANNOTATION_TOOLS.includes(stroke.tool)||!ANNOTATION_COLORS.includes(stroke.color)||
       !between(stroke.width,.001,.12)||!Array.isArray(stroke.points)||stroke.points.length<1||stroke.points.length>MAX_POINTS||
       (ANNOTATION_SHAPES.includes(stroke.tool)&&stroke.points.length!==2)||
-      ((stroke.tool==='text'||stroke.tool==='symbol')&&stroke.points.length!==1))
+      ((stroke.tool==='text'||stroke.tool==='symbol')&&stroke.points.length!==1)||
+      (stroke.rotationDegrees!==undefined&&!between(stroke.rotationDegrees,-180,180)))
      throw new Error('Traç d’anotació no vàlid.');
    const coords=stroke.points.map(point=>{
     if(!Array.isArray(point)||point.length!==2||!between(point[0],0,1)||!between(point[1],0,1))
@@ -62,13 +63,20 @@ export function normalizeAnnotations(input){
     for(const field of ['italic','alignment','backgroundEnabled','borderEnabled']){
       if(stroke[field]!==undefined)record[field]=stroke[field];
     }
+    if(stroke.rotationDegrees!==undefined)record.rotationDegrees=clean(stroke.rotationDegrees);
     out.push(record);
    }else if(stroke.tool==='symbol'){
     if(!isMusicalSymbol(stroke.symbolId)||!between(stroke.fontSize,.018,.16)||!between(stroke.opacity,.2,1))
       throw new Error('Símbol musical no vàlid.');
-    out.push({tool:'symbol',color:stroke.color,width:stroke.width,points:coords,
-      symbolId:stroke.symbolId,fontSize:stroke.fontSize,opacity:stroke.opacity});
-   }else out.push({tool:stroke.tool,color:stroke.color,width:stroke.width,points:coords});
+    const record={tool:'symbol',color:stroke.color,width:stroke.width,points:coords,
+      symbolId:stroke.symbolId,fontSize:stroke.fontSize,opacity:stroke.opacity};
+    if(stroke.rotationDegrees!==undefined)record.rotationDegrees=clean(stroke.rotationDegrees);
+    out.push(record);
+   }else{
+    const record={tool:stroke.tool,color:stroke.color,width:stroke.width,points:coords};
+    if(stroke.rotationDegrees!==undefined)record.rotationDegrees=clean(stroke.rotationDegrees);
+    out.push(record);
+   }
    points+=coords.length;strokes++;
   }
   if(out.length)pages[key]=out;
