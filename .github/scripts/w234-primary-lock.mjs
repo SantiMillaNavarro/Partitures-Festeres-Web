@@ -18,7 +18,7 @@ try{
  await context.addInitScript(()=>{
   window.__lockTest={events:[],fullscreen:false};
   Object.defineProperty(document,'fullscreenElement',{configurable:true,get:()=>window.__lockTest.fullscreen?document.documentElement:null});
-  Object.defineProperty(document.documentElement,'requestFullscreen',{configurable:true,value:()=>{
+  Object.defineProperty(Element.prototype,'requestFullscreen',{configurable:true,value:()=>{
    window.__lockTest.events.push('fullscreen-request');
    window.__lockTest.fullscreen=true;
    return Promise.resolve();
