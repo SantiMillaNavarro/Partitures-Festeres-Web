@@ -49,6 +49,7 @@ try{
  const context=await browser.newContext({viewport:{width:390,height:844},deviceScaleFactor:2,isMobile:true,hasTouch:true});
  const page=await context.newPage(),errors=[];
  page.on('pageerror',e=>errors.push(e.message));
+ page.on('console',msg=>{if(msg.text().startsWith('W232'))console.log('PAGE LOG',msg.text());});
  await page.goto('http://127.0.0.1:8765/',{waitUntil:'domcontentloaded'});
  if(await page.locator('[data-action="welcome-done"]').count())await page.locator('[data-action="welcome-done"]').click();
  const add=async(name,buffer)=>{
@@ -97,6 +98,9 @@ try{
   const {getPref}=await import('./db.js');const p=await getPref('viewer:ARCUM.pdf');
   return p?.page===3&&p?.rotation===0&&p?.rotationMode==='auto';
  },null,{timeout:10000});
+ console.log('PAGE3 PREF AT WAIT',JSON.stringify(await pref('ARCUM.pdf')));
+ await page.waitForTimeout(250);
+ console.log('PAGE3 PREF AFTER DELAY',JSON.stringify(await pref('ARCUM.pdf')));
  assert.equal((await pref('ARCUM.pdf')).rotation,0,'Portrait text content stays upright within mixed document');
  assert((await dims()).height>(await dims()).width);
  await page.locator('[data-action="viewer-rotate"]').click();
