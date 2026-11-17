@@ -1,0 +1,26 @@
+name: W2.3.3 Stable orientation and clean relaunch
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+jobs:
+  rotation-lifecycle:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install Chromium
+        run: |
+          npm install --no-save playwright
+          npx playwright install chromium --with-deps
+      - name: Start HTTP server
+        run: python3 -m http.server 8765 --bind 127.0.0.1 >/tmp/partitures-w233.log 2>&1 &
+      - name: Verify JavaScript syntax
+        run: |
+          node --check app-w233.js
+          node --check viewer-w233.js
+          node --check .github/scripts/w233-lifecycle-rotation.mjs
+      - name: Run orientation and PWA session browser tests
+        run: node .github/scripts/w233-lifecycle-rotation.mjs
