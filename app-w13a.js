@@ -265,7 +265,7 @@ function renderLibrary(){
   return `<button class="entry" data-action="folder" data-value="${esc(name)}"><span class="entry-ico">${icon('folder')}</span><span class="entry-text"><span class="entry-title">${esc(name)}</span><div class="entry-note">${count} ${esc(tr('scoreCount'))}</div></span></button>`;
  }).join('');
  const ds=docs.map(s=>htmlScoreRow(s,{note:q?relativePath(s.path):''})).join('');
- return heading('library',tr('subtitle'))+paperBar()+breadcrumbs()+`<div class="section-tools">${searchBox()}</div>`+s+(fs||ds?`<div class="cards" style="margin-top:19px">${fs+ds}</div>`:empty(tr('noResults'),tr('noResultsDesc')));
+ return heading('library',tr('subtitle'))+paperBar()+breadcrumbs()+`<div class="section-tools">${searchBox()}</div>`+s+(fs||ds?`<div class="cards ${ds?'score-list':''}" style="margin-top:19px">${fs+ds}</div>`:empty(tr('noResults'),tr('noResultsDesc')));
 }
 function renderIndex(){
  const selected=scopedScores(),q=norm(state.search.trim());
