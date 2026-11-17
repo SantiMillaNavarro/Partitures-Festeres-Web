@@ -1,30 +1,29 @@
-# Partitures Festeres Web — W2.3.2 · Orientació automàtica de les partitures
+# Partitures Festeres Web — W2.3.3 · Gir estable i reobertura neta
 
-Esta fase corregix un problema detectat en proves reals amb partitures com **Arcum**: en W2.3.1 el *visor* es presentava horitzontalment, però la *pàgina del PDF* continuava apareixent de costat o del revés. Les partitures importades amb contingut girat no han de requerir una correcció manual cada vegada.
+Esta actualització corregix les transicions de pantalla que, en girar un Android/iPhone amb una partitura oberta, mostraven moments en negre, canvis de grandària bruscos i la pàgina de Biblioteca intermitentment.
 
-## Com orienta el PDF
+## 1. Gir horitzontal estable
 
-1. En obrir una obra, es consulta la primera pàgina sol·licitada i les dades del PDF.
-2. Si el document conté text vectorial llegible, el visor analitza la direcció de les seues línies (títol, autoria, etc.) per decidir automàticament la rotació correcta entre 0°, 90°, 180° i 270°. No sols detecta la forma vertical o horitzontal de la pàgina, també el **sentit** del text per a evitar partituras cap per avall.
-3. Si no hi ha capa de text, el visor analitza localment una versió de baixa resolució de la pàgina i detecta la direcció principal dels pentagrames. Les partitures que tenen els pentagrames verticals es posen automàticament horitzontals, respectant /Rotate si indica una de les orientacions correctes. En escanejos sense informació de sentit, s'utilitza 270° per defecte; alguns escanejos excepcionals poden requerir un únic gir manual.
-4. En passar a una altra pàgina, l'anàlisi de text es repetix. Quan la pàgina no conté text i manté el mateix format, es reutilitza l'orientació detectada en la resta de l'obra, evitant retards.
-5. La Biblioteca, Repertoris i els altres menús conserven el funcionament anterior: només afecta el contingut del visor PDF.
+- El visor utilitza **una sola estratègia de gir per sessió**: el bloqueig d'orientació nadiu del navegador si està permés, o el gir visual CSS de tota la interfície si no ho està.
+- La transformació visual només s'aplica amb la classe `landscape-css-fallback` quan l'API de bloqueig no està disponible, falla o excedix un temps de resposta raonable. No se superposa a un bloqueig nadiu reeixit.
+- En els girs successius es deixa estabilitzar el nou grandària del visor uns instants abans de tornar a renderitzar el PDF; es manté la imatge anterior estirada durant eixa transició en lloc de deixar zones buides.
+- El zoom, la rotació automàtica del contingut, el botó Girar, les anotacions i els controls tàctils es mantenen independents del gir del dispositiu.
 
-## Respecta les preferències existents
+## 2. Sessió nova sense una partitura oberta
 
-- **L'orientació automàtica és la predeterminada** per a cada obra, també per a aquelles que W2.3.1 havia guardat a 0° sense que el músic haguera girat la pàgina.
-- **Girar 90°** continua disponible. En tocar-lo, la rotació de l'obra passa a ser una preferència manual i queda guardada. Les preferències antigues de 90°, 180° i 270° es respecten com a ajustos manuals.
-- **AUTO**: botó menut en el visor que torna a activar la detecció automàtica després d'haver girat una partitura.
-- Ni el PDF ni les anotacions existents es modifiquen. Les coordenades d'anotacions es mantenen relatives a la pàgina original, independentment del gir.
-- Les preferències continuen guardant-se en IndexedDB i s'inclouen en les còpies ZIP. El format de les còpies no canvia.
-- Sense enviaments de PDF a cap servei extern: l'anàlisi utilitza el PDF.js local.
+- **Recàrrega explícita** (actualitzar o lliscar cap avall): continua obrint la mateixa partitura i pàgina, com en W2.2.1.
+- **Nova obertura de la web-app**: recupera la secció on estaves, però no obri el PDF. El visor comença tancat i no es carreguen innecessàriament el document PDF, la seua renderització i els seus controls. Si estaves en Biblioteca o Repertoris, tornes a eixa secció.
+- Quan el navegador emet l'esdeveniment `pagehide`, es guarda primer la ubicació de la sessió per si estaves refrescant i **després** es tanquen les tasques de PDF.js, els temporitzadors, els listeners i les URLs temporals. Això no implica eliminar processos del sistema operatiu, que són responsabilitat de l'OS.
+- Safari/iOS i alguns navegadors poden suspendre i recuperar la mateixa pàgina en lloc de crear-ne una de nova; l'app no pot distingir sempre de manera fiable un tancament total d'una suspensió breu. El comportament de nova obertura s'aplica quan es crea un nou document de navegació.
+
+## Compatibilitat de les dades
+
+- Cap canvi en les dades IndexedDB ni en el format ZIP; els PDF, les anotacions i les preferències guardades no es modifiquen.
+- No cal reimportar les partitures i **no s'han d'esborrar les dades de l'app** per actualitzar.
+- Ajustos i identificació de les còpies de seguretat: **W2.3.3**.
 
 ## Proves
 
-Les comprovacions de navegació i de totes les fases W1/W2 existents es mantenen. W2.3.2 incorpora proves de contingut girat, text normal, pentagrames escanejats sense text, pàgines de diferents orientacions, persistència, restauració de la manera automàtica després d'una recàrrega, respecte als girs manuals antics i integritat dels PDF.
+Nova bateria automàtica Playwright amb sis girs seguits en un navegador tàctil, lectura i canvas estables, bloqueig nadiu simulat, bloqueig no disponible, recàrrega amb PDF recuperat, alliberament dels recursos en `pagehide`, nova navegació sense PDF i conservació de la biblioteca. Es mantenen les regressions de les fases anteriors.
 
-**Limitació:** en alguns PDF escanejats que no tenen text recuperable ni informació del sentit «dalt/baix», detectar automàticament si la partitura està exactament cap per avall és intrínsecament ambigu; en eixos casos es pot aplicar el gir manual una vegada per obra. La resta de la biblioteca no necessita una correcció obra per obra.
-
-Versió visible en Ajustos i en còpies ZIP: **W2.3.2**. Pendent de validació en Safari real de l'iPhone/iPad després de fusionar el PR.
-
-**No esborres les dades del navegador sense conservar una còpia ZIP externa.**
+**Pendent de validar en dispositius reals:** el comportament final quan Android o iOS canvien l'orientació, així com la manera concreta de suspendre o tancar completament la web-app en el sistema.
