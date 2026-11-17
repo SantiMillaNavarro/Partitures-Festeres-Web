@@ -593,7 +593,7 @@ html.reading-pdf,body.reading-pdf{background:#fff!important;background-image:non
    Biblioteca, Repertoris i Ajustos mantenen l'orientació natural. */
 @media (orientation:portrait) and (pointer:coarse) {
  .pf-reading-mode{
-  position:fixed;top:0;left:100vw;right:auto;bottom:auto;inset:auto;
+  position:fixed;inset:auto;top:0;left:100vw;right:auto;bottom:auto;
   width:100dvh;height:100dvw;min-width:0;min-height:0;
   transform-origin:top left;transform:rotate(90deg);
   z-index:1000;
