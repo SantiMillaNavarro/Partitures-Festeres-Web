@@ -26,6 +26,12 @@ const I = {
   rotate:'<svg viewBox="0 0 24 24"><path d="M4 11a8 8 0 1 1 2 6M4 4v7h7M8 13h8v5H8z"/></svg>',
   expand:'<svg viewBox="0 0 24 24"><path d="M8 3H3v5M16 3h5v5M3 16v5h5M21 16v5h-5"/></svg>',
   fit:'<svg viewBox="0 0 24 24"><path d="M3 7V3h4M17 3h4v4M3 17v4h4M21 17v4h-4M7 12h10"/></svg>'
+  star:'<svg viewBox="0 0 24 24"><path d="m12 2 3.1 6.4 7 1-5.05 4.95 1.2 7L12 18l-6.25 3.35 1.2-7L1.9 9.4l7-1z"/></svg>',
+  clock:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 6v6l4 2"/></svg>',
+  list:'<svg viewBox="0 0 24 24"><path d="M8 5h13M8 12h13M8 19h13M3 5h1M3 12h1M3 19h1"/></svg>',
+  plus:'<svg viewBox="0 0 24 24"><path d="M12 4v16M4 12h16"/></svg>',
+  up:'<svg viewBox="0 0 24 24"><path d="m5 15 7-7 7 7"/></svg>',
+  down:'<svg viewBox="0 0 24 24"><path d="m5 9 7 7 7-7"/></svg>'
 };
 const icon = (name) => `<span class="icon" aria-hidden="true">${I[name]||I.file}</span>`;
 const L = {
@@ -59,7 +65,7 @@ const L = {
   errorStorage:'No s’ha pogut obrir l’emmagatzematge local.',
   restore:'Recuperar còpia',saveZip:'Conserva una còpia del ZIP original fora de l’app.',
   installStatus:'App instal·lable',network:'Estat',about:'Sobre esta versió',
-  limitations:'Esta primera versió no inclou encara les anotacions, el sincronisme de Drive, els repertoris ni les ferramentes musicals.',
+  limitations:'Esta versió inclou repertoris, favorits i recents. Les anotacions, Drive i les ferramentes musicals continuen pendents.',
   help:'Ajuda',openPdf:'Obrir PDF',fileNumber:'Partitura',zipError:'ZIP no vàlid o protegit.',tooBig:'El PDF excedix el límit de prova de 100 MB.',
   browserNote:'No obris l’HTML com a fitxer local: publica’l en HTTPS o usa un servidor local per a les proves.',
   confirmOne:'Vols esborrar esta partitura del dispositiu?',
@@ -77,6 +83,7 @@ const L = {
   storageNote:'L’ús i la quota són estimacions del navegador; no representen l’espai lliure total del dispositiu.',backupNoScores:'La biblioteca no conté encara cap PDF.',
   backupLarge:'Per a biblioteques grans, un ZIP únic pot requerir molta memòria en iPhone. Conserva una altra còpia dels PDF originals.',
   restorePending:'Llegint l’arxiu de còpia…',backupVerify:'Verificant PDF i preparant restauració…',
+  favorites:'Favorits',recents:'Recents',repertoires:'Repertoris',createRepertoire:'Crear repertori',renameRepertoire:'Canviar nom',removeRepertoire:'Esborrar repertori',repertoireName:'Nom del repertori',repertoireEmpty:'Este repertori encara no conté partitures.',repertoireNoItems:'Encara no tens repertoris. Crea’n un per a cada actuació.',repertoireRemoveConfirm:'Vols esborrar este repertori? Les partitures originals es conserven.',repertoireExists:'Ja hi ha un repertori amb este nom.',repertoireInvalid:'Escriu un nom entre 1 i 60 caràcters.',repertoireSaved:'Repertori guardat',repertoireRemoved:'Repertori eliminat',addToRepertoire:'Afegir a repertori',removeFromRepertoire:'Traure del repertori',repertoireAdded:'Partitura afegida al repertori',repertoireRemovedScore:'Partitura retirada del repertori',moveUp:'Pujar',moveDown:'Baixar',addFavorite:'Afegir a favorits',removeFavorite:'Traure de favorits',emptyFavorites:'Encara no hi ha partitures favorites.',emptyRecents:'Encara no has consultat partitures.',repertoireSubtitle:'Organitza les actuacions amb els botons de pujar i baixar.',favoritesSubtitle:'Les teues partitures preferides',recentsSubtitle:'Últimes obres consultades',chooseRepertoire:'Tria el repertori',repertoireAll:'Tots els repertoris',
   viewerStageHint:'Toca el centre per a vore els controls · toca els costats per a passar pàgina',viewerLoading:'Carregant partitura…',viewerPage:'Pàgina',viewerFitWidth:'Ajustar a l’amplària',viewerFitPage:'Ajustar pàgina completa',viewerRotate:'Girar 90°',viewerZoomIn:'Ampliar',viewerZoomOut:'Reduir',viewerZen:'Ocultar controls',viewerShowControls:'Mostrar controls',viewerPrevPage:'Pàgina anterior',viewerNextPage:'Pàgina següent',viewerPages:'Pàgines',viewerFallback:'No s’ha pogut representar el PDF. Pots obrir-lo amb una altra aplicació.',
   viewerPrepare:'Preparar visor sense connexió',viewerPrepared:'Visor avançat preparat per a treballar sense connexió',viewerNeedPrepare:'El visor avançat necessita una preparació amb Internet. Les partitures continuen guardades localment.',viewerInfo:'El visor permet ampliar, girar i canviar de pàgina, també sense connexió.',viewerReadyToast:'Visor preparat per a usar sense connexió',viewerEngineTitle:'Visor de partitures',viewerPercent:'Ampliació',viewerShow:'Mostrar visor original',viewerTouch:'En zoom normal, llisca horitzontalment per a canviar de pàgina.'
  },
@@ -110,7 +117,7 @@ const L = {
   errorStorage:'No se pudo abrir el almacenamiento local.',
   restore:'Recuperar copia',saveZip:'Conserva una copia del ZIP original fuera de la app.',
   installStatus:'App instalable',network:'Estado',about:'Sobre esta versión',
-  limitations:'Esta primera versión aún no incluye anotaciones, sincronización de Drive, repertorios ni herramientas musicales.',
+  limitations:'Esta versión incluye repertorios, favoritos y recientes. Las anotaciones, Drive y las herramientas musicales siguen pendientes.',
   help:'Ayuda',openPdf:'Abrir PDF',fileNumber:'Partitura',zipError:'ZIP inválido o protegido.',tooBig:'El PDF excede el límite de prueba de 100 MB.',
   browserNote:'No abras el HTML como archivo local: publícalo en HTTPS o usa un servidor local para las pruebas.',
   confirmOne:'¿Quieres borrar esta partitura del dispositivo?',
@@ -128,6 +135,7 @@ const L = {
   storageNote:'El uso y la cuota son estimaciones del navegador; no representan el espacio libre total del dispositivo.',backupNoScores:'La biblioteca todavía no contiene PDF.',
   backupLarge:'Para bibliotecas grandes, un ZIP único puede requerir mucha memoria en iPhone. Conserva otra copia de los PDF originales.',
   restorePending:'Leyendo el archivo de copia…',backupVerify:'Verificando PDF y preparando la restauración…',
+  favorites:'Favoritos',recents:'Recientes',repertoires:'Repertorios',createRepertoire:'Crear repertorio',renameRepertoire:'Cambiar nombre',removeRepertoire:'Eliminar repertorio',repertoireName:'Nombre del repertorio',repertoireEmpty:'Este repertorio todavía no tiene partituras.',repertoireNoItems:'Todavía no tienes repertorios. Crea uno para cada actuación.',repertoireRemoveConfirm:'¿Quieres eliminar este repertorio? Las partituras originales se conservan.',repertoireExists:'Ya existe un repertorio con este nombre.',repertoireInvalid:'Escribe un nombre entre 1 y 60 caracteres.',repertoireSaved:'Repertorio guardado',repertoireRemoved:'Repertorio eliminado',addToRepertoire:'Añadir a repertorio',removeFromRepertoire:'Quitar del repertorio',repertoireAdded:'Partitura añadida al repertorio',repertoireRemovedScore:'Partitura quitada del repertorio',moveUp:'Subir',moveDown:'Bajar',addFavorite:'Añadir a favoritos',removeFavorite:'Quitar de favoritos',emptyFavorites:'Todavía no hay partituras favoritas.',emptyRecents:'Todavía no has consultado partituras.',repertoireSubtitle:'Organiza las actuaciones con los botones de subir y bajar.',favoritesSubtitle:'Tus partituras preferidas',recentsSubtitle:'Últimas obras consultadas',chooseRepertoire:'Elige el repertorio',repertoireAll:'Todos los repertorios',
   viewerStageHint:'Toca el centro para ver los controles · toca los lados para pasar página',viewerLoading:'Cargando partitura…',viewerPage:'Página',viewerFitWidth:'Ajustar a anchura',viewerFitPage:'Ajustar página completa',viewerRotate:'Girar 90°',viewerZoomIn:'Ampliar',viewerZoomOut:'Reducir',viewerZen:'Ocultar controles',viewerShowControls:'Mostrar controles',viewerPrevPage:'Página anterior',viewerNextPage:'Página siguiente',viewerPages:'Páginas',viewerFallback:'No se ha podido visualizar el PDF. Puedes abrirlo con otra aplicación.',
   viewerPrepare:'Preparar visor sin conexión',viewerPrepared:'Visor avanzado preparado para funcionar sin conexión',viewerNeedPrepare:'El visor avanzado necesita una preparación con Internet. Las partituras siguen guardadas localmente.',viewerInfo:'El visor permite ampliar, girar y cambiar de página, también sin conexión.',viewerReadyToast:'Visor preparado para usar sin conexión',viewerEngineTitle:'Visor de partituras',viewerPercent:'Ampliación',viewerShow:'Mostrar visor original',viewerTouch:'Con zoom normal, desliza horizontalmente para cambiar de página.'
  }
@@ -136,7 +144,7 @@ const $ = (q,root=document) => root.querySelector(q);
 const esc = value => String(value??'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const norm = value => (value??'').toLocaleLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
 const sort = (a,b) => a.localeCompare(b,'ca',{numeric:true,sensitivity:'base'});
-const state={lang:'va',page:'library',paper:'root',cwd:[],scores:[],search:'',view:null,blobUrl:null,modal:null,toastTimer:null,loading:false,online:navigator.onLine,storage:null,backup:null,restore:null,zen:false};
+const state={lang:'va',page:'library',paper:'root',cwd:[],scores:[],search:'',view:null,blobUrl:null,modal:null,toastTimer:null,loading:false,online:navigator.onLine,storage:null,backup:null,restore:null,zen:false,favorites:[],recents:[],repertoires:[],repertoireOpen:null,modalRepId:null,pickerPath:null};
 let scoreViewer=null;
 let viewerRequest=0;
 const tr = key => L[state.lang][key]||key;
@@ -161,6 +169,68 @@ function availableFolders(records,prefix='') {
  }
  return {folders:[...folders].sort(sort),direct:direct.sort((a,b)=>sort(a.path,b.path))};
 }
+
+const scorePaths=()=>new Set(state.scores.map(s=>s.path));
+function keepExisting(list){
+ const valid=scorePaths();
+ return Array.isArray(list)?[...new Set(list.filter(p=>typeof p==='string'&&valid.has(p)))].slice(0,15000):[];
+}
+function cleanRepertoires(items){
+ if(!Array.isArray(items))return [];
+ const seen=new Set(),out=[];
+ for(const item of items.slice(0,500)){
+  if(!item||typeof item.id!=='string'||!/^rep_[a-zA-Z0-9_-]{1,45}$/.test(item.id)||seen.has(item.id)||typeof item.name!=='string')continue;
+  const name=item.name.trim().slice(0,60);if(!name)continue;
+  seen.add(item.id);out.push({id:item.id,name,paths:keepExisting(item.paths)});
+ }
+ return out;
+}
+async function reloadCollections(){
+ state.favorites=keepExisting(await getPref('w13:favorites',[]));
+ state.recents=keepExisting(await getPref('w13:recents',[])).slice(0,45);
+ state.repertoires=cleanRepertoires(await getPref('w13:repertoires',[]));
+ if(state.repertoireOpen&&!state.repertoires.some(r=>r.id===state.repertoireOpen))state.repertoireOpen=null;
+}
+async function persistCollections(){
+ await Promise.all([setPref('w13:favorites',state.favorites),setPref('w13:recents',state.recents),setPref('w13:repertoires',state.repertoires)]);
+}
+const findRepertoire=id=>state.repertoires.find(r=>r.id===id);
+const paperMatches=path=>state.paper==='root'||path.startsWith(state.paper+'/');
+function currentCollectionScores(){
+ const records=new Map(state.scores.map(s=>[s.path,s]));
+ const collection=state.page==='favorites'?state.favorites:state.page==='recents'?state.recents:
+  state.page==='repertoires'&&state.repertoireOpen?(findRepertoire(state.repertoireOpen)?.paths||[]):null;
+ if(collection)return collection.filter(p=>records.has(p)&&(state.page==='repertoires'||paperMatches(p))).map(p=>records.get(p));
+ return scopedScores();
+}
+function htmlScoreRow(score,{note='',repertoireId=null,reorder=0,count=0}={}){
+ const favorite=state.favorites.includes(score.path),label=tr(favorite?'removeFavorite':'addFavorite');
+ return `<div class="score-row">
+  ${repertoireId!==null?`<span class="repertoire-order"><button data-action="rep-up" data-id="${esc(repertoireId)}" data-value="${esc(score.path)}" title="${esc(tr('moveUp'))}" aria-label="${esc(tr('moveUp'))}" ${reorder===0?'disabled':''}>${icon('up')}</button><button data-action="rep-down" data-id="${esc(repertoireId)}" data-value="${esc(score.path)}" title="${esc(tr('moveDown'))}" aria-label="${esc(tr('moveDown'))}" ${reorder===count-1?'disabled':''}>${icon('down')}</button></span>`:''}
+  <button class="entry" data-action="open" data-value="${esc(score.path)}"><span class="entry-ico pdf">${icon('file')}</span><span class="entry-text"><span class="entry-title">${esc(nice(parts(score.path).at(-1)))}</span><span class="entry-note">${esc(note||bytes(score.size))}</span></span></button>
+  <button class="score-tool ${favorite?'active':''}" data-action="favorite" data-value="${esc(score.path)}" aria-pressed="${favorite}" title="${esc(label)}" aria-label="${esc(label)}">${icon('star')}</button>
+  <button class="score-tool" data-action="${repertoireId!==null?'rep-remove-score':'rep-pick'}" data-id="${esc(repertoireId||'')}" data-value="${esc(score.path)}" title="${esc(tr(repertoireId!==null?'removeFromRepertoire':'addToRepertoire'))}" aria-label="${esc(tr(repertoireId!==null?'removeFromRepertoire':'addToRepertoire'))}">${icon(repertoireId!==null?'trash':'plus')}</button>
+ </div>`;
+}
+function renderCollectionPage(page){
+ const all=currentCollectionScores(),q=norm(state.search.trim()),shown=all.filter(s=>norm(s.path).includes(q));
+ return heading(page,tr(page==='favorites'?'favoritesSubtitle':'recentsSubtitle'))+paperBar()+
+  `<div class="section-tools">${searchBox()}<span class="stat">${icon('file')}${all.length} ${esc(tr('scoreCount'))}</span></div>`+
+  (shown.length?`<div class="cards score-list">${shown.map(s=>htmlScoreRow(s,{note:relativePath(s.path)})).join('')}</div>`:empty(tr(q?'noResults':page==='favorites'?'emptyFavorites':'emptyRecents'),tr('noResultsDesc')));
+}
+function renderRepertoires(){
+ const current=findRepertoire(state.repertoireOpen);
+ let block=`<div class="rep-actions"><button class="primary" data-action="rep-create">${icon('plus')}${esc(tr('createRepertoire'))}</button>${current?`<button class="secondary" data-action="rep-back">${icon('back')}${esc(tr('repertoireAll'))}</button>`:''}</div>`;
+ if(current){
+  const scores=new Map(state.scores.map(s=>[s.path,s])),all=current.paths.filter(p=>scores.has(p)),q=norm(state.search.trim()),visible=all.filter(p=>norm(p).includes(q));
+  block+=`<div class="panel rep-head"><h3>${esc(current.name)}</h3><div class="rep-actions"><button class="secondary" data-action="rep-rename" data-id="${esc(current.id)}">${esc(tr('renameRepertoire'))}</button><button class="secondary" data-action="rep-delete" data-id="${esc(current.id)}">${icon('trash')}${esc(tr('removeRepertoire'))}</button></div></div>`;
+  block+=`<div class="section-tools">${searchBox()}<span class="stat">${all.length} ${esc(tr('scoreCount'))}</span></div>`;
+  block+=visible.length?`<div class="cards score-list">${visible.map(p=>htmlScoreRow(scores.get(p),{note:relativePath(p),repertoireId:current.id,reorder:all.indexOf(p),count:all.length})).join('')}</div>`:empty(tr(q?'noResults':'repertoireEmpty'),tr('repertoireSubtitle'));
+ }else if(!state.repertoires.length)block+=empty(tr('repertoireNoItems'),tr('repertoireSubtitle'));
+ else block+=`<div class="cards rep-list">${state.repertoires.map(r=>`<button class="entry rep-entry" data-action="rep-open" data-id="${esc(r.id)}"><span class="entry-ico">${icon('list')}</span><span class="entry-text"><span class="entry-title">${esc(r.name)}</span><span class="entry-note">${r.paths.length} ${esc(tr('scoreCount'))}</span></span>${icon('next')}</button>`).join('')}</div>`;
+ return heading('repertoires',tr('repertoireSubtitle'))+block;
+}
+
 function nav(name,page){return `<button class="navlink ${state.page===page?'selected':''}" data-action="page" data-value="${page}">${icon(name)} <span>${esc(tr(page))}</span></button>`;}
 function tabsMobile(name,page){return `<button class="bottom-link ${state.page===page?'selected':''}" data-action="page" data-value="${page}">${icon(name)}<span>${esc(tr(page))}</span></button>`;}
 function paperBar(){
