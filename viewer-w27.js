@@ -795,6 +795,9 @@ export class ScoreViewer {
   annotationPointerDown(e){
     if(!this.annotationMode||!this.page)return;
     e.preventDefault();e.stopPropagation();
+    // Un únic quadre cada vegada: mentre el teclat està actiu, tocar el PDF
+    // no ha d'iniciar una altra col·locació ni substituir el text en curs.
+    if(this.inlineSession)return;
     if(this.annotationPointer!==null||(e.pointerType==='mouse'&&e.button!==0))return;
     const point=this.annotationPoint(e);if(!point)return;
     if(this.annotationTool==='text'){
