@@ -88,7 +88,7 @@ try{
  await selectTool('line');await drag(.14,.62,.43,.72);
  await selectTool('arrow');await drag(.55,.61,.80,.75);
  await selectTool('highlighter');await page.locator('#annotation-width').selectOption('1');
- await drag(.15,.84,.42,.88);
+ await drag(.15,.50,.42,.54);
  assert.equal(await page.locator('.annotation-stroke').count(),6,'All tools render in the same SVG layer');
  await page.waitForFunction(async()=>{const {getAnnotations}=await import('./db.js');return (await getAnnotations('W22.pdf')).pages['1']?.length===6;});
  const before=await points();
