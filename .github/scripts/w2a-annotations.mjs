@@ -34,6 +34,13 @@ try{
  page.on('pageerror',error=>errors.push(error.message));
  await page.goto('http://127.0.0.1:8765/',{waitUntil:'domcontentloaded'});
  if(await page.locator('[data-action="welcome-done"]').count())await page.locator('[data-action="welcome-done"]').click();
+ // La versió d'Ajustos i la informació sobre anotacions han d'estar actualitzades.
+ await page.locator('.bottom-link[data-value="settings"]').click();
+ const settingsText=await page.locator('main.content').innerText();
+ assert.match(settingsText,/Partitures Festeres Web — W2\\.1/,'Version in settings');
+ assert(!settingsText.includes('Les anotacions, Drive'),'Annotations are no longer marked as pending');
+ assert(settingsText.includes('llapis i ressaltador'),'W2.1 annotation capabilities displayed in settings');
+ await page.locator('.bottom-link[data-value="library"]').click();
  const pdfBytes=pdf();
  await page.locator('#import-input').setInputFiles({name:'ANOTACIONS.pdf',mimeType:'application/pdf',buffer:pdfBytes});
  await page.locator('.score-row').first().waitFor();
