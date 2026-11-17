@@ -88,8 +88,7 @@ try{
  await page.locator('[data-action="paper"][data-value="root"].active').waitFor();
  assert.equal(await page.locator('.index-score-row').count(),5);
  await page.reload();
- assert.equal(await page.locator('#index-group-by').count(),0,'Page restarts at Library');
- await page.locator('.bottom-link[data-value="index"]').click();
+ assert.equal(await page.locator('#index-group-by').count(),1,'Reload preserves Index instead of returning to Library');
  assert.equal(await page.locator('#index-group-by').inputValue(),'year','Grouping preference survives reload');
  assert.equal(await page.locator('#index-sort-by').inputValue(),'year','Sorting preference survives reload');
  assert.equal(await page.locator('.index-score-row').count(),5,'No score lost');
