@@ -24,6 +24,8 @@ export function strokePath(stroke,w,h,rotation=0){
  if(!p.length)return '';
  const fmt=(v)=>v.toFixed(2);
  const P=([x,y])=>fmt(x)+' '+fmt(y);
+ // En començar a arrossegar, la forma encara té un sol extrem: dibuixa un punt provisional.
+ if(p.length<2)return 'M'+P(p[0])+' l0.01 0.01';
  if(stroke.tool==='rectangle'){
   const [a,b]=p;return 'M'+P(a)+' H'+fmt(b[0])+' V'+fmt(b[1])+' H'+fmt(a[0])+' Z';
  }
