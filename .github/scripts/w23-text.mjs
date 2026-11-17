@@ -83,8 +83,8 @@ try{
  await page.locator('.annotation-text-modal').waitFor();
  assert.equal(await page.locator('#annotation-text-value').inputValue(),'');
  await page.locator('#annotation-text-value').fill('D.C. al Fine\nTornada');
- await page.locator('#annotation-font-size').selectOption('.06');
- await page.locator('#annotation-text-opacity').selectOption('.5');
+ await page.locator('#annotation-font-size').selectOption('0.06');
+ await page.locator('#annotation-text-opacity').selectOption('0.5');
  await page.locator('#annotation-text-bold').check();
  await page.locator('#annotation-text-underline').check();
  await page.locator('input[name="annotation-text-color"][value="#1b58a7"]').check();
@@ -122,8 +122,8 @@ try{
  await page.locator('.annotation-text-modal').waitFor();
  assert.equal(await page.locator('#annotation-text-value').inputValue(),'D.C. al Fine\nTornada');
  await page.locator('#annotation-text-value').fill('D.S. al Coda');
- await page.locator('#annotation-font-size').selectOption('.044');
- await page.locator('#annotation-text-opacity').selectOption('.75');
+ await page.locator('#annotation-font-size').selectOption('0.044');
+ await page.locator('#annotation-text-opacity').selectOption('0.75');
  await page.locator('#annotation-text-bold').uncheck();
  await page.locator('input[name="annotation-text-color"][value="#21824f"]').check();
  await page.locator('[data-action="annotation-text-save"]').click();
