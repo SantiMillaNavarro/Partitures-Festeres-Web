@@ -1,0 +1,27 @@
+name: W1.3B.1 metadata and ZIP compatibility
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+jobs:
+  metadata:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install Chromium
+        run: |
+          npm install --no-save playwright
+          npx playwright install chromium --with-deps
+      - name: Start server
+        run: python3 -m http.server 8765 --bind 127.0.0.1 > /tmp/partitures.log 2>&1 &
+      - name: Check syntax
+        run: |
+          node --check app-w13b1.js
+          node --check db.js
+          node --check backup.js
+          node --check metadata.js
+      - name: Test editor, PDF integrity and backup compatibility
+        run: node .github/scripts/w13b1-metadata.mjs
