@@ -1,0 +1,26 @@
+name: W1.3C organized Index tests
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+jobs:
+  index:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install Chromium
+        run: |
+          npm install --no-save playwright
+          npx playwright install chromium --with-deps
+      - name: Start server
+        run: python3 -m http.server 8765 --bind 127.0.0.1 > /tmp/partitures.log 2>&1 &
+      - name: Check JS syntax
+        run: |
+          node --check app-w13c.js
+          node --check index-groups.js
+          node --check .github/scripts/w13c-index.mjs
+      - name: Test Index logic and browser integration
+        run: node .github/scripts/w13c-index.mjs
