@@ -955,7 +955,32 @@ async function handleClick(el){
     scoreViewer.setAnnotationMode(state.annotating);
     clearTimeout(viewerMenuTimer);state.zen=false;render();break;
    }
+   case 'annotation-group':if(scoreViewer?.annotationMode&&ANNOTATION_GROUP_TOOLS[val]){state.annotationGroup=val;render();}break;
    case 'annotation-tool':if(scoreViewer?.annotationMode){scoreViewer.setAnnotationTool(val);render();}break;
+   case 'annotation-text-edit':{
+     const item=scoreViewer?.getSelectedText();
+     if(!item||!state.view)break;
+     state.textDraft={path:state.view.path,page:scoreViewer.pageNumber,index:item.index,
+       point:item.points[0],text:item.text,fontSize:item.fontSize,color:item.color,
+       bold:item.bold,underline:item.underline,opacity:item.opacity};
+     state.modal='annotation-text';render();$('#annotation-text-value')?.focus();break;
+   }
+   case 'annotation-text-cancel':state.textDraft=null;state.modal=null;render();break;
+   case 'annotation-text-save':{
+     const d=state.textDraft;
+     if(!d||state.modal!=='annotation-text'||!scoreViewer?.annotationMode||
+        d.path!==state.view?.path||d.page!==scoreViewer.pageNumber)break;
+     const text=($('#annotation-text-value')?.value||'').replace(/\r\n?/g,'\n').trim();
+     if(!text||text.length>280||text.split('\n').length>5){toast(tr('annotationTextError'),true);break;}
+     const color=document.querySelector('input[name="annotation-text-color"]:checked')?.value||d.color;
+     const done=scoreViewer.saveTextAnnotation({...d,text,
+       fontSize:Number($('#annotation-font-size')?.value),
+       opacity:Number($('#annotation-text-opacity')?.value),
+       color,bold:!!$('#annotation-text-bold')?.checked,
+       underline:!!$('#annotation-text-underline')?.checked});
+     if(done){state.textDraft=null;state.modal=null;render();}
+     break;
+   }
    case 'annotation-color':if(scoreViewer?.annotationMode){scoreViewer.setAnnotationColor(val);render();}break;
    case 'annotation-delete-selected':if(scoreViewer?.annotationMode){scoreViewer.deleteSelectedAnnotation();syncViewerControls();}break;
    case 'annotation-undo':scoreViewer?.undoAnnotation();syncViewerControls();break;
