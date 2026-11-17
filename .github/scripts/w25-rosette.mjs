@@ -33,8 +33,12 @@ const browser=await chromium.launch({headless:true,args:['--no-sandbox']});
 try{
  const context=await browser.newContext({viewport:{width:1080,height:750},deviceScaleFactor:1,acceptDownloads:true});
  const page=await context.newPage(),errors=[];
- page.on('pageerror',error=>errors.push(error.message));
+ page.on('pageerror',error=>{console.error('W25 BROWSER PAGE ERROR',error.stack||error.message);errors.push(error.message);});
+ page.on('console',message=>{if(message.type()==='error')console.error('W25 CONSOLE ERROR',message.text());});
+ page.on('requestfailed',request=>console.error('W25 REQUEST FAILED',request.url(),request.failure()?.errorText));
  await page.goto('http://127.0.0.1:8765/',{waitUntil:'domcontentloaded'});
+ await page.waitForTimeout(250);
+ console.log('W25 INITIAL APP',JSON.stringify((await page.locator('#app').innerText()).slice(0,350)));
  if(await page.locator('[data-action="welcome-done"]').count())await page.locator('[data-action="welcome-done"]').click();
  await page.locator('#import-input').setInputFiles({name:'ROSETTE25.pdf',mimeType:'application/pdf',buffer:makePdf()});
  await page.locator('[data-action="open"][data-value="ROSETTE25.pdf"]').waitFor();
