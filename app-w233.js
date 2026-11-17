@@ -1,7 +1,7 @@
 import {openDB, getAllScores, getScore, saveBatch, setScoreMetadata, deleteScore, clearScores, getPref, setPref, getAnnotations, setAnnotations} from './db.js';
 import {normalizeScoreMetadata, scoreDisplayTitle, hasScoreMetadata} from './metadata.js';
 import {BACKUP_MANIFEST, createBackup, inspectBackup, restoreBackup} from './backup.js';
-import {ScoreViewer} from './viewer-w232.js';
+import {ScoreViewer} from './viewer-w233.js';
 import {ANNOTATION_COLORS,TEXT_SIZES,TEXT_OPACITIES} from './annotations.js';
 import {blankAdvancedFilters,countAdvancedFilters,matchesScoreSearch} from './search-filters.js';
 import {INDEX_GROUP_MODES,INDEX_SORT_MODES,buildIndexGroups} from './index-groups.js';
