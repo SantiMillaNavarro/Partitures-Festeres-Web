@@ -87,6 +87,8 @@ try{
  assert(await next.isVisible(),'Fletxes tornen després d’anotar');
  await page.locator('[data-action="viewer-close"]').evaluate(button=>button.click());
  await viewer.waitFor({state:'detached'});
+ await page.waitForFunction(()=>!history.state?.pfwebViewer,null,{timeout:7000});
+ await page.reload(); // La sessió de lectura ja ha eixit de l'historial.
  // El retorn circular d'Actuació també ha de funcionar amb les fletxes laterals.
  await page.locator('.bottom-link[data-value="repertoires"]').click();
  await page.locator('.rep-entry[data-id="r_concert"]').click();
