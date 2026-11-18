@@ -41,7 +41,7 @@ try{
    {path:'A.pdf',blob:a,size:a.size,added:Date.now()},
    {path:'B.pdf',blob:b,size:b.size,added:Date.now()+1}
   ]);
-  await setPref('w13:repertoires',[{id:'r_concert',name:'Concert Fester',paths:['A.pdf','B.pdf']}]);
+  await setPref('w13:repertoires',[{id:'rep_concert',name:'Concert Fester',paths:['A.pdf','B.pdf']}]);
  });
  await page.reload();
  await page.locator('.bottom-link[data-value="library"]').click();
@@ -91,7 +91,7 @@ try{
  await page.reload(); // La sessió de lectura ja ha eixit de l'historial.
  // El retorn circular d'Actuació també ha de funcionar amb les fletxes laterals.
  await page.locator('.bottom-link[data-value="repertoires"]').click();
- await page.locator('.rep-entry[data-id="r_concert"]').click();
+ await page.locator('.rep-entry[data-id="rep_concert"]').click();
  await page.locator('[data-action="rep-start"]').click();
  await page.waitForFunction(()=>document.querySelector('#viewer-stage canvas')?.width>0&&
   document.querySelector('#viewer-stage')?.dataset.path==='A.pdf',null,{timeout:20000});
