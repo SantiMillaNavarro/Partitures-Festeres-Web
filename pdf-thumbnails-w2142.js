@@ -67,7 +67,7 @@ export class PdfThumbnailController{
   this.readScore=readScore;this.readPref=readPref;
   this.maxEntries=maxEntries;this.maxBytes=maxBytes;
   this.cache=new Map();this.cacheBytes=0;
-  this.failures=new Set();this.queued=new Set();
+  this.failures=new Set();this.queued=new Set();this.inflight=new Set();
   this.queue=[];this.active=0;this.nodes=new Map();this.observer=null;
   this.enabled=true;this.epoch=0;this.scores=new Map();
   this.stats={created:0,failed:0};
@@ -128,7 +128,7 @@ export class PdfThumbnailController{
   if(!this.enabled||!this.scores.has(path)||this.scores.get(path)!==key)return;
   const cached=this.cache.get(key);
   if(cached){this.fillNodes(key,cached.url);return;}
-  if(this.failures.has(key)||this.queued.has(key))return;
+  if(this.failures.has(key)||this.queued.has(key)||this.inflight.has(key))return;
   this.queued.add(key);this.queue.push({path,key});void this.pump();
  }
  async pump(){
@@ -140,9 +140,9 @@ export class PdfThumbnailController{
    if(!this.enabled||this.scores.get(item.path)!==item.key){
     this.queued.delete(item.key);continue;
    }
-   this.active++;
+   this.active++;this.inflight.add(item.key);
    void this.process(item).finally(()=>{
-    this.active--;
+    this.active--;this.inflight.delete(item.key);
     void this.pump();
    });
   }
