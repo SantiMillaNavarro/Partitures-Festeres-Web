@@ -2,7 +2,7 @@
    Estat menut en localStorage; les dades de la biblioteca continuen en IndexedDB. */
 export const NAVIGATION_KEY='pfweb:location:v1';
 export const NAVIGATION_VERSION=1;
-export const APP_PAGES=Object.freeze(['library','repertoires','index','recents','favorites','settings']);
+export const APP_PAGES=Object.freeze(['library','repertoires','index','recents','favorites','tools','settings']);
 const isRecord=x=>x!==null&&typeof x==='object'&&!Array.isArray(x);
 const cleanPath=x=>typeof x==='string'&&x.length>0&&x.length<=500&&!x.startsWith('/')&&
  !x.includes('\\')&&!/[\x00-\x1f]/.test(x)&&x.split('/').every(seg=>seg.length>0&&seg!=='.'&&seg!=='..');
