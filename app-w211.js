@@ -576,7 +576,7 @@ function renderTools(){
  return heading('tools',tr('toolsSubtitle'))+
   '<div class="pf-tools-screen"><div class="pf-tools-tabbar" role="tablist" aria-label="'+(va?'Ferramentes musicals':'Herramientas musicales')+'">'+
   tab('metronome',va?'Metrònom':'Metrónomo')+tab('tuner',va?'Afinador':'Afinador')+tab('reference',va?'Nota de referència':'Nota de referencia')+'</div>'+
-  (state.toolTab==='tuner'?tuner.markup(state.lang):metronome.markup(state.lang))+'</div>';
+  (state.toolTab==='tuner'?tuner.markup(state.lang):state.toolTab==='reference'?referenceTone.markup(state.lang):metronome.markup(state.lang))+'</div>';
 }
 function renderSettings(){
  return heading('settings',tr('settingsSubtitle'))+`
