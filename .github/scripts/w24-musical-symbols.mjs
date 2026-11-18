@@ -49,7 +49,7 @@ try{
  await page.goto('http://127.0.0.1:8765/',{waitUntil:'domcontentloaded'});
  if(await page.locator('[data-action="welcome-done"]').count())await page.locator('[data-action="welcome-done"]').click();
  await page.locator('.bottom-link[data-value="settings"]').click();
- assert.match(await page.locator('main.content').innerText(),/Partitures Festeres Web — W2\.15\.2/);
+ assert.match(await page.locator('main.content').innerText(),/Partitures Festeres Web — W2\.16/);
  await page.locator('.bottom-link[data-value="library"]').click();
  await page.locator('#import-input').setInputFiles({name:'MUSIC_W24.pdf',mimeType:'application/pdf',buffer:originalPdf});
  await page.locator('[data-action="open"][data-value="MUSIC_W24.pdf"]').waitFor();
@@ -57,7 +57,7 @@ try{
   const {getAnnotations}=await import('./db.js');
   return (await getAnnotations('MUSIC_W24.pdf')).pages['1']||[];
  });
- const stageClick=async()=>page.locator('#viewer-stage').click({position:{x:310,y:230}});
+ const stageClick=async()=>page.locator('#viewer-stage').click({position:{x:195,y:230}}); // Centre: Android utilitza 22% de zones laterals.
  const layerPoint=async(x,y)=>{
   const r=await page.locator('.viewer-annotation-layer').boundingBox();
   assert(r?.width>50&&r?.height>50,'PDF overlay is mounted');
