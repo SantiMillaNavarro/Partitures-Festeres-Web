@@ -49,7 +49,8 @@ try{
  const page=await context.newPage(),errors=[];
  page.on('pageerror',e=>errors.push(e.message));
  await page.goto('http://127.0.0.1:8765/',{waitUntil:'domcontentloaded'});
- if(await page.locator('[data-action="welcome-done"]').count())await page.locator('[data-action="welcome-done"]').click();
+ await page.locator('[data-action="welcome-done"]').waitFor({timeout:20000});
+ await page.locator('[data-action="welcome-done"]').click();
  await page.locator('.bottom-link[data-value="settings"]').click();
  const settings=await page.locator('main.content').innerText();
  assert.match(settings,/Partitures Festeres Web — W2\.14\.3/,'The version is updated in Ajustos');
