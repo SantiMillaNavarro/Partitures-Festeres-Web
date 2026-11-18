@@ -1,3 +1,29 @@
+# Partitures Festeres Web — W2.13.3 · Retall manual i perspectiva
+
+Esta fase respon a la comprovació real del mòbil: la detecció automàtica de fulles no és consistent en totes les condicions. **El retall manual de quatre cantonades és la ruta fiable**, independentment de l'eficàcia de la detecció.
+
+## Flux d'escaneig
+
+1. En **Escanejar**, fes una foto (escàner automàtic / Capturar ara / Foto del sistema) o tria fotografies de la galeria.
+2. Cada miniatura conté un botó **✂ Retallar fulla**. S'obri un editor a pantalla completa amb la fotografia original i **quatre cercles verds numerats**.
+3. **Arrossega les quatre cantonades** fins als extrems del paper. Els punts també funcionen amb teclat (fletxes, Majúscules per a passos més grans). Pots prémer **Detectar vores** per a rebre una proposta opcional, però no s'aplica sense confirmació i no depén d'eixa detecció.
+4. **Previsualitzar** mostra la pàgina real corregida mitjançant una homografia. **Tornar als punts** permet continuar l'ajust. **Aplicar retall** confirma, **Cancel·lar** conserva l'estat anterior, **Restablir punts** posa el marc complet i **Sense retall** retorna a la fotografia completa.
+5. La miniatura mostra el **resultat del retall**, i passa a **✓ Ajustar retall** per a poder reobrir l'editor. Després pots girar, triar els filtres existents, reordenar les pàgines i guardar el PDF.
+
+## Seguretat i fidelitat
+
+- La fotografia original **no es modifica ni s'esborra** en retallar. Es conserven els punts normalitzats; en generar PDF s'aplica la **correcció projectiva sobre la fotografia original abans del gir i dels filtres**. La qualitat del PDF no depén de la miniatura de l'editor.
+- No s'utilitzen serveis remots, SDKs de pagament ni xarxa. Els JPEG temporals de previsualització i els `blob:` es netegen en substituir-los, en cancel·lar i en eixir de l'escàner.
+- Es rebutgen polígons auto-intersectats, capgirats, massa menuts o amb punts fora de la imatge, per a evitar PDFs corruptes i consum descontrolat de memòria.
+- El sistema d'exportació continua sense sobreescriure PDFs o anotacions: carpeta, repertori, múltiples fulls, 30 pàgines i còpies ZIP es mantenen.
+- El detector automàtic de W2.13.2 continua disponible, però és **opcional**. Si no reconeix el full, captura'l manualment i retalla'l després; és el flux recomanat.
+
+## Proves
+
+El workflow `W2.13.3 Retall manual amb perspectiva` comprova els quatre punts, la geometria, els gestos tàctils emulats, Previsualitzar, Cancel·lar, Aplicar, recuperar un retall, Sense retall, gir posterior, filtres, JPEG projectiu i PDF real amb PDF.js. S'executen també les 30 comprovacions anteriors.
+
+---
+
 # Partitures Festeres Web — W2.13.2 · Escàner automàtic de fulles i capçalera vertical
 
 Subfase que respon a les proves reals de **W2.13.1** en mòbil. Dos canvis independents, sense alterar la biblioteca ni les anotacions:

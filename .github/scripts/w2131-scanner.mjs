@@ -30,8 +30,10 @@ try{
  const page=await context.newPage(),errors=[];
  page.on('pageerror',e=>errors.push(e.stack||e.message));
  await page.goto('http://127.0.0.1:8765/',{waitUntil:'domcontentloaded'});
- if(await page.locator('[data-action="welcome-done"]').count())
-  await page.locator('[data-action="welcome-done"]').click();
+ // Esperar explícitament la primera instal·lació: el modal apareix
+ // després d'IndexedDB i pot tardar més que domcontentloaded.
+ await page.locator('[data-action="welcome-done"]').waitFor({timeout:20000});
+ await page.locator('[data-action="welcome-done"]').click();
  assert.equal(await page.locator('header [data-action="scan-open"]').count(),1);
  await page.locator('.bottom-nav [data-action="page"][data-value="repertoires"]').click();
  await page.locator('[data-action="rep-create"]').click();
