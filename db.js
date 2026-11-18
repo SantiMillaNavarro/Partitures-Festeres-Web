@@ -224,3 +224,75 @@ export async function commitStagedBackup(mode, prefs, expectedCount, annotationR
     tx.onabort = () => reject(tx.error || new Error('Restauració interrompuda. La biblioteca original està intacta.'));
   });
 }
+
+
+/* W2.14.1 — Trasllat/renomenat ATÒMIC dins d'una transacció IndexedDB.
+ * Es preserva el mateix Blob, les metadades, anotacions, estat de visor,
+ * favorits, recents i repertoris. Cap PDF existent es pot sobreescriure.
+ */
+export async function moveScoreSafely(oldPath,newPath){
+ const {targetScorePath,scoreFolder,moveCollectionReferences}=await import('./score-organize-w2141.js');
+ if(typeof oldPath!=='string'||!oldPath||!oldPath.toLowerCase().endsWith('.pdf'))
+  throw new Error('La partitura original no té una ruta vàlida.');
+ const expected=targetScorePath({name:newPath.split('/').at(-1),folder:scoreFolder(newPath)});
+ if(expected!==newPath)throw new Error('La ruta de destinació no és vàlida.');
+ if(oldPath===newPath)return {changed:false,path:oldPath};
+ const db=await openDB();
+ return new Promise((resolve,reject)=>{
+  const tx=db.transaction(['scores','annotations','prefs'],'readwrite');
+  const scores=tx.objectStore('scores');
+  const annotations=tx.objectStore('annotations');
+  const prefs=tx.objectStore('prefs');
+  const reads={
+   source:scores.get(oldPath),
+   destination:scores.get(newPath),
+   sourceAnnotations:annotations.get(oldPath),
+   destinationAnnotations:annotations.get(newPath),
+   oldViewer:prefs.get('viewer:'+oldPath),
+   newViewer:prefs.get('viewer:'+newPath),
+   favorites:prefs.get('w13:favorites'),
+   recents:prefs.get('w13:recents'),
+   repertoires:prefs.get('w13:repertoires')
+  };
+  let pending=Object.keys(reads).length,problem=null;
+  const fail=message=>{
+   problem=message instanceof Error?message:new Error(message);
+   try{tx.abort();}catch{}
+  };
+  const finish=()=>{
+   const old=reads.source.result;
+   if(!old?.blob)return fail('La partitura original no està disponible.');
+   if(reads.destination.result)return fail('Ja existix una partitura amb este nom en la carpeta de destinació.');
+   if(reads.destinationAnnotations.result)return fail('La destinació conté anotacions anteriors. Per seguretat no es reescriu.');
+   if(reads.newViewer.result)return fail('La destinació té un estat de lectura anterior. Tria un altre nom.');
+   scores.put({...old,path:newPath});
+   scores.delete(oldPath);
+   if(reads.sourceAnnotations.result){
+    annotations.put({...reads.sourceAnnotations.result,path:newPath});
+    annotations.delete(oldPath);
+   }
+   if(reads.oldViewer.result){
+    prefs.put({key:'viewer:'+newPath,value:reads.oldViewer.result.value});
+    prefs.delete('viewer:'+oldPath);
+   }
+   const updated=moveCollectionReferences({
+    favorites:reads.favorites.result?.value||[],
+    recents:reads.recents.result?.value||[],
+    repertoires:reads.repertoires.result?.value||[]
+   },oldPath,newPath);
+   for(const [key,value] of Object.entries(updated)){
+    const storeKey=key==='repertoires'?'w13:repertoires':key==='favorites'?'w13:favorites':'w13:recents';
+    prefs.put({key:storeKey,value});
+   }
+  };
+  for(const req of Object.values(reads)){
+   req.onsuccess=()=>{
+    if(--pending===0)try{finish();}catch(error){fail(error);}
+   };
+   req.onerror=()=>{problem=req.error||new Error('No s’han pogut llegir les dades.');try{tx.abort();}catch{}};
+  }
+  tx.oncomplete=()=>resolve({changed:true,path:newPath});
+  tx.onerror=()=>reject(problem||tx.error||new Error('No s’ha pogut traslladar la partitura.'));
+  tx.onabort=()=>reject(problem||tx.error||new Error('Trasllat cancel·lat: les dades anteriors estan intactes.'));
+ });
+}
