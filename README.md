@@ -1,3 +1,27 @@
+# Partitures Festeres Web — W2.10 · Afinador cromàtic d'Android
+
+La fase **W2.10** incorpora en **Eines → Afinador** el panell cromàtic de la versió Android v1.11.15. El **Metrònom** de W2.9 continua complet i es tria amb les pestanyes pròpies d'Eines.
+
+## Afinador cromàtic
+
+- **Iniciar/Parar**, amb permís del micròfon demanat sols en tocar Iniciar.
+- Detecció cromàtica **YIN/CMNDF**, interpolació parabòlica i filtres d'energia/confiança com a `TunerEngine.kt`; rang de 55 a 1800 Hz. Execució en **Web Worker** quan el navegador ho admet, per a preservar la fluïdesa del visor; ruta compatible alternativa si falla.
+- Mostra la **nota (Do, Do♯, Re, Mi♭, …)**, la freqüència i desviació en **cents**.
+- Indicador semicircular **−50 a +50 cents**, amb zona verda **±5 cents** i zona d'aproximació ±10.
+- **Historial** amb neteja, que separa els traços quan canvia la nota.
+- **La de referència** de **430 a 450 Hz**, inici **442 Hz**, restabliment a 442 i preferència guardada en la mateixa base IndexedDB (per als ZIP de seguretat).
+- Captura local Web Audio: **no s'envia ni es desa àudio**. Es desconnecta el micròfon en canviar d'eina, eixir d'Eines, passar a segon pla o tancar.
+- Disponible amb connexió o sense després de la primera instal·lació PWA (fitxers de càlcul i worker inclosos en el Service Worker). **Els permisos del micròfon requereixen HTTPS o localhost**.
+- El comportament real del permís i la qualitat del to depenen del navegador, el micròfon i les millores automàtiques d'àudio del sistema. És important provar amb un instrument sostingut en un dispositiu real.
+
+## Seguretat i regressions
+
+No es modifica la biblioteca, cap PDF, el visor, els repertoris, les anotacions, els ZIP ni el motor del metrònom. El canvi de caché actualitza fitxers públics però no esborra IndexedDB. L'afinador no comença automàticament després de recarregar. Hi ha proves de YIN sintètic, controls, històric, referència, cancel·lació del micròfon i retorn al metrònom.
+
+**Pendent per a altres fases:** to de referència i Dictat Musical. No es mostren com a ferramentes funcionals fins que estiguen implementats.
+
+---
+
 # Partitures Festeres Web — W2.9 · Eines: metrònom fidel a Android
 
 Aquesta fase estrena una secció **Eines** a la navegació (tauleta i mòbil) amb el **Metrònom**. S'ha pres com a referència directa `ToolsScreen.kt` i `MetronomeEngine.kt` d'Android v1.11.15.
