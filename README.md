@@ -1,3 +1,25 @@
+# Partitures Festeres Web — W2.14.3 · Visor PDF prioritari
+
+Correcció de rendiment després de la W2.14.2: una miniatura PDF podia continuar renderitzant-se en segon pla **mentre el visor obria una altra partitura**. Encara que la cua de miniatures s'aturava en abandonar Biblioteca, el procés actiu no es cancel·lava, competint pels recursos de PDF.js. Esta fase elimina la competència sense desactivar les miniatures de manera permanent.
+
+## Canvis
+
+- **Prioritat absoluta al visor:** `openPdf()` suspén les miniatures **sincrònicament abans de llegir IndexedDB** i abans de construir `ScoreViewer`.
+- **Cancel·lació activa:** el controlador de miniatures fa servir `AbortController` i, si s'està renderitzant, cancel·la `PDFRenderTask` i interromp la càrrega PDF.js de la miniatura.
+- **Descart de cua:** en entrar al visor es cancel·len les peticions pendents, les observacions d'IntersectionObserver i les iniciacions diferides, sense esborrar les miniatures ja cachejades.
+- **Generació durant la inactivitat:** noves miniatures s'inicien amb `requestIdleCallback` si existeix, i amb una pausa curta alternativa si no. Mai no impedeix prémer una partitura immediatament.
+- **Reactivació en tornar:** en tancar el visor es reprenen els observadors i les miniatures que encara falten. Les cancel·lacions voluntàries no es marquen com a PDF corruptes i no bloquegen la generació futura.
+- Es manté la caché LRU de 36 miniatures / 6 MiB de W2.14.2, sense modificar el format ni la qualitat dels PDFs i sense canvis en anotacions, índex, metadades o còpies de seguretat.
+- La preferència **Ajustos → Miniatures de partitures** continua disponible.
+
+## Validació
+
+El workflow nou **W2.14.3 Prioritat del visor PDF** simula una miniatura que es queda bloquejada indefinidament, obri un PDF real de tres pàgines i comprova que la miniatura es cancel·la, que no es creen noves miniatures durant la lectura, i que es reprenen en tornar a Biblioteca. També s'executen les regressions de les 33 funcions anteriors, inclosa la W2.14.2.
+
+**Nota de rigor:** el problema de competència està confirmat en el codi, però no es pot mesurar la mateixa latència en cada mòbil des de GitHub Actions. Cal validar la velocitat real en el dispositiu de l'usuari, amb una biblioteca representativa.
+
+---
+
 # Partitures Festeres Web — W2.14.2 · Miniatures dels PDF
 
 Després d'organitzar les partitures, recuperem una funció visual important de l'app Android: **la previsualització de la primera pàgina en cada partitura**, en lloc de mostrar només la mateixa icona.
