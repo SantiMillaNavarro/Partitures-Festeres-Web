@@ -67,10 +67,11 @@ try{
  assert(r?.width>100&&r?.height>100,'Fotografia visible');
  const drag=async(i,x,y)=>{
   const handle=page.locator('.pf-crop-handle[data-corner="'+i+'"]');
+  const box=await page.locator('.pf-crop-photo').boundingBox();
   const b=await handle.boundingBox();
   await page.mouse.move(b.x+b.width/2,b.y+b.height/2);
   await page.mouse.down();
-  await page.mouse.move(r.x+x*r.width,r.y+y*r.height,{steps:8});
+  await page.mouse.move(box.x+x*box.width,box.y+y*box.height,{steps:8});
   await page.mouse.up();
  };
  await drag(0,.20,.09);
