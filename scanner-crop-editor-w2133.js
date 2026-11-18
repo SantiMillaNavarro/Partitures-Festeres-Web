@@ -107,7 +107,10 @@ export class ScanCropEditor{
  }
  togglePreview(show){
   if(!this.dialog)return;
-  this.previewMode=show;this.refresh();
+  this.previewMode=show;
+  this.dialog.querySelector('.pf-crop-original').hidden=show;
+  this.dialog.querySelector('.pf-crop-result').hidden=!show;
+  this.refresh();
  }
  onPointerDown(event){
   const button=event.target.closest?.('[data-corner]');
