@@ -52,7 +52,7 @@ try{
  if(await page.locator('[data-action="welcome-done"]').count())await page.locator('[data-action="welcome-done"]').click();
  await page.locator('.bottom-link[data-value="settings"]').click();
  const settings=await page.locator('main.content').innerText();
- assert.match(settings,/Partitures Festeres Web — W2\.12\.2/,'The version is updated in Ajustos');
+ assert.match(settings,/Partitures Festeres Web — W2\.13\.1/,'The version is updated in Ajustos');
  await page.locator('.bottom-link[data-value="library"]').click();
  await page.locator('#import-input').setInputFiles({name:'W22.pdf',mimeType:'application/pdf',buffer});
  await page.locator('.score-row').waitFor();
