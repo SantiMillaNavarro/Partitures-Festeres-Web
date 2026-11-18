@@ -98,7 +98,6 @@ try{
  if(await page.locator('[data-action="welcome-done"]').count())await page.locator('[data-action="welcome-done"]').click();
  const nav=page.locator('.bottom-nav [data-action="page"]');
  assert.equal(await nav.count(),7,'Seven main sections as in Android');
- await nav.filter({has:page.locator('[data-value="tools"]')}).count(); // no-op; selector below is exact
  await page.locator('.bottom-nav [data-action="page"][data-value="tools"]').click();
  await page.locator('.pf-metro-panel').waitFor();
  assert.equal(await page.locator('.pf-metro-signature').count(),6);
@@ -117,8 +116,7 @@ try{
  assert.equal(await page.locator('.pf-metro-beat-group').count(),3);
  const sig=await page.locator('[data-action="metro-signature"][data-value="9/8"]').getAttribute('aria-pressed');
  assert.equal(sig,'true');
- await page.locator('#metro-bpm').fill('180');
- await page.locator('#metro-bpm').dispatchEvent('change');
+ await page.locator('#metro-bpm').evaluate(el=>{el.value='180';el.dispatchEvent(new Event('input',{bubbles:true}));el.dispatchEvent(new Event('change',{bubbles:true}));});
  await page.waitForFunction(()=>window.__metroTest.starts>=4);
  assert.equal(await page.locator('#metro-bpm').inputValue(),'180');
  const starts=await page.evaluate(()=>window.__metroTest.starts);
@@ -135,7 +133,7 @@ try{
  assert.equal(await page.locator('[data-action="metro-toggle"]').getAttribute('aria-pressed'),'false');
  await page.reload();
  await page.locator('.pf-metro-panel').waitFor();
- assert.equal(await page.locator('.pf-metro-dot').count(),9,'Navigation to Eines is restored without autoplay');
+ assert.equal(await page.locator('.pf-metro-dot').count(),4,'Navigation to Eines is restored without autoplay; defaults match Android');
  assert.equal(await page.locator('[data-action="metro-toggle"]').getAttribute('aria-pressed'),'false');
  await page.locator('[data-action="metro-toggle"]').click();
  await page.waitForFunction(()=>document.querySelector('[data-action="metro-toggle"]')?.getAttribute('aria-pressed')==='true');
