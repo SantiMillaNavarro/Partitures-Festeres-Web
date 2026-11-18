@@ -113,6 +113,7 @@ export function strokeDistance(stroke,point,w,h,rotation=0){
  }
  const localPoint=unprojectPoint([target[0]/w,target[1]/h],rotation);
  if(stroke.tool==='text')return textDistance(stroke,localPoint,w,h,rotation);
+ if(stroke.tool==='crop')return anchoredStampDistance(stroke,localPoint,w,h,rotation,{width:stroke.boxWidth*w,height:stroke.boxHeight*h});
  if(stroke.tool==='symbol')return symbolDistance(stroke,localPoint,w,h,rotation);
  if(p.length===1)return dist(target,p[0]);
  if(stroke.tool==='rectangle'){
@@ -150,8 +151,8 @@ export function hitTestStroke(strokes,point,w,h,rotation=0,zoom=1){
 export function objectBounds(stroke,w,h,rotation=0){
  const points=stroke.points.map(p=>projectPoint(p,rotation)).map(p=>[p[0]*w,p[1]*h]);
  const x=Math.min(...points.map(p=>p[0])),y=Math.min(...points.map(p=>p[1]));
- if(stroke.tool==='text'||stroke.tool==='symbol'){
-  const size=stroke.tool==='text'?textBounds(stroke,w,h):musicalSymbolBounds(stroke,w,h);
+ if(stroke.tool==='text'||stroke.tool==='symbol'||stroke.tool==='crop'){
+  const size=stroke.tool==='text'?textBounds(stroke,w,h):stroke.tool==='crop'?{width:stroke.boxWidth*w,height:stroke.boxHeight*h}:musicalSymbolBounds(stroke,w,h);
   return {left:x,top:y,width:size.width,height:size.height,cx:x+size.width/2,cy:y+size.height/2};
  }
  const right=Math.max(...points.map(p=>p[0])),bottom=Math.max(...points.map(p=>p[1]));
@@ -164,14 +165,14 @@ export function rotateScreenPoint(point,cx,cy,degrees){
 export function resizedStroke(stroke,factor,w,h,rotation=0){
  if(!Number.isFinite(factor)||factor<=0)return stroke;
  if(stroke.tool==='symbol')return {...stroke,fontSize:r4(clamp(stroke.fontSize*factor,.018,.16))};
- if(stroke.tool==='text'){
-  const fontSize=r4(clamp(stroke.fontSize*factor,.012,.12));
-  if(stroke.boxWidth==null||stroke.boxHeight==null)return {...stroke,fontSize};
+ if(stroke.tool==='text'||stroke.tool==='crop'){
+  const fontSize=stroke.tool==='text'?r4(clamp(stroke.fontSize*factor,.012,.12)):undefined;
+  if(stroke.boxWidth==null||stroke.boxHeight==null)return {...stroke,...(fontSize?{fontSize}:{})};
   const boxWidth=r4(clamp(stroke.boxWidth*factor,.03,.95));
   const boxHeight=r4(clamp(stroke.boxHeight*factor,.03,.95));
   const p=projectPoint(stroke.points[0],rotation);
   const anchor=[clamp(p[0],0,1-boxWidth),clamp(p[1],0,1-boxHeight)];
-  return {...stroke,fontSize,boxWidth,boxHeight,points:[unprojectPoint(anchor,rotation).map(r4)]};
+  return {...stroke,...(fontSize?{fontSize}:{}),boxWidth,boxHeight,points:[unprojectPoint(anchor,rotation).map(r4)]};
  }
  const b=objectBounds(stroke,w,h,rotation),pivot=unprojectPoint([b.cx/w,b.cy/h],rotation);
  let effective=factor;
