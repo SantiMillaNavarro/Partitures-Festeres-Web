@@ -51,7 +51,10 @@ try{
  });
  assert.equal(initial,true);
  await page.reload();
- await page.locator('.score-row').first().waitFor();
+ const allTab=page.locator('[data-action="paper"][data-value="root"]');
+ if(await allTab.count())await allTab.click();
+ await page.locator('[data-action="folder"][data-value="1er"]').click();
+ await page.locator('[data-action="folder"][data-value="Pasdobles"]').click();
  await page.locator('.score-row [data-action="meta-open"][data-value="1er/Pasdobles/Original.pdf"]').click();
  await page.locator('#metadata-dialog-title').waitFor();
  assert.match(await page.locator('#meta-composer').inputValue(),/Pere Fester/);
