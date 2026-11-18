@@ -23,7 +23,9 @@ assert.equal(performanceStep(session,'A.pdf',-1),null,'No es retrocedeix circula
 assert.equal(buildPerformanceSession(original,new Set(['X.pdf'])),null);
 assert.equal(buildPerformanceSession(original,new Set(['B.pdf']),'A.pdf').current,'B.pdf');
 
-const browser=await chromium.launch({headless:true,args:['--no-sandbox']});
+const launchOptions={headless:true,args:['--no-sandbox']};
+if(process.env.PF_CHROMIUM_PATH)launchOptions.executablePath=process.env.PF_CHROMIUM_PATH;
+const browser=await chromium.launch(launchOptions);
 try{
  const context=await browser.newContext({viewport:{width:390,height:844}});
  const page=await context.newPage(),errors=[];
