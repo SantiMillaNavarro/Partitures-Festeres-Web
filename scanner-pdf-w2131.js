@@ -60,7 +60,7 @@ async function decodeImage(file){
  if(typeof createImageBitmap==='function'){
   try{bitmap=await createImageBitmap(file,{imageOrientation:'from-image'});}catch{}
  }
- if(bitmap)return {width:bitmap.width,height:bitmap.height,draw:(ctx,w,h)=>ctx.drawImage(bitmap,0,0,w,h),close:()=>bitmap.close?.()};
+ if(bitmap)return {width:bitmap.width,height:bitmap.height,draw:(ctx,w,h)=>ctx.drawImage(bitmap,-w/2,-h/2,w,h),close:()=>bitmap.close?.()};
  try{
   objectUrl=URL.createObjectURL(file);
   image=new Image();
@@ -69,7 +69,7 @@ async function decodeImage(file){
   if(image.decode)await image.decode();
   else await new Promise((resolve,reject)=>{image.onload=resolve;image.onerror=()=>reject(new Error('Format d’imatge no compatible.'));});
   if(!image.naturalWidth||!image.naturalHeight)throw new Error('No s’ha pogut llegir la imatge.');
-  return {width:image.naturalWidth,height:image.naturalHeight,draw:(ctx,w,h)=>ctx.drawImage(image,0,0,w,h),
+  return {width:image.naturalWidth,height:image.naturalHeight,draw:(ctx,w,h)=>ctx.drawImage(image,-w/2,-h/2,w,h),
     close:()=>{image.src='';URL.revokeObjectURL(objectUrl);}};
  }catch(e){if(objectUrl)URL.revokeObjectURL(objectUrl);throw e;}
 }
@@ -93,7 +93,7 @@ export async function scanImageAsJpeg(page){
   const sh=Math.max(1,Math.round(source.height*scale));
   ctx.save();ctx.translate(width/2,height/2);ctx.rotate(rotation*Math.PI/180);
   applyScanFilter(ctx,page.filter);
-  source.draw(ctx,sw,sh); // Fixem l'origen abans de dibuixar.
+  source.draw(ctx,sw,sh); // Imatge centrada després del gir.
   ctx.restore();
   // drawImage ha de partir del centre, no de (0,0).
   const data=await jpegBlob(canvas);
