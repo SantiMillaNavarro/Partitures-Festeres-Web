@@ -69,6 +69,7 @@ try{
  await page.locator('[data-action="page"][data-value="library"]').first().click();
  await page.locator('[data-action="paper-setup"]').first().click();
  await page.locator('[data-action="paper-add"]').click();
+ await page.locator('[data-action="paper-choose"][data-value="3"]').waitFor({timeout:10000});
  assert(await page.locator('[data-action="paper-choose"][data-value="3"]').count()===1,'No es crea 3r.');
  await page.locator('#paper-folder-search').fill('Trompeta/3r');
  await page.locator('[data-action="paper-set-folder"][data-value="Trompeta/3r"]').click();
