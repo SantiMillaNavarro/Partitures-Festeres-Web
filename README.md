@@ -1,3 +1,35 @@
+# Partitures Festeres Web — W2.15.1 · Duplicar repertoris i mode Actuació
+
+La web incorpora dos comportaments que la versió Android 1.11.15 ja tenia. S'han llegit directament **`PartituresFesteresApp.kt`, `RepertoiresScreen.kt` i `PdfViewerActivity.kt`** per a reproduir-los fidelment.
+
+## 1. Duplicar repertoris
+
+En **Repertoris**, utilitza el botó de duplicació de la llista (al costat del nom), o obri un repertori i prem **Duplicar**. La còpia:
+- Rep un **identificador nou** i manté exactament el mateix **ordre de PDFs**, sense copiar físicament els documents (les anotacions continuen associades a cada partitura, no es dupliquen).
+- Es crea amb **«(còpia)»**, **«(còpia 2)»**, etc., com en Android; es comproven col·lisions sense distingir majúscules i es respecta la longitud màxima del nom.
+- Passa a ser el repertori seleccionat. Canviar-ne l'ordre, el nom o les entrades **no modifica l'original**.
+- Es desa en IndexedDB amb les preferències de repertoris existents, per tant no canvia el format de les còpies ZIP.
+
+## 2. Mode Actuació: avanç circular
+
+Dins d'un repertori, el botó **Iniciar actuació** comença per la **primera pàgina de la primera partitura disponible**, encara que tingues una pàgina de lectura guardada. També pots tocar una partitura concreta per començar per ella, sempre en pàgina 1.
+
+- Entre les pàgines de la mateixa obra funciona la navegació normal del visor.
+- Quan s'arriba al final d'una partitura, anar cap avant obri la **primera pàgina de la següent obra**.
+- En finalitzar l'**última** obra, anar cap avant torna a la **primera pàgina de la primera obra** i es pot repetir el repertori sense eixir del visor.
+- Retrocedir des de la primera pàgina d'una obra obri l'**última pàgina de la partitura anterior**.
+- **No es fa volta circular cap arrere** en la primera obra: així funciona Android.
+- El visor mostra un indicador **Actuació · [repertori]** amb el número d'obra actual. El botó de següent obra roman disponible en l'última posició; el de retrocés continua desactivat en la primera posició.
+- S'utilitza una **instantània de l'ordre del repertori** en començar, ometent PDFs desapareguts. En tancar el visor acaba eixa sessió. Un PDF obert des de Biblioteca, Favorits o Recents **no** activa el bucle.
+
+S'han conservat la prioritat de càrrega del visor de W2.14.3, anotacions, zoom, rotació, retorn d'Android, Favorits, Recents i ZIP.
+
+## Validació
+
+La prova nova **W2.15.1 Repertoris i Actuacio circular** comprova amb PDFs reals: duplicació amb noms sense col·lisions, independència del repertori original, ordre guardat després de recarregar, inici en pàgina 1, pas a última pàgina en retrocedir, volta cap avant d'última obra a primera, i navegació normal fora del repertori. A més s'executen totes les regressions anteriors.
+
+---
+
 # Partitures Festeres Web — W2.14.3 · Visor PDF prioritari
 
 Correcció de rendiment després de la W2.14.2: una miniatura PDF podia continuar renderitzant-se en segon pla **mentre el visor obria una altra partitura**. Encara que la cua de miniatures s'aturava en abandonar Biblioteca, el procés actiu no es cancel·lava, competint pels recursos de PDF.js. Esta fase elimina la competència sense desactivar les miniatures de manera permanent.
