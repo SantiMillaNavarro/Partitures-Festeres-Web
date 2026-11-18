@@ -11,7 +11,7 @@ try{
  await page.goto('http://127.0.0.1:8765/',{waitUntil:'domcontentloaded'});
  await page.locator('[data-action="welcome-done"]').waitFor({timeout:20000});
  await page.locator('[data-action="welcome-done"]').click();
- assert.match(await page.locator('.side-bottom').innerText(),/W2\.19/);
+ assert.match(await page.locator('.side-bottom').innerText(),/W2\.\d+/);
  const result=await page.evaluate(async()=>{
   const {ScoreViewer}=await import('./viewer-w219.js');
   const {normalizeAnnotations}=await import('./annotations.js');

@@ -10,9 +10,9 @@ try{
  const page=await context.newPage();
  page.on('pageerror',error=>errors.push(error.message));
  await page.goto('http://127.0.0.1:8765/',{waitUntil:'domcontentloaded'});
- const welcome=page.locator('[data-action="welcome-done"]');
- if(await welcome.count())await welcome.click();
  await page.locator('[data-action="paper-setup"]').first().waitFor({timeout:20000});
+ const welcome=page.locator('[data-action="welcome-done"]');
+ if(await welcome.isVisible())await welcome.click();
  const status=await page.evaluate(async()=>{
   const m=await import('./paper-roles-w220.js');
   const {saveBatch}=await import('./db.js');
