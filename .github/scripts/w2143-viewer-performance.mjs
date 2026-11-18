@@ -68,7 +68,22 @@ try{
  });
  await page.locator('#thumbnail-enabled').check();
  await page.locator('.bottom-nav [data-action="page"][data-value="library"]').click();
- await page.waitForFunction(()=>window.__perf.thumbStarts>0,null,{timeout:20000});
+ try{
+  await page.waitForFunction(()=>window.__perf.thumbStarts>0,null,{timeout:9000});
+ }catch(error){
+  const diagnostic=await page.evaluate(()=>({
+   perf:window.__perf,
+   current:document.querySelector('main.content h2')?.textContent,
+   thumbs:[...document.querySelectorAll('[data-pf-thumb]')].slice(0,8).map(x=>({
+    path:x.dataset.pfThumb,rect:x.getBoundingClientRect().toJSON(),
+    classes:x.className,src:x.querySelector('img')?.src
+   })),
+   scores:document.querySelectorAll('.score-row').length,
+   checked:document.getElementById('thumbnail-enabled')?.checked
+  }));
+  console.error('DIAGNOSTIC THUMB START:',JSON.stringify(diagnostic));
+  throw error;
+ }
  const begins=Date.now();
  await page.locator('.score-row [data-action="open"][data-value="CIMO.pdf"]').click();
  await page.waitForFunction(()=>{
