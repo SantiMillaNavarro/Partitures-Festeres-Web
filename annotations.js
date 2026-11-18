@@ -1,8 +1,9 @@
-/* W2.7 compatible W2.4.1 — Text en quadres mesurables; símbols i anotacions anteriors compatibles. */
+/* W2.8 compatible W2.4.1 — Text en quadres mesurables; símbols i anotacions anteriors compatibles. */
 import {isMusicalSymbol} from './musical-symbols.js';
+import {validCropDataUri} from './annotation-crops.js';
 export const ANNOTATION_VERSION=1;
 export const ANNOTATION_SHAPES=Object.freeze(['line','rectangle','ellipse','arrow']);
-export const ANNOTATION_TOOLS=Object.freeze(['pen','highlighter',...ANNOTATION_SHAPES,'text','symbol']);
+export const ANNOTATION_TOOLS=Object.freeze(['pen','highlighter',...ANNOTATION_SHAPES,'text','symbol','crop']);
 export const TEXT_SIZES=Object.freeze([.018,.026,.034,.044,.06,.08,.1]);
 export const TEXT_OPACITIES=Object.freeze([.25,.5,.75,1]);
 export const ANNOTATION_COLORS=Object.freeze(['#242424','#b51f34','#1b58a7','#21824f','#f0cf35','#f28b30']);
@@ -31,7 +32,7 @@ export function normalizeAnnotations(input){
    if(!isPlain(stroke)||!ANNOTATION_TOOLS.includes(stroke.tool)||!ANNOTATION_COLORS.includes(stroke.color)||
       !between(stroke.width,.001,.12)||!Array.isArray(stroke.points)||stroke.points.length<1||stroke.points.length>MAX_POINTS||
       (ANNOTATION_SHAPES.includes(stroke.tool)&&stroke.points.length!==2)||
-      ((stroke.tool==='text'||stroke.tool==='symbol')&&stroke.points.length!==1)||
+      ((stroke.tool==='text'||stroke.tool==='symbol'||stroke.tool==='crop')&&stroke.points.length!==1)||
       (stroke.rotationDegrees!==undefined&&!between(stroke.rotationDegrees,-180,180)))
      throw new Error('Traç d’anotació no vàlid.');
    const coords=stroke.points.map(point=>{
@@ -65,6 +66,16 @@ export function normalizeAnnotations(input){
     }
     if(stroke.rotationDegrees!==undefined)record.rotationDegrees=clean(stroke.rotationDegrees);
     out.push(record);
+   }else if(stroke.tool==='crop'){
+    if(!validCropDataUri(stroke.imageData)||
+       !between(stroke.boxWidth,.02,1)||!between(stroke.boxHeight,.02,1)||
+       !between(stroke.opacity,.2,1))
+      throw new Error('Retall de partitura no vàlid.');
+    const data={tool:'crop',color:stroke.color,width:stroke.width,points:coords,
+     imageData:stroke.imageData,boxWidth:clean(stroke.boxWidth),
+     boxHeight:clean(stroke.boxHeight),opacity:stroke.opacity};
+    if(stroke.rotationDegrees!==undefined)data.rotationDegrees=clean(stroke.rotationDegrees);
+    out.push(data);
    }else if(stroke.tool==='symbol'){
     if(!isMusicalSymbol(stroke.symbolId)||!between(stroke.fontSize,.018,.16)||!between(stroke.opacity,.2,1))
       throw new Error('Símbol musical no vàlid.');
