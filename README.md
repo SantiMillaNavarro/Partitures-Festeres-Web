@@ -1,3 +1,37 @@
+# Partitures Festeres Web — W2.13.1 · Afegir / Escàner multipàgina
+
+La fase **W2.13.1** estrena en la web el flux de treball d'**Afegir partitures**. S'ha revisat directament el codi d'Android v1.11.15 (`AddContentScreen.kt`, `ScanImportPolicy.kt` i `ScannerPreviewDecoder.kt`). Android fa servir **Google ML Kit Document Scanner**, que no està disponible com a component integrable en el navegador; en web fem servir el selector nadiu de càmera/galeria i un motor local de generació PDF.
+
+## Eines disponibles
+
+- Botó **Escanejar** en la capçalera, sense ocultar ni substituir el botó existent **Importar**. Eixir amb **Tornar a la biblioteca**.
+- **Escanejar pàgina:** obri la càmera del dispositiu mitjançant `<input type="file" accept="image/*" capture="environment">` quan el navegador ho admet. En escriptori pot aparéixer un selector d'imatges. Es poden capturar múltiples fulls, un a un, sense deixar la pantalla d'Afegir.
+- **Afegir fotos:** selecció múltiple de fotos ja existents. Permet afegir **fins a 30 pàgines**, seguint el límit de l'Android original.
+- Miniatures numerades; botons **↑**/**↓** per a reordenar, **↻** per a girar cada full 90°, **×** per a eliminar la pàgina individual, i **Netejar totes**.
+- Filtre independent en cada pàgina: **Original**, **Millorar**, **Grisos** o **Blanc i negre**. Les previsualitzacions mostren el mateix filtre triat.
+- Camps **Nom**, **Guardar en** (carpetes dinàmiques reals de la biblioteca, inclosa l'arrel), i **Afegir a un repertori** (opcional). Importar PDF des d'Afegir continua obrint el selector anterior.
+- **Guardar partitura PDF** genera un PDF d'imatges multipàgina llegible per PDF.js i el desa a **IndexedDB**, on apareix immediatament en Biblioteca, Repertoris (quan seleccionat), Recents en obrir-lo, i dins de les còpies ZIP.
+- Els noms repetits es guarden amb sufix **(2)**, **(3)**, etc. **Mai se substituïx automàticament un PDF ni se'n borren les anotacions.**
+- Procés **local, sense servidors**. La càmera del navegador funciona per capturar fitxers, i no s'obri cap flux de vídeo permanent.
+
+## Memòria i validacions
+
+- Pàgines originals de fins a 24 MiB, selecció total fins a 180 MiB, PDF final fins a 100 MiB; es rebutgen fitxers buits i formats no reconeguts.
+- Les fotos es redimensionen fins a un màxim de 2400 píxels per costat i 4 milions de píxels totals abans de desar-les en JPEG, amb una sola descodificació activa al generador PDF.
+- Cada pàgina s'ajusta dins d'una pàgina **A4 vertical o horitzontal** segons el gir/orientació, preservant la imatge sencera (sense retall).
+- Es comprova la capçalera real `%PDF-` abans d'escriure en la biblioteca. El PDF només entra a IndexedDB quan totes les pàgines s'han processat correctament.
+- Les miniatures temporals `blob:` es revoquen en eliminar les pàgines o eixir de l'escàner.
+
+## Diferències amb Android i següent subfase
+
+**W2.13.1 no té la detecció automàtica de vores ni la correcció de perspectiva d'ML Kit.** Els controls de foto/gir/filtre es fan amb funcions estables del navegador. La pròxima **W2.13.2** desenvoluparà **retall i correcció manual de perspectiva** adaptats a la web.
+
+A més, la captura de càmera i el tipus de selector nadiu depenen del navegador: `capture="environment"` és una preferència, no una garantia. No es crea cap núvol o biblioteca Drive nou ni s'alteren PDF o anotacions existents.
+
+La CI `W2.13.1 Escaner multipagina i PDF` valida formats, filtres, seguretat de rutes, 30 pàgines, foto/càmera sintètica, PDF.js de múltiples fulls, gir, creació en carpeta, associació amb repertori i duplicats. També s'executen totes les regressions de les 28 funcions prèvies.
+
+---
+
 # Partitures Festeres Web — W2.12.2 · Guardar i compartir dictats
 
 La fase W2.12.2 completa l'exportació de **Dictat Musical** i **Dictat Marina** en Eines, prenent literalment de `DictationExportPolicy.kt` i `renderScoreBitmap` en `DictationMarinaPanel.kt` del projecte Android v1.11.15.
