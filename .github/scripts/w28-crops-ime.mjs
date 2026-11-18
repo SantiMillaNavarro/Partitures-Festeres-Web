@@ -93,7 +93,26 @@ try {
  await page.locator('[data-action="annotation-undo"]').click();
  rows=await read();assert.equal(rows['2'][0].boxWidth,clone.boxWidth);
  // Text IME: Return should accept, not add a second line.
- await page.locator('[data-action="rosette-option"][data-value="text"]').click();
+ const chooseText=async()=>{
+  const rosette=page.locator('.pf-rosette');
+  for(let attempt=0;attempt<6;attempt++){
+   if(await page.locator('[data-action="rosette-option"][data-value="text"]').count())break;
+   if(!(await rosette.count())){
+    await page.locator('.viewer-annotate-btn').click();continue;
+   }
+   await page.locator('.pf-rosette-core').click();
+  }
+  const button=page.locator('[data-action="rosette-option"][data-value="text"]');
+  if(!(await button.count())){
+   console.log('W28 ROSETTE DIAGNOSTIC',await page.evaluate(()=>({
+    rose:document.querySelector('.pf-rosette')?.outerHTML?.slice(0,300),
+    legacy:!!document.querySelector('.w23-annotation-toolbar'),
+    mode:document.querySelector('.pf-reading-mode')?.className
+   })));
+  }
+  await button.click();
+ };
+ await chooseText();
  await tap(.68,.70);
  await page.locator('.pf-inline-input').waitFor({timeout:8000});
  assert.equal(await page.locator('.pf-inline-input').getAttribute('enterkeyhint'),'done');
@@ -104,7 +123,7 @@ try {
  assert.equal(rows['2'].find(s=>s.tool==='text')?.text,'Fet des del teclat');
  assert.equal(await page.locator('.annotation-text').count(),1);
  // Multilínia explícita: Shift+Enter i el botó ↵ preserven salts de línia.
- await page.locator('[data-action="rosette-option"][data-value="text"]').click();
+ await chooseText();
  await tap(.62,.52);
  await page.locator('.pf-inline-input').waitFor();
  await page.locator('.pf-inline-input').fill('Primera');
