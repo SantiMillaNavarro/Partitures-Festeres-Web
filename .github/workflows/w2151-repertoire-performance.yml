@@ -1,0 +1,26 @@
+name: W2.15.1 Repertoris i Actuacio circular
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+jobs:
+  performance:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install Chromium
+        run: |
+          npm install --no-save playwright
+          npx playwright install chromium --with-deps
+      - name: Start local HTTP server
+        run: python3 -m http.server 8765 --bind 127.0.0.1 >/tmp/pf-w2151.log 2>&1 &
+      - name: Verify syntax
+        run: |
+          node --check app-w2151.js
+          node --check repertoire-performance-w2151.js
+          node --check .github/scripts/w2151-repertoire-performance.mjs
+      - name: Duplicate repertoires and loop through multi-page PDF scores
+        run: node .github/scripts/w2151-repertoire-performance.mjs
