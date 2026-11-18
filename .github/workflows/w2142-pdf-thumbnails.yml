@@ -1,0 +1,26 @@
+name: W2.14.2 Miniatures primera pagina PDF
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+jobs:
+  pdf-thumbnails:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install Chromium
+        run: |
+          npm install --no-save playwright
+          npx playwright install chromium --with-deps
+      - name: Start local server
+        run: python3 -m http.server 8765 --bind 127.0.0.1 >/tmp/pf-w2142.log 2>&1 &
+      - name: Check JavaScript syntax
+        run: |
+          node --check app-w2142.js
+          node --check pdf-thumbnails-w2142.js
+          node --check .github/scripts/w2142-pdf-thumbnails.mjs
+      - name: Render PDF and check lists, rotation, fallback and settings
+        run: node .github/scripts/w2142-pdf-thumbnails.mjs
