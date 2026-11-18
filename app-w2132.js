@@ -14,7 +14,7 @@ import {MetronomeController} from './metronome-controller-w210.js';
 import {TunerController} from './tuner-controller-w210.js';
 import {ReferenceToneController} from './reference-tone-controller-w211.js';
 import {DictationController} from './dictation-controller-w2122.js';
-import {ScannerController} from './scanner-controller-w2131.js';
+import {ScannerController} from './scanner-controller-w2132.js';
 import {DocumentCamera} from './scanner-camera-w2132.js';
 import {uniqueScanPath} from './scanner-pdf-w2131.js';
 
