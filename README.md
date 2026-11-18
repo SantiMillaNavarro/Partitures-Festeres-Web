@@ -1,4 +1,29 @@
-# Partitures Festeres Web — W2.8 · Retalls de partitura i teclat «Fet»
+# Partitures Festeres Web — W2.9 · Eines: metrònom fidel a Android
+
+Aquesta fase estrena una secció **Eines** a la navegació (tauleta i mòbil) amb el **Metrònom**. S'ha pres com a referència directa `ToolsScreen.kt` i `MetronomeEngine.kt` d'Android v1.11.15.
+
+## Metrònom (W2.9)
+
+- **Sis compassos:** 2/4, 3/4, 4/4, 6/8, 9/8 i 12/8. Per defecte, **100 BPM i 4/4**, igual que Android.
+- Tempo de **40 a 240 BPM**, control lliscant i botons ±1.
+- El BPM indica sempre el **pols principal**. En 6/8, 9/8 i 12/8 cada pols té tres subdivisions audibles.
+- Hi ha exactament **dos sons**, el primer clic més fort i tots els altres idèntics. No alterna timbres entre grups.
+- Àudio generat mitjançant una mostra de **compàs sencer en bucle Web Audio**, per a evitar la deriva de `setInterval` en els clics. Els punts visuals es calculen segons el rellotge real del motor d'àudio.
+- En canviar el tempo o el compàs mentre sona, el motor reconstrueix el bucle amb els nous valors.
+- El metrònom **s'atura en abandonar Eines, tancar la pestanya o ocultar la PWA**, per a no deixar àudio reproduint-se accidentalment.
+- En Android, el motor utilitza `AudioTrack.MODE_STATIC`; en web, `AudioBufferSourceNode.loop` és l'equivalent aplicable. L'àudio només s'inicia per una acció explícita.
+- **Pròximes fases:** afinador, to de referència i Dictat Musical; no es presenten com a funcionalitats ja implementades.
+
+## Compatibilitat
+
+- S'han mantingut la biblioteca, els repertoris, l'índex, els PDF, les anotacions W2.1–W2.8 i els ZIP de seguretat.
+- L'índex de navegació admet la nova pàgina `tools`. El caché de la PWA es renova; IndexedDB i els PDF locals **no s'esborren**.
+- En navegadors sense Web Audio la pàgina indica l'error i no afirma que el metrònom està en marxa.
+- La precisió auditiu-temporal depén del dispositiu, el navegador i la latència de l'eixida d'àudio; cal comprovar-la també amb un dispositiu físic.
+
+---
+
+## Històric W2.8 — Retalls de partitura i teclat «Fet»
 
 La fase **W2.8** incorpora dues millores vinculades al visor de la versió Android v1.11.15.
 
