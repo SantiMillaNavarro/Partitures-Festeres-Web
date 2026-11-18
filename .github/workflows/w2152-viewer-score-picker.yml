@@ -1,0 +1,36 @@
+name: W2.15.2 Selector de partitures dins del visor
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+jobs:
+  viewer-picker:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install Playwright library
+        run: npm install --no-save playwright
+      - name: Use Chrome preinstalled on GitHub runner
+        shell: bash
+        run: |
+          for browser in google-chrome google-chrome-stable chromium chromium-browser; do
+            if command -v "$browser" >/dev/null 2>&1; then
+              echo "PF_CHROMIUM_PATH=$(command -v "$browser")" >> "$GITHUB_ENV"
+              exit 0
+            fi
+          done
+          echo "No system Chrome available" >&2
+          exit 1
+      - name: Start local HTTP server
+        run: python3 -m http.server 8765 --bind 127.0.0.1 >/tmp/pf-w2152.log 2>&1 &
+      - name: Check new modules and application syntax
+        run: |
+          node --check app-w2152.js
+          node --check viewer-score-picker-w2152.js
+          node --check .github/scripts/w2152-viewer-score-picker.mjs
+      - name: Search, select, Android Back and preserve viewer state
+        run: node .github/scripts/w2152-viewer-score-picker.mjs
