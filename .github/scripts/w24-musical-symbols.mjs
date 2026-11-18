@@ -57,7 +57,7 @@ try{
   const {getAnnotations}=await import('./db.js');
   return (await getAnnotations('MUSIC_W24.pdf')).pages['1']||[];
  });
- const stageClick=async()=>page.locator('#viewer-stage').click({position:{x:310,y:230}});
+ const stageClick=async()=>page.locator('#viewer-stage').click({position:{x:195,y:230}}); // Centre: Android utilitza 22% de zones laterals.
  const layerPoint=async(x,y)=>{
   const r=await page.locator('.viewer-annotation-layer').boundingBox();
   assert(r?.width>50&&r?.height>50,'PDF overlay is mounted');
