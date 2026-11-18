@@ -113,7 +113,7 @@ try {
   await button.click();
  };
  await chooseText();
- await tap(.68,.70);
+ await tap(.80,.20);
  await page.locator('.pf-inline-input').waitFor({timeout:8000});
  assert.equal(await page.locator('.pf-inline-input').getAttribute('enterkeyhint'),'done');
  await page.locator('.pf-inline-input').fill('Fet des del teclat');
@@ -124,7 +124,7 @@ try {
  assert.equal(await page.locator('.annotation-text').count(),1);
  // Multilínia explícita: Shift+Enter i el botó ↵ preserven salts de línia.
  await chooseText();
- await tap(.62,.52);
+ await tap(.20,.70);
  await page.locator('.pf-inline-input').waitFor();
  await page.locator('.pf-inline-input').fill('Primera');
  await page.locator('.pf-inline-input').press('Shift+Enter');
