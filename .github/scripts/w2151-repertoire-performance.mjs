@@ -58,7 +58,7 @@ try{
  assert.deepEqual(originalOrder,['A.pdf','B.pdf']);
  // Duplicar dins del repertori, després tornar i duplicar des de la llista.
  await page.locator('.rep-head [data-action="rep-duplicate"]').click();
- assert.equal(await page.locator('.rep-head h3').innerText(),'Concert de Festes (còpia)');
+ await page.waitForFunction(()=>document.querySelector('.rep-head h3')?.textContent==='Concert de Festes (còpia)');
  const copyOrder=await page.evaluate(async()=>{
   const {getPref}=await import('./db.js');
   return await getPref('w13:repertoires');
@@ -68,13 +68,14 @@ try{
  assert.deepEqual(copyOrder[1].paths,['A.pdf','B.pdf']);
  assert.notEqual(copyOrder[0].id,copyOrder[1].id);
  await page.locator('.rep-head [data-action="rep-duplicate"]').click();
- assert.equal(await page.locator('.rep-head h3').innerText(),'Concert de Festes (còpia) (còpia)');
+ await page.waitForFunction(()=>document.querySelector('.rep-head h3')?.textContent==='Concert de Festes (còpia) (còpia)');
  await page.locator('[data-action="rep-back"]').click();
  await page.locator('.pf-rep-choice [data-action="rep-duplicate"][data-id="rep_concert"]').click();
- assert.equal(await page.locator('.rep-head h3').innerText(),'Concert de Festes (còpia 2)');
+ await page.waitForFunction(()=>document.querySelector('.rep-head h3')?.textContent==='Concert de Festes (còpia 2)');
  const copyId=await page.locator('.rep-head [data-action="rep-start"]').getAttribute('data-id');
  assert(copyId.startsWith('rep_'));
  await page.locator('[data-action="rep-up"][data-value="B.pdf"]').click();
+ await page.waitForFunction(async()=>{const {getPref}=await import('./db.js');const r=(await getPref('w13:repertoires'))?.find(x=>x.name==='Concert de Festes (còpia 2)');return r?.paths?.[0]==='B.pdf';});
  const afterReorder=await page.evaluate(async()=>{
   const {getPref}=await import('./db.js');
   return await getPref('w13:repertoires');
