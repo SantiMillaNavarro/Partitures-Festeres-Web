@@ -1232,3 +1232,16 @@ html.reading-pdf,body.reading-pdf{background:#fff!important;background-image:non
  .pf-dictation-empty{min-height:105px}
  .pf-marina-avatar img{height:88px}
 }
+
+/* W2.12.1 — Quatre pestanyes visibles sense scroll horitzontal en mòbil. */
+@media(max-width:620px){
+ .pf-tools-tabbar{
+  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:7px;overflow:visible;
+ }
+ .pf-tools-tab{
+  display:flex;justify-content:center;align-items:center;
+  white-space:normal;text-align:center;line-height:1.2;
+  padding:8px 6px;font-size:clamp(.72rem,2.9vw,.88rem);min-width:0;
+ }
+}
