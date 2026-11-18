@@ -1,3 +1,28 @@
+# Partitures Festeres Web — W2.14.2 · Miniatures dels PDF
+
+Després d'organitzar les partitures, recuperem una funció visual important de l'app Android: **la previsualització de la primera pàgina en cada partitura**, en lloc de mostrar només la mateixa icona.
+
+## Referència Android i implementació web
+
+Basat en el codi real **`PdfThumbnailRepository.kt`** d'Android v1.11.15, inspeccionat directament. Android usa `PdfRenderer`, un `LruCache` de memòria, una miniatura per primera pàgina, un màxim de píxels i la rotació guardada del visor. La web aplica els mateixos principis amb **PDF.js local, Canvas i una caché LRU limitada**.
+
+- Les miniatures apareixen en **Biblioteca**, **Repertoris** (dins de la llista de partitures), **Recents**, **Favorits** i **Índex**.
+- Primer full del PDF original, sense enregistrar còpies de pàgines en IndexedDB ni modificar documents o anotacions.
+- **Càrrega mandrosa:** només es renderitzen les miniatures que estan pròximes a entrar en pantalla (`IntersectionObserver`, marge de 300px). Els PDF es processen **un a un**, evitant que una Biblioteca amb centenars de partitures faça renderitzacions simultànies.
+- Miniatures màximes **280 × 420 px**, límit de **170.000 píxels**, i JPEG comprimit. Caché en memòria limitada a **36 entrades / 6 MiB**. S'allibera el PDF.js `PDFDocumentProxy` després de cada miniatura i la URL temporal de la font sempre es revoca.
+- Es respecta el **gir manual guardat del visor PDF** de la partitura, amb rotació original automàtica del mateix PDF si no s'ha fixat cap gir.
+- Els PDF corruptes, protegits o amb renderització fallida **conserven la icona PDF original**, sense error visible ni bloquejar la resta de la pantalla.
+- En **Ajustos → Miniatures de partitures**, es poden **activar/desactivar**. La preferència és persistent entre sessions i el comportament original amb icones continua disponible.
+- Després d'un trasllat / canvi de nom, l'antic camí s'invalida en la caché i es genera la nova miniatura quan corresponga. Els canvis de mida i data d'importació també invaliden les miniatures antigues.
+- Disseny de pergamí compacte: no es creen nous botons a les files ni desapareixen funcions de metadades, Favorits o repertoris.
+- El motor és **100% local i offline**; reutilitza el PDF.js i el worker ja inclosos a la PWA, sense nous CDN o servidors.
+
+## Validació
+
+El workflow **W2.14.2 Miniatures primera pagina PDF** prova PDFs reals generats al navegador, orientació original i gir manual, límits de memòria/píxels, fallback davant d'un PDF corrupte, miniatures en cinc seccions, canvi persistent d'Ajustos i integritat dels PDFs en IndexedDB. Es mantenen les regressions de les fases anteriors.
+
+---
+
 # Partitures Festeres Web — W2.14.1 · Organitzar partitures
 
 Fase de gestió de fitxers basada en la semàntica de `replacePdfReferences` d'Android v1.11.15: **moure o renomenar no crea un altre PDF ni fa perdre les dades de l'obra.**
