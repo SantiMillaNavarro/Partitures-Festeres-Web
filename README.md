@@ -1,3 +1,33 @@
+# Partitures Festeres Web — W2.13.2 · Escàner automàtic de fulles i capçalera vertical
+
+Subfase que respon a les proves reals de **W2.13.1** en mòbil. Dos canvis independents, sense alterar la biblioteca ni les anotacions:
+
+## 1. Capçalera sense solapaments (mòbils i tauletes estretes)
+
+En pantalles de fins a **850 px CSS**, el logotip i **Partitures Festeres** es mostren en una primera fila, i els botons **Escanejar** i **Importar** en una segona fila de dues columnes. Els títols tenen amplària acotada, i els botons mai es superposen a la marca. Escriptori i el visor PDF mantenen els seus components habituals.
+
+## 2. Escàner amb càmera i detecció de fulles
+
+Android v1.11.15 delega en **Google ML Kit Document Scanner**, usant `GmsDocumentScannerOptions.SCANNER_MODE_FULL`. Aquest SDK no és un component web; la PWA usa **getUserMedia + Canvas i detecció geomètrica local sense dependències externes**.
+
+- **Escàner automàtic** obri una previsualització de càmera real (amb permís explícit); traça un polígon **verd** quan detecta una fulla contrastada amb el fons.
+- El detector comprova la diferència de brillantor centre/vora, la component rectangular, la convexitat i la mida mínima. Captura **automàticament després de quatre deteccions estables consecutives** (aproximadament 1 segon), amb llindar conservador per reduir falsos positius.
+- La fotografia queda retallada amb les **quatre cantonades detectades** i corregida mitjançant una **homografia projectiva**. El resultat es convertix a **JPEG**, i entra com una pàgina més de l'escàner anterior. Un botó **Capturar ara** continua sempre disponible.
+- Evita les duplicacions d'una fulla estàtica: cal **retirar la fulla uns instants** o prémer **Preparar següent fulla** abans d'una altra auto-captura. Màxim **30 pàgines**.
+- **Captura automàtica** es pot desactivar amb una casella. **Acabar** torna a la pantalla de previsualització, on es pot reordenar, girar, filtrar i guardar en PDF a la Biblioteca o a un Repertori.
+- **Foto del sistema** conserva el selector de càmera natiu de W2.13.1: és l'alternativa als navegadors sense `getUserMedia` o quan es denega el permís. **Afegir fotos** segueix disponible.
+- Càmera i dades de vídeo **només al dispositiu**; sense enviaments, ni llibreries de tercers, ni streaming de xarxa. S'allibera la càmera i s'aturen totes les pistes en tancar, ocultar la pàgina o eixir d'Afegir.
+- Qualitat: els fulls blancs sobre una taula fosca o de color contrastat es reconeixen millor. Superfícies de color semblant, ombres, reflexos o papers arrugats poden impedir la detecció; no prometem la precisió de ML Kit. La captura manual continua operativa i, si no es detecten cantonades fiables, guarda la foto sencera.
+- Els fitxers de reconeixement i perspectiva s'inclouen en el **caché de PWA**, per a funcionar sense connexió.
+
+## Proves
+
+Workflow nou **W2.13.2 Deteccio automatica i capcalera**: verificació de límits de títol/botons amb mides 320, 360, 390, 430, 620, 768 i 830 px; imatges sintètiques amb i sense fulla; 4 cantonades, homografia i JPEG; càmera simulada, captura automàtica, prevenció de duplicats, captura manual i finalització sense deixar pistes actives. Es mantenen les regressions existents (W2.13.1 i anteriors).
+
+**Millora futura:** un editor de cantonades ajustables manualment per quan el reconeixement no detecte una fulla.
+
+---
+
 # Partitures Festeres Web — W2.13.1 · Afegir / Escàner multipàgina
 
 La fase **W2.13.1** estrena en la web el flux de treball d'**Afegir partitures**. S'ha revisat directament el codi d'Android v1.11.15 (`AddContentScreen.kt`, `ScanImportPolicy.kt` i `ScannerPreviewDecoder.kt`). Android fa servir **Google ML Kit Document Scanner**, que no està disponible com a component integrable en el navegador; en web fem servir el selector nadiu de càmera/galeria i un motor local de generació PDF.
