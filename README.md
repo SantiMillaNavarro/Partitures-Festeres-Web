@@ -1,3 +1,20 @@
+# Partitures Festeres Web — W2.18 · Ajustos individuals de pàgina
+
+L'app Android 1.11.15 guarda per pàgina un **gir**, un **retall visual** i el **contrast** sense alterar el fitxer PDF. W2.18 incorpora estes opcions al visor web amb el mateix principi no destructiu.
+
+- En obrir una partitura, mostra els controls i toca **Ajustar pàgina** (icona de marc en el menú superior).
+- La previsualització del full permet girar **90° a dreta o esquerra**, moure el marc i ajustar els marges arrossegant els huit punts o amb els quatre controls de 0–35 %. El contrast és de **70–160 %**.
+- **Aplicar a la pàgina** afecta només el full actual; **Aplicar a tot el PDF** propaga estos mateixos ajustos a tots els fulls. **Restablir retall i contrast** conserva el gir configurat. **Cancel·lar** no guarda els canvis.
+- El PDF original i les anotacions existents no es modifiquen: el retall amaga només la part exterior; el canvas PDF i la capa SVG d'anotacions es desplacen amb les mateixes coordenades.
+- Cada partitura guarda els seus propis ajustos per número de pàgina en IndexedDB. Es recuperen després de reobrir el visor i funcionen sense connexió. Renomenar o moure el PDF trasllada també estes preferències en la mateixa transacció; eliminar-lo neteja els seus ajustos.
+- L'editor s'inhabilita mentre s'anota per protegir textos i gestos. Es conserven els huit ajustos de W2.16 i les fletxes laterals de W2.17.
+
+**Prova:** obri un PDF de dos fulls, retalla i puja el contrast del primer, passa al segon, torna al primer i reobri la partitura. Després prova el gir i «Aplicar a tot el PDF» i comprova que les anotacions mantenen la posició.
+
+**Pròximes fases:** paritat de les opcions Android restants, prioritzant estabilitat i compatibilitat de navegadors.
+
+---
+
 # Partitures Festeres Web — W2.17 · Fletxes laterals i visor sense avís de pantalla completa
 
 Canvis sol·licitats després de provar **W2.16** en Android amb una captura on Chrome mostra una notificació sobre com eixir de **pantalla completa** per damunt de la partitura. Eixe avís és del navegador, no del PDF. Per eliminar-lo deixem de demanar `requestFullscreen()` en entrar al lector.
