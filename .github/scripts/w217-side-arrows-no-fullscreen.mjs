@@ -79,10 +79,10 @@ try{
  await previous.click();
  await page.waitForFunction(()=>document.querySelector('#viewer-page-counter')?.textContent?.includes('1 / 2'),null,{timeout:20000});
  // En editar anotacions, les fletxes no poden rebre tocs sobre el PDF.
- await page.locator('[data-action="viewer-annotate"]').evaluate(button=>button.click());
+ await page.locator('.viewer-annotate-btn').evaluate(button=>button.click());
  await page.waitForFunction(()=>document.querySelector('.pf-reading-mode')?.classList.contains('annotation-mode'));
  assert.equal(await next.isVisible(),false,'Fletxes ocultes durant anotacions');
- await page.locator('[data-action="viewer-annotate"]').evaluate(button=>button.click());
+ await page.locator('.viewer-annotate-btn').evaluate(button=>button.click());
  await page.waitForFunction(()=>!document.querySelector('.pf-reading-mode')?.classList.contains('annotation-mode'));
  assert(await next.isVisible(),'Fletxes tornen després d’anotar');
  await page.locator('[data-action="viewer-close"]').evaluate(button=>button.click());
