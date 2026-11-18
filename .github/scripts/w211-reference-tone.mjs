@@ -76,7 +76,8 @@ try{
   window.AudioContext=Context;window.webkitAudioContext=Context;
  });
  await page.goto('http://127.0.0.1:8765/',{waitUntil:'domcontentloaded'});
- if(await page.locator('[data-action="welcome-done"]').count())await page.locator('[data-action="welcome-done"]').click();
+ await page.locator('[data-action="welcome-done"]').waitFor({timeout:20000});
+ await page.locator('[data-action="welcome-done"]').click();
  await page.locator('.bottom-nav [data-action="page"][data-value="tools"]').click();
  await page.locator('[data-action="tool-tab"][data-value="reference"]').click();
  await page.locator('.pf-reference-panel').waitFor();

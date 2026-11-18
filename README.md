@@ -1,3 +1,30 @@
+# Partitures Festeres Web — W2.14.1 · Organitzar partitures
+
+Fase de gestió de fitxers basada en la semàntica de `replacePdfReferences` d'Android v1.11.15: **moure o renomenar no crea un altre PDF ni fa perdre les dades de l'obra.**
+
+## Com s'utilitza
+
+Des de Biblioteca, Favorits, Recents o Repertoris, prem el **llapis de metadades** d'una partitura. Al final del quadre trobaràs **Moure o renomenar fitxer PDF**. Es pot modificar el nom, triar una carpeta existent (inclosa l'arrel) o crear una **nova subcarpeta** dins de la carpeta triada. Es mostra la ruta resultant abans de guardar. En mòbil no s'ha afegit cap quart botó per fila, perquè ja hi havia poc espai per als títols de les obres.
+
+En guardar, la Biblioteca obri la ubicació final de la partitura, amb les seues carpetes reals creades segons els fitxers. Els noms de carpeta es respecten, i les carpetes buides no es representen perquè la Biblioteca web continua derivant l'arbre de la ruta dels PDFs.
+
+## Conservació de dades i seguretat
+
+- La funció `moveScoreSafely` de `db.js` trasllada el mateix **Blob PDF** i les metadades, a més d'**anotacions**, **pàgina/zoom/ajusts de lectura**, **Favorits**, **Recents** i referències de tots els **Repertoris**.
+- El trasllat es fa dins d'**una sola transacció IndexedDB** sobre `scores`, `annotations` i `prefs`, sense estats intermedis. Si qualsevol pas falla, es reverteix automàticament tot el canvi.
+- No se sobreescriu **mai** un PDF existent, unes anotacions preexistents o unes preferències de lector preexistents en el camí de destinació. En cas de conflicte s'informa a l'usuari, que pot triar un altre nom.
+- S'apliquen controls de nom i carpeta per a impedir rutes amb `..`, barres dins de noms, caràcters de control i fitxers sense nom.
+- Les còpies ZIP ja preparades s'invaliden després d'un trasllat correcte. Les dades continuen disponibles offline i incloses en la pròxima còpia de seguretat.
+- La nova carpeta és una subcarpeta **real en l'estructura virtual del web**: es materialitza en moure-hi la partitura, sense modificar cap carpeta de Google Drive ni cap arxiu Android.
+
+**Nota:** si estaves editant metadades quan polses Organitzar, guarda eixos canvis de metadades abans d'obrir el moviment de fitxer.
+
+## Validació
+
+La nova prova `W2.14.1 Organitzar partituras` comprova PDF idèntic, anotacions, metadades, Favorits, Recents, Repertoris, preferències del visor, subcarpeta nova i col·lisions sense destrucció de dades, més la resta de workflows anteriors.
+
+---
+
 # Partitures Festeres Web — W2.13.3 · Retall manual i perspectiva
 
 Esta fase respon a la comprovació real del mòbil: la detecció automàtica de fulles no és consistent en totes les condicions. **El retall manual de quatre cantonades és la ruta fiable**, independentment de l'eficàcia de la detecció.

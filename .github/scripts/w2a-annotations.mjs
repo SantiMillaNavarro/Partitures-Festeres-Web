@@ -37,7 +37,7 @@ try{
  // La versió d'Ajustos i la informació sobre anotacions han d'estar actualitzades.
  await page.locator('.bottom-link[data-value="settings"]').click();
  const settingsText=await page.locator('main.content').innerText();
- assert.match(settingsText,/Partitures Festeres Web — W2\.13\.3/,'Version in settings');
+ assert.match(settingsText,/Partitures Festeres Web — W2\.14\.1/,'Version in settings');
  assert(!settingsText.includes('Les anotacions, Drive'),'Annotations are no longer marked as pending');
  assert(settingsText.includes('llapis, formes'),'W2.2 annotation capabilities displayed in settings');
  await page.locator('.bottom-link[data-value="library"]').click();
