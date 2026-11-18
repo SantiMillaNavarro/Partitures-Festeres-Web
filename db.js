@@ -250,6 +250,8 @@ export async function moveScoreSafely(oldPath,newPath){
    destinationAnnotations:annotations.get(newPath),
    oldViewer:prefs.get('viewer:'+oldPath),
    newViewer:prefs.get('viewer:'+newPath),
+   oldPageAdjustments:prefs.get('w218:page:'+oldPath),
+   newPageAdjustments:prefs.get('w218:page:'+newPath),
    favorites:prefs.get('w13:favorites'),
    recents:prefs.get('w13:recents'),
    repertoires:prefs.get('w13:repertoires')
@@ -265,6 +267,7 @@ export async function moveScoreSafely(oldPath,newPath){
    if(reads.destination.result)return fail('Ja existix una partitura amb este nom en la carpeta de destinació.');
    if(reads.destinationAnnotations.result)return fail('La destinació conté anotacions anteriors. Per seguretat no es reescriu.');
    if(reads.newViewer.result)return fail('La destinació té un estat de lectura anterior. Tria un altre nom.');
+   if(reads.newPageAdjustments.result)return fail('La destinació té ajustos de pàgina. Tria un altre nom.');
    scores.put({...old,path:newPath});
    scores.delete(oldPath);
    if(reads.sourceAnnotations.result){
@@ -274,6 +277,10 @@ export async function moveScoreSafely(oldPath,newPath){
    if(reads.oldViewer.result){
     prefs.put({key:'viewer:'+newPath,value:reads.oldViewer.result.value});
     prefs.delete('viewer:'+oldPath);
+   }
+   if(reads.oldPageAdjustments.result){
+    prefs.put({key:'w218:page:'+newPath,value:reads.oldPageAdjustments.result.value});
+    prefs.delete('w218:page:'+oldPath);
    }
    const updated=moveCollectionReferences({
     favorites:reads.favorites.result?.value||[],
