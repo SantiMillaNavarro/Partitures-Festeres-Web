@@ -1,3 +1,32 @@
+# Partitures Festeres Web — W2.20 · Papers virtuals i carpetes configurables
+
+## Referència Android 1.11.15
+Implementació inspirada en PaperRoleStore.kt, PaperRoleNavigation.kt i PaperRoleControls de PartituresFesteresApp.kt. El paper és un accés virtual a una **ruta de carpeta** de la biblioteca; no mou, crea ni suprimix cap PDF.
+
+## Novetats
+- **Configurar papers** (engranatge al costat del selector a Biblioteca i Índex; també des d'Ajustos). Es poden assignar els papers 1r i 2n a qualsevol carpeta **existent** de la biblioteca, incloent-ne de niades com Instruments/Saxo Alt/1r.
+- **Afegir paper** crea 3r, 4t, 5é i els següents. Es poden eliminar només els papers addicionals. La confirmació explica que no es modifica cap carpeta ni partitura.
+- **Cerca de carpeta** dins del modal, amb els noms reals i ruta completa. Una carpeta assignada a un altre paper es mostra com a ocupada; al reassignar-la, es desvincula del paper anterior (mateix principi d'Android).
+- **Arrel** permet vore totes les obres de la biblioteca. Un paper seleccionat mostra directament els seus PDFs/subcarpetes internes; no obliga a tornar a entrar per les carpetes pare.
+- La Biblioteca, l'Índex, Recents, Favorits, la navegació per breadcrumbs, l'escàner i la reorganització tenen en compte l'arrel virtual. Els repertoris mantenen les seues rutes originals i no canvien de contingut.
+- Les assignacions i el paper actiu es desen a IndexedDB. S'inclouen en els ZIP complets (Ajustos).
+- **Migració W2.19**: els antics accessos per carpetes numerades a la primera capa es convertixen en papers 1r, 2n, 3r, 4t, etc. La migració conserva la selecció antiga quan siga possible i no renombra ni mou arxius.
+
+## Diferències de plataforma
+Android utilitza URIs reals del Storage Access Framework; la web, de moment, utilitza les rutes dels PDFs importats en la seua base IndexedDB. **No s'ha implementat encara la connexió directa a carpetes del dispositiu ni a Google Drive**. Les carpetes buides, sense cap PDF importat, no són seleccionables. Si una carpeta vinculada desapareix del contingut, apareix un avís al configurador, però l'assignació es conserva per a futures reimportacions.
+
+## Proves manuals
+1. Importa un ZIP amb rutes Instruments/Saxo/1r/Marxes, Instruments/Saxo/2n/Pasdobles i Instruments/Trompeta/3r/Mores.
+2. Al selector de Biblioteca, toca l'engranatge i assigna 1r a Instruments/Saxo/1r; comprova que Biblioteca mostra Marxes directament, sense carpetes Instruments ni Saxo.
+3. Afig 3r, assigna Instruments/Trompeta/3r, selecciona 3r i després Arrel.
+4. Reassigna una carpeta d'un paper a un altre: ha de desaparèixer la vinculació antiga, sense tocar els PDF.
+5. Esborra 3r amb confirmació: el paper desapareix però les obres continuen visibles en Arrel.
+6. Recarrega l'app i comprova que les assignacions persistixen. Fes una còpia ZIP; restaura en mode Substituir per a recuperar-les.
+
+**Pròxima fase:** W2.21 · preparació del connector opcional Google Drive i estratègia d'accés segur i local sense connexió.
+
+---
+
 # Partitures Festeres Web — W2.19 · Edició avançada i còpies ZIP segures
 
 Esta fase recupera ferramentes d'Android 1.11.15 (PdfViewerScreen.kt) sense alterar el PDF original.

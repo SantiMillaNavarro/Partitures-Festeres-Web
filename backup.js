@@ -110,7 +110,8 @@ export async function createBackup(onProgress=()=>{}) {
   });
   const preferences=safePrefs(eligiblePrefs);
   if(preferences.length>MAX_BACKUP_PREFS||eligiblePrefs.some(p=>typeof p.key==='string'&&
-      (p.key.startsWith('viewer:')||p.key.startsWith('w218:page:'))&&
+      (p.key.startsWith('viewer:')||p.key.startsWith('w218:page:')||
+       p.key==='w220:paperRoles'||p.key==='paper')&&
       !preferences.some(saved=>saved.key===p.key)))
    throw new Error('Hi ha ajustos de partitura que no caben en la còpia. No s’ha exportat un ZIP incomplet.');
   const files=[]; let totalBytes=0;
@@ -138,7 +139,7 @@ export async function createBackup(onProgress=()=>{}) {
     zip.file(annotationEntry(record.path),json,{compression:'DEFLATE'});
     annotations.push({path:record.path,size:blob.size,sha256:sha});
   }
-  const manifest={kind:BACKUP_KIND,schemaVersion:1,appVersion:'W2.19',createdAt:new Date().toISOString(),scoreCount:files.length,totalBytes,files,preferences,annotations};
+  const manifest={kind:BACKUP_KIND,schemaVersion:1,appVersion:'W2.20',createdAt:new Date().toISOString(),scoreCount:files.length,totalBytes,files,preferences,annotations};
   const manifestText=JSON.stringify(manifest,null,2);
   if(manifestText.length>MAX_MANIFEST_BYTES)throw new Error('La biblioteca té massa ajustos per a este ZIP. No s’ha creat una còpia incompleta.');
   zip.file(BACKUP_MANIFEST,manifestText);

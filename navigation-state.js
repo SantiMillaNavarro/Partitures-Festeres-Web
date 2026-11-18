@@ -20,7 +20,7 @@ export function snapshotNavigation(state,scrollY=0){
   view:cleanPath(view)&&/\.pdf$/i.test(view)?{path:view,page:goodPage(state.view.page)}:null,
   scrollY:goodScroll(scrollY)};
 }
-export function validateNavigation(raw,{scores=[],repertoires=[],paper='root'}={}){
+export function validateNavigation(raw,{scores=[],repertoires=[],paper='root',paperBase=null}={}){
  if(!isRecord(raw)||raw.version!==NAVIGATION_VERSION)return null;
  const knownPaths=new Set(scores.map(s=>s.path));
  const page=APP_PAGES.includes(raw.page)?raw.page:'library';
@@ -29,7 +29,7 @@ export function validateNavigation(raw,{scores=[],repertoires=[],paper='root'}={
  if(page==='library'&&raw.paper===paper&&Array.isArray(raw.cwd)){
   for(const folder of raw.cwd.slice(0,15)){
    if(!cleanFolder(folder))break;
-   const prefix=[...(paper==='root'?[]:[paper]),...cwd,folder].join('/')+'/';
+   const prefix=[...(paperBase!==null?(paperBase?paperBase.split('/'):[]):(paper==='root'?[]:[paper])),...cwd,folder].join('/')+'/';
    if(!scores.some(s=>s.path.startsWith(prefix)))break;
    cwd.push(folder);
   }

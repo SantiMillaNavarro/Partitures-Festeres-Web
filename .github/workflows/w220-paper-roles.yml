@@ -1,0 +1,40 @@
+name: W2.20 Papers configurables i carpetes virtuals
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+jobs:
+  paper-roles:
+    runs-on: ubuntu-latest
+    timeout-minutes: 13
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install Playwright
+        run: npm install --no-save playwright
+      - name: Use installed Chrome
+        run: |
+          for browser in google-chrome google-chrome-stable chromium chromium-browser; do
+            if command -v "$browser" >/dev/null 2>&1; then
+              echo "PF_CHROMIUM_PATH=$(command -v "$browser")" >> "$GITHUB_ENV"
+              exit 0
+            fi
+          done
+          echo "Chrome not found" >&2
+          exit 1
+      - name: Start local server
+        run: python3 -m http.server 8765 --bind 127.0.0.1 >/tmp/pf-w220.log 2>&1 &
+      - name: Check module syntax
+        run: |
+          node --check app-w220.js
+          node --check paper-roles-w220.js
+          node --check paper-role-ui-w220.js
+          node --check navigation-state.js
+          node --check backup.js
+          node --check .github/scripts/w220-paper-roles.mjs
+      - name: Test paper settings and real PDF library
+        run: node .github/scripts/w220-paper-roles.mjs
