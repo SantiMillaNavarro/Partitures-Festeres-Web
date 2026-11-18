@@ -1,3 +1,28 @@
+# Partitures Festeres Web — W2.11 · Nota de referència
+
+La fase W2.11 porta a la web el panell **Nota de referència** d'Android v1.11.15, contrastat directament amb `ToolsScreen.kt` i `ReferenceToneEngine.kt`.
+
+## En Eines
+
+- Les tres pestanyes reals **Metrònom**, **Afinador** i **Nota de referència** comparteixen el disseny musical d'Android.
+- **12 notes** cromàtiques amb els noms visibles d'Android (incloent **Do♯/Re♭**, **Fa♯/Sol♭** i **Sib**).
+- **Octaves 2–6** i accessos directes **La4, Sib3, Sib4**. La selecció inicial és La4.
+- La freqüència es calcula en temperament igual a partir de **La4 = 442 Hz**, compartit amb el calibratge de l'afinador (430–450 Hz). El canvi de calibratge en Afinador també canvia automàticament el to de referència.
+- La síntesi local `PeriodicWave` amb Web Audio combina exactament els pesos d'harmònics d'Android `0,82`, `0,13` i `0,05` i una amplitud nominal `0,34`. No s'empren fitxers externs ni serveis en línia.
+- **Fer sonar / Parar nota**. Es pot canviar la nota o l'octava en plena reproducció, sense reiniciar l'oscil·lador.
+- S'atura en canviar de ferramenta, eixir d'Eines, passar a segon pla, recarregar o tancar. No hi ha reproducció automàtica.
+- Disseny adaptable a mòbil, tauleta i orientació horitzontal.
+
+## Compatibilitat i seguretat
+
+Es conserven completament el metrònom de W2.9 i l'afinador YIN de W2.10, així com biblioteca, repertoris, visor, PDF, anotacions, metadades i còpies ZIP. El Web Audio no modifica partitures ni emmagatzema so. El caché PWA actualitzat permet síntesi sense connexió després de la instal·lació inicial; les dades privades continuen en IndexedDB.
+
+La reproducció depén del permís d'àudio del navegador, dels altaveus i del volum del sistema. En dispositius reals cal provar el canvi entre notes i confirmar que l'àudio es para en canviar d'eina o ocultar la pantalla.
+
+**Pròxima ferramenta pendent:** Dictat Musical i Marina, a desenvolupar en fases específiques després de provar aquesta.
+
+---
+
 # Partitures Festeres Web — W2.10 · Afinador cromàtic d'Android
 
 La fase **W2.10** incorpora en **Eines → Afinador** el panell cromàtic de la versió Android v1.11.15. El **Metrònom** de W2.9 continua complet i es tria amb les pestanyes pròpies d'Eines.
