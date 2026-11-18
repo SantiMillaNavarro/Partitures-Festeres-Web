@@ -1,0 +1,37 @@
+name: W2.16 Ajustos complets del visor
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+jobs:
+  full-viewer-settings:
+    runs-on: ubuntu-latest
+    timeout-minutes: 9
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install Playwright library
+        run: npm install --no-save playwright
+      - name: Use preinstalled Chrome
+        shell: bash
+        run: |
+          for browser in google-chrome google-chrome-stable chromium chromium-browser; do
+            if command -v "$browser" >/dev/null 2>&1; then
+              echo "PF_CHROMIUM_PATH=$(command -v "$browser")" >> "$GITHUB_ENV"
+              exit 0
+            fi
+          done
+          echo "No system Chrome available" >&2
+          exit 1
+      - name: Start local server
+        run: python3 -m http.server 8765 --bind 127.0.0.1 >/tmp/pf-w216.log 2>&1 &
+      - name: Check syntax
+        run: |
+          node --check app-w216.js
+          node --check viewer-w216.js
+          node --check viewer-advanced-settings-w216.js
+          node --check .github/scripts/w216-all-viewer-settings.mjs
+      - name: Android viewer parity, persistence, wake lock and navigation
+        run: node .github/scripts/w216-all-viewer-settings.mjs
