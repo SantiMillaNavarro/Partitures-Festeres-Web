@@ -1,0 +1,35 @@
+name: W2.17 Fletxes i visor sense pantalla completa
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+jobs:
+  sidebar-navigation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 9
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install Playwright package
+        run: npm install --no-save playwright
+      - name: Use Chrome preinstalled on runner
+        shell: bash
+        run: |
+          for browser in google-chrome google-chrome-stable chromium chromium-browser; do
+            if command -v "$browser" >/dev/null 2>&1; then
+              echo "PF_CHROMIUM_PATH=$(command -v "$browser")" >> "$GITHUB_ENV"
+              exit 0
+            fi
+          done
+          echo "No system Chrome available" >&2
+          exit 1
+      - name: Start local web app
+        run: python3 -m http.server 8765 --bind 127.0.0.1 >/tmp/pf-w217.log 2>&1 &
+      - name: Check JS syntax
+        run: |
+          node --check app-w217.js
+          node --check .github/scripts/w217-side-arrows-no-fullscreen.mjs
+      - name: Verify edge navigation and no fullscreen popup
+        run: node .github/scripts/w217-side-arrows-no-fullscreen.mjs
