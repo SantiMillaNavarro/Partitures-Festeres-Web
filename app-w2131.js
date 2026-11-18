@@ -413,7 +413,7 @@ function advancedFilterOptions(key){
  }
  return values.sort(sort).slice(0,100);
 }
-function setPage(page){if(state.page==='tools'&&page!=='tools'){metronome.stop({release:true,notify:false});tuner.stop({notify:false});referenceTone.stop({notify:false});dictation.stop({notify:false});}if(state.page==='add'&&page!=='add')scanner.cancel();state.page=page;state.search='';clearAdvancedSearch();state.cwd=[];state.view=null;render();}
+function setPage(page){if(state.page==='add'&&page!=='add'&&scanner.busy){toast(state.lang==='es'?'Se está guardando el PDF.':'S’està guardant el PDF.');return;}if(state.page==='tools'&&page!=='tools'){metronome.stop({release:true,notify:false});tuner.stop({notify:false});referenceTone.stop({notify:false});dictation.stop({notify:false});}if(state.page==='add'&&page!=='add')scanner.cancel();state.page=page;state.search='';clearAdvancedSearch();state.cwd=[];state.view=null;render();}
 function availableFolders(records,prefix='') {
  const folders=new Set();let direct=[];
  for(const s of records){
@@ -1166,7 +1166,7 @@ async function handleClick(el){
  const action=el.dataset.action,val=el.dataset.value;
  switch(action){
   case 'scan-open':{
-   if(state.view||viewerPendingOpen)break;
+   if(state.view||viewerPendingOpen||state.page==='add'||scanner.busy)break;
    const folder=state.page==='library'?currentBase():state.paper==='root'?'':state.paper;
    setPage('add');scanner.open({folder,repertoires:state.repertoires});break;
   }
@@ -1260,7 +1260,7 @@ async function handleClick(el){
   case 'paper':state.paper=val;state.cwd=[];state.search='';state.indexCollapsed.clear();await setPref('paper',val);render();break;
   case 'crumb':state.cwd=state.cwd.slice(0,Number(val));state.search='';render();break;
   case 'folder':state.cwd.push(val);state.search='';render();break;
-  case 'import':$('#import-input').click();break;
+  case 'import':if(!(state.page==='add'&&scanner.busy))$('#import-input').click();break;
   case 'backup-create':await doBackup();break;
   case 'backup-choose':$('#restore-input').click();break;
   case 'backup-save':saveBackup();break;
