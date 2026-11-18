@@ -83,7 +83,7 @@ export function renderDictationMarkup({mode='musical',instrumentId='CONCERT_TREB
  '<p>'+tr('Detecta les alçades de la veu quasi en temps real i les escriu sobre el pentagrama perquè després pugues guardar-les o compartir-les.',
  'Detecta las alturas de la voz casi en tiempo real y las escribe en el pentagrama para que después puedas guardarlas o compartirlas.')+'</p></div></div>':
  '<label class="pf-dictation-select-label" for="dictation-instrument">'+tr('Instrument','Instrumento')+'</label>'+
- '<select id="dictation-instrument" class="pf-dictation-select"'+(running||pending?' disabled':'')+'>'+select+'</select>'+
+ '<select id="dictation-instrument" class="pf-dictation-select"'+(running||pending||exporting?' disabled':'')+'>'+select+'</select>'+
  '<p class="pf-dictation-hint">'+tr('El dictat escriu la nota tal com la llig l’instrument seleccionat.','El dictado escribe la nota como la lee el instrumento seleccionado.')+'</p>'+
  (notes.length?'<p class="pf-dictation-hint pf-dictation-warning">'+tr('Canviar d’instrument neteja el dictat actual.','Cambiar de instrumento borra el dictado actual.')+'</p>':''))+
  '<p class="pf-dictation-note">'+tr(marina?'Mode lúdic: plasma amb rapidesa la veu en el pentagrama. No és un dictat rigorós; és una “melodia parlada”.':
@@ -96,9 +96,9 @@ export function renderDictationMarkup({mode='musical',instrumentId='CONCERT_TREB
  'Encara no hi ha notes. Prem «Començar dictat» i toca l’instrument.',
  marina?'Todavía no hay notas. Activa Dictat Marina y habla, canta o di cualquier cosa.':
  'Todavía no hay notas. Pulsa «Iniciar dictado» y toca el instrumento.')+'</div>')+
- '</div>'+exportControls+'<div class="pf-dictation-footer"><button type="button" class="pf-dictation-toggle'+(running?' running':'')+'" data-action="dictation-toggle" aria-pressed="'+running+'"'+(pending?' disabled':'')+'>'+
+ '</div>'+exportControls+'<div class="pf-dictation-footer"><button type="button" class="pf-dictation-toggle'+(running?' running':'')+'" data-action="dictation-toggle" aria-pressed="'+running+'"'+(pending||exporting?' disabled':'')+'>'+
  (running?'■ '+tr('Acabar dictat','Detener dictado'):pending?tr('Activant micròfon…','Activando micrófono…'):'● '+tr('Començar dictat','Iniciar dictado'))+'</button>'+
- '<button type="button" class="pf-dictation-clear" data-action="dictation-clear"'+(running||pending||!notes.length?' disabled':'')+'>'+tr('Netejar','Limpiar')+'</button></div>'+
+ '<button type="button" class="pf-dictation-clear" data-action="dictation-clear"'+(running||pending||exporting||!notes.length?' disabled':'')+'>'+tr('Netejar','Limpiar')+'</button></div>'+
  '<p class="pf-dictation-privacy">'+tr('El micròfon només s’activa quan comences. L’àudio es processa al dispositiu i no es guarda ni s’envia.',
  'El micrófono solo se activa cuando empiezas. El audio se procesa en tu dispositivo y no se guarda ni se envía.')+
  ' '+tr('La4 de referència','La4 de referencia')+': '+reference+' Hz.</p>'+
