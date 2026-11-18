@@ -1,3 +1,36 @@
+# Partitures Festeres Web — W2.16 · TOTS els ajustos avançats del visor d'Android
+
+Fase completa, sense subdivisió. Revisió directa del codi original **Android 1.11.15**: `data/SettingsStore.kt`, `ui/SettingsScreen.kt`, `ui/PdfViewerScreen.kt` i `ui/PdfViewerActivity.kt`. Les huit opcions de configuració del visor trobades s'han reproduït en un únic panell **Ajustos → Ajustos avançats del visor**, en valencià i castellà. No s'han afegit opcions suposades d'Android ni s'han alterat els PDFs.
+
+## Les huit opcions i els valors originals
+
+| Android `AppSettings` | Web W2.16 | Valor inicial | Comportament |
+| --- | --- | --- | --- |
+| `menuHideSeconds` | Amagar menús després de | **3 s**, de 1 a 10 | Desapareix el menú del visor després del temps triat |
+| `showScoreNameOnChange` | Mostrar el nom al canviar | **No** | Cartell temporal durant **1,2 s** en obrir una partitura |
+| `rememberZoom` | Recordar el zoom | **Sí** | Si es desactiva, s'obri cada PDF al 100 %; preservem el zoom guardat anterior per si es torna a activar |
+| `keepScreenOn` | Mantindre la pantalla encesa | **Sí** | `navigator.wakeLock.request('screen')` si el navegador ho permet; s'allibera al tancar el visor o amagar la pestanya |
+| `allowViewerRotation` | Intentar orientació horitzontal | **Sí** | Conserva l'intent de bloqueig horitzontal que ja tenia la PWA; desactivat, respecta l'orientació física actual |
+| `sideTapFraction` | Amplària zones laterals | **22 %**, de 12 a 32 % | Zones esquerra/dreta per a pàgina anterior/següent, centre per als controls; doble toc central respecta la mateixa franja |
+| `overrideBrightness` | Ajustar la llum del visor | **No** | La web usa un filtre visual d'atenuació, **no** pot canviar el brillantor físic del dispositiu |
+| `brightnessPercent` | Llum relativa del visor | **80 %**, de 20 a 100 % | Atenuació configurada (no bloqueja tocs ni tapa els botons), i vista prèvia abans de guardar |
+
+**Nota sobre la rotació Android:** la font 1.11.15 conserva el camp `allowViewerRotation` a Ajustos i a `SettingsStore`, però `PdfViewerActivity.kt` evita expressament forçar l'orientació des d'Android 16. La web li dona un comportament útil i explícit: habilitar o no l'intent de bloqueig horitzontal. El botó de gir manual de les pàgines continua disponible.
+
+## Com usar-lo
+
+Entra en **Ajustos → Ajustos avançats del visor** i modifica les opcions. Les barres mostren immediatament el número i una previsualització de les zones tàctils, o la simulació de llum. Prem **Guardar canvis** per a desar les huit preferències juntes a IndexedDB. **Restablir valors Android** torna als valors inicials, sense desar-los fins a confirmar.
+
+Les preferències només afecten el visor; ni les anotacions ni les partitures són modificades. Es mantenen la navegació circular de W2.15.1, la cerca dins del visor de W2.15.2, el redibuix estable, el rosetó i el teclat Android per a quadres de text.
+
+**Limitacions web:** Screen Wake Lock pot no estar disponible o ser denegada quan el navegador no està en primer pla; l'app continua funcionant sense bloqueig. La brillantor és només visual i pot reduir la llum percebuda, però no pot pujar el nivell físic del dispositiu. El bloqueig d'orientació depén del navegador. No es promet una equivalència impossible amb les APIs natives.
+
+## Proves
+
+Workflow nou **W2.16 Ajustos complets del visor**: verifica els valors Android, límits dels controls, persistència entre recàrregues, temporitzador de menús, banner temporal, zoom no recordat i restaurat després, zones tàctils 32 %, bloqueig de pantalla simulat i alliberament, orientació amb bloqueig desactivat, atenuació visual i restauració per defecte. Prova amb un PDF local real de tres pàgines i conserva les proves de regressió anteriors.
+
+---
+
 # Partitures Festeres Web — W2.15.2 · Cercar i saltar dins del visor
 
 Continuació de W2.15.1 amb el **selector de partitures del visor** equivalent a `ScorePickerDialog` de `PdfViewerScreen.kt` (Android v1.11.15), consultat directament.
