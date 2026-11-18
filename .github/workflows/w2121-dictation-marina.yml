@@ -1,0 +1,29 @@
+name: W2.12.1 Dictat Musical i Marina
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+jobs:
+  dictation-marina:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install Chromium
+        run: |
+          npm install --no-save playwright
+          npx playwright install chromium --with-deps
+      - name: Start local server
+        run: python3 -m http.server 8765 --bind 127.0.0.1 >/tmp/pf-w2121.log 2>&1 &
+      - name: Check syntax and bundled Marina
+        run: |
+          node --check app-w2121.js
+          node --check dictation-model-w2121.js
+          node --check dictation-ui-w2121.js
+          node --check dictation-controller-w2121.js
+          node --check .github/scripts/w2121-dictation-marina.mjs
+          test -s assets/marina-mascot.webp
+      - name: Dictation and browser regression
+        run: node .github/scripts/w2121-dictation-marina.mjs
