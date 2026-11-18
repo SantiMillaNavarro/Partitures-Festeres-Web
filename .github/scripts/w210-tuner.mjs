@@ -100,7 +100,9 @@ try{
  assert.equal(await page.evaluate(()=>window.__tunerTest.stops),2);
  assert.equal(errors.length,0,'Errors JS navegador: '+JSON.stringify(errors));
  await page.reload();
- await page.locator('.pf-tuner-panel').waitFor({timeout:15000});
+ await page.locator('.pf-metro-panel').waitFor({timeout:15000});
+ await page.locator('[data-action="tool-tab"][data-value="tuner"]').click();
+ await page.locator('.pf-tuner-panel').waitFor();
  assert.equal(await page.locator('[data-action="tuner-toggle"]').getAttribute('aria-pressed'),'false','Mai autoactivar micròfon');
  assert.equal(await page.locator('#tuner-reference').inputValue(),'442');
  console.log('PASS W2.10: notes YIN, calibratge, worker, història, privadesa i parada automàtica');
