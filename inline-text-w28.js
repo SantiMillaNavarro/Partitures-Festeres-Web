@@ -67,6 +67,7 @@ export function createInlineTextEditor(viewer,draft,labels={}){
  };
  const finishFromKeyboard=()=>{
   if(!active)return;
+  if(!textarea.value.trim()){viewer.cancelInlineTextEditor();return;}
   if(!validInlineText(textarea.value)){
    status.textContent=tr('Escriu un text vàlid abans de confirmar.','Escribe un texto válido antes de confirmar.');return;
   }
@@ -74,7 +75,7 @@ export function createInlineTextEditor(viewer,draft,labels={}){
  };
  textarea.addEventListener('compositionstart',()=>{composing=true;});
  textarea.addEventListener('compositionend',()=>{composing=false;limit();});
- textarea.addEventListener('input',()=>{if(!composing){limit();if(validInlineText(textarea.value))status.textContent='';}});
+ textarea.addEventListener('input',()=>{allowNextLineBreak=false;if(!composing){limit();if(validInlineText(textarea.value))status.textContent='';}});
  // En un textarea el navegador pot enviar Enter per a la tecla IME «Fet».
  // Convertim eixa acció en Guardar. Shift+Enter o ↵ inserixen salt de línia.
  textarea.addEventListener('keydown',e=>{
