@@ -44,7 +44,8 @@ function safePrefs(prefs){
 function validatePagePreferences(prefs,known){
  for(const item of prefs){
   const path=prefScorePath(item.key);
-  if(path!==null&&!known.has(path))throw new Error('La còpia conté preferències de partitures inexistents.');
+  if(path!==null&&!known.has(path)&&item.key.startsWith('w218:page:'))
+   throw new Error('La còpia conté ajustos W2.18 de partitures inexistents.');
   if(item.key.startsWith('w218:page:')){
    if(!item.value||typeof item.value!=='object'||Array.isArray(item.value))
     throw new Error('Ajustos de pàgina incorrectes en la còpia.');
@@ -99,8 +100,16 @@ export async function createBackup(onProgress=()=>{}) {
   const scores=(await getAllScores()).sort((a,b)=>a.path.localeCompare(b.path));
   if (scores.length>MAX_FILES) throw new Error('Hi ha massa partitures en esta biblioteca.');
   const allPrefs=await getAllPrefs();
-  const preferences=safePrefs(allPrefs);
-  if(preferences.length>MAX_BACKUP_PREFS||allPrefs.some(p=>typeof p.key==='string'&&
+  const availablePaths=new Set(scores.map(item=>item.path));
+  // Poden quedar preferències antigues de PDF ja eliminats. No són dades de
+  // cap obra existent i no han d'invalidar la còpia ni omplir el manifest.
+  const eligiblePrefs=allPrefs.filter(pref=>{
+   if(typeof pref.key!=='string')return false;
+   const path=prefScorePath(pref.key);
+   return path===null||availablePaths.has(path);
+  });
+  const preferences=safePrefs(eligiblePrefs);
+  if(preferences.length>MAX_BACKUP_PREFS||eligiblePrefs.some(p=>typeof p.key==='string'&&
       (p.key.startsWith('viewer:')||p.key.startsWith('w218:page:'))&&
       !preferences.some(saved=>saved.key===p.key)))
    throw new Error('Hi ha ajustos de partitura que no caben en la còpia. No s’ha exportat un ZIP incomplet.');
@@ -184,10 +193,12 @@ export async function restoreBackup(prepared,mode,onProgress=()=>{}) {
       catch{throw new Error('No s’han pogut validar les anotacions de la còpia.');}
       annotationRecords.push({path:item.path,document});
     }
-    const incomingPrefs=mode==='merge'?manifest.preferences.filter(p=>{
+    const manifestPaths=new Set(manifest.files.map(file=>file.path));
+    const incomingPrefs=manifest.preferences.filter(p=>{
       const score=prefScorePath(p.key);
-      return score!==null&&!previous?.has(score);
-    }):manifest.preferences;
+      if(score!==null&&!manifestPaths.has(score))return false;
+      return mode!=='merge'||score!==null&&!previous?.has(score);
+    });
     const copied=await commitStagedBackup(mode,incomingPrefs,manifest.files.length,annotationRecords);
     success=true;
     return copied;

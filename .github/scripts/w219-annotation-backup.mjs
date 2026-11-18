@@ -16,7 +16,7 @@ try{
   const {ScoreViewer}=await import('./viewer-w219.js');
   const {normalizeAnnotations}=await import('./annotations.js');
   const {assembleScanPdf}=await import('./scanner-pdf-w2133.js');
-  const {getPref,setPref,saveBatch,getScore,setAnnotations,getAnnotations}=await import('./db.js');
+  const {getPref,setPref,saveBatch,getScore,setAnnotations,getAnnotations,deleteScore}=await import('./db.js');
   const {createBackup,inspectBackup,restoreBackup}=await import('./backup.js');
   const check=(condition,message)=>{if(!condition)throw Error(message);};
   const canvas=document.createElement('canvas');canvas.width=360;canvas.height=550;
@@ -86,10 +86,12 @@ try{
   await setAnnotations(path,finalDoc);
   await setPref('viewer:'+path,{page:2,zoom:1.7,fit:'page',rotation:0,rotationMode:'auto'});
   await setPref('w218:page:'+path,{'1':{cropLeft:.2,contrast:1.4,rotationQuarterTurns:1}});
+  await setPref('viewer:Antiga-Eliminada.pdf',{zoom:3});
   const saved=await createBackup();
   const inspected=await inspectBackup(saved.blob);
   const preferences=inspected.manifest.preferences;
   check(preferences.some(p=>p.key==='viewer:'+path),'Falta l’estat lector de subcarpeta.');
+  check(!preferences.some(p=>p.key==='viewer:Antiga-Eliminada.pdf'),'Un PDF eliminat no pot invalidar el ZIP.');
   check(preferences.some(p=>p.key==='w218:page:'+path),'Falten ajustos W2.18 de subcarpeta.');
   check(inspected.manifest.annotations.length===1,'La còpia no conserva anotacions.');
   await setPref('w218:page:'+path,{'1':{cropLeft:.02,contrast:1}});
@@ -102,6 +104,9 @@ try{
   await setPref('w218:page:'+path,{'1':{contrast:1.65}});
   await restoreBackup(inspected,'merge');
   check((await getPref('w218:page:'+path))['1'].contrast===1.65,'Fusionar no ha preservat els ajustos locals.');
+  await deleteScore(path);
+  check((await getPref('viewer:'+path,null))===null,'Eliminar PDF deixa zoom òrfen.');
+  check((await getPref('w218:page:'+path,null))===null,'Eliminar PDF deixa ajustos òrfens.');
   return {pageCount:viewer.numPages,annotations:finalDoc.pages['1'].length+finalDoc.pages['2'].length,
    storedPrefs:preferences.length,bytes:saved.blob.size};
  });
