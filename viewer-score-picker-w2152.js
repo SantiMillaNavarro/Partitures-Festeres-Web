@@ -31,6 +31,9 @@ export class ViewerScorePicker{
   this.root=null;this.items=[];this.currentPath='';this.language='va';
   this.previousFocus=null;this.busy=false;
   this.boundKeydown=e=>this.onKeydown(e);
+  this.boundPopState=()=>{
+   if(this.root&&!history.state?.pfwebScorePicker)this.close({restoreFocus:false,historyBack:false});
+  };
  }
  get active(){return !!this.root;}
  tr(va,es){return this.language==='es'?es:va;}
@@ -68,6 +71,12 @@ export class ViewerScorePicker{
   });
   root.addEventListener('keydown',this.boundKeydown);
   document.body.append(root);
+  // El botó Android Enrere tanca primer el selector, sense eixir del visor.
+  try{
+   const prior=history.state&&typeof history.state==='object'&&!Array.isArray(history.state)?history.state:{};
+   if(!prior.pfwebScorePicker)history.pushState({...prior,pfwebScorePicker:true},'',location.href);
+  }catch{}
+  window.addEventListener('popstate',this.boundPopState);
   this.refresh({scrollToCurrent:true});
   root.querySelector('#pf-score-picker-input')?.focus({preventScroll:true});
   return true;
@@ -153,14 +162,18 @@ export class ViewerScorePicker{
    e.preventDefault();void this.select(buttons[0].dataset.pickerPath);
   }
  }
- close({restoreFocus=true}={}){
+ close({restoreFocus=true,historyBack=true}={}){
   if(!this.root)return;
   const root=this.root;this.root=null;
   root.removeEventListener('keydown',this.boundKeydown);
+  window.removeEventListener('popstate',this.boundPopState);
   root.remove();
   this.items=[];
   if(restoreFocus&&this.previousFocus?.isConnected)this.previousFocus.focus({preventScroll:true});
   this.previousFocus=null;
+  if(historyBack&&history.state?.pfwebScorePicker){
+   try{history.back();}catch{}
+  }
   this.onClose();
  }
 }
