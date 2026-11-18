@@ -61,6 +61,13 @@ try{
   await page.locator('[data-action="welcome-done"]').click();
  await page.locator('.bottom-nav [data-action="page"][data-value="tools"]').click();
  await page.locator('[data-action="tool-tab"][data-value="tuner"]').click();
+ if(await page.locator('.pf-tuner-panel').count()!==1){
+  throw new Error('No apareix panell: '+JSON.stringify({
+   tab:await page.locator('.pf-tools-tabbar').innerHTML().catch(()=>null),
+   view:await page.locator('main.content').innerText().catch(()=>null),
+   errors
+  }));
+ }
  await page.locator('.pf-tuner-panel').waitFor();
  assert.equal(await page.locator('#tuner-reference').inputValue(),'442');
  await page.locator('[data-action="tuner-toggle"]').click();
