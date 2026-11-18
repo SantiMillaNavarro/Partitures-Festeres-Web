@@ -95,9 +95,10 @@ export async function setScoreMetadata(path,fields){
 export async function deleteScore(path) {
  const db=await openDB();
  return new Promise((resolve,reject)=>{
-  const tx=db.transaction(['scores','annotations'],'readwrite');
+  const tx=db.transaction(['scores','annotations','prefs'],'readwrite');
   tx.objectStore('scores').delete(path);
   tx.objectStore('annotations').delete(path);
+  tx.objectStore('prefs').delete('w218:page:'+path);
   tx.oncomplete=()=>resolve();
   tx.onerror=()=>reject(tx.error||new Error('No s’ha pogut esborrar la partitura'));
   tx.onabort=()=>reject(tx.error||new Error('Eliminació cancel·lada'));
@@ -106,8 +107,11 @@ export async function deleteScore(path) {
 export async function clearScores(){
  const db=await openDB();
  return new Promise((resolve,reject)=>{
-  const tx=db.transaction(['scores','annotations'],'readwrite');
+  const tx=db.transaction(['scores','annotations','prefs'],'readwrite');
   tx.objectStore('scores').clear();tx.objectStore('annotations').clear();
+  const prefs=tx.objectStore('prefs');
+  const req=prefs.getAllKeys();
+  req.onsuccess=()=>{for(const key of req.result)if(typeof key==='string'&&key.startsWith('w218:page:'))prefs.delete(key);};
   tx.oncomplete=()=>resolve();
   tx.onerror=()=>reject(tx.error||new Error('No s’ha pogut esborrar la biblioteca'));
   tx.onabort=()=>reject(tx.error||new Error('Eliminació cancel·lada'));
