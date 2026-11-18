@@ -1,0 +1,30 @@
+name: W2.13.3 Retall manual amb perspectiva
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+jobs:
+  manual-crop:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install Chromium
+        run: |
+          npm install --no-save playwright
+          npx playwright install chromium --with-deps
+      - name: Start local server
+        run: python3 -m http.server 8765 --bind 127.0.0.1 >/tmp/pf-w2133.log 2>&1 &
+      - name: Check scanner syntax
+        run: |
+          node --check app-w2133.js
+          node --check scanner-crop-geometry-w2133.js
+          node --check scanner-crop-editor-w2133.js
+          node --check scanner-pdf-w2133.js
+          node --check scanner-controller-w2133.js
+          node --check scanner-ui-w2133.js
+          node --check .github/scripts/w2133-manual-crop.mjs
+      - name: Crop four corners, preview and real PDF
+        run: node .github/scripts/w2133-manual-crop.mjs
