@@ -21,7 +21,8 @@ assert.equal(writeNavigation(fakeStorage,sample),true);
 assert.deepEqual(readNavigation(fakeStorage),sample);
 fakeStorage.data='{invalid';
 assert.equal(readNavigation(fakeStorage),null,'Invalid storage never blocks startup');
-assert.deepEqual(APP_PAGES,['library','repertoires','index','recents','favorites','settings']);
+assert.deepEqual(APP_PAGES,['library','repertoires','index','recents','favorites','tools','settings']);
+assert.equal(validateNavigation({...sample,page:'tools'},{scores:items,repertoires,paper:'1er'}).page,'tools','Eines returns correctly after reload');
 assert.equal(NAVIGATION_VERSION,1);
 
 function pdf(){
