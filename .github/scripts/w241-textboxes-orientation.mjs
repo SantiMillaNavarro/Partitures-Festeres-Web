@@ -44,7 +44,7 @@ try{
  await page.goto('http://127.0.0.1:8765/',{waitUntil:'domcontentloaded'});
  if(await page.locator('[data-action="welcome-done"]').count())await page.locator('[data-action="welcome-done"]').click();
  await page.locator('.bottom-link[data-value="settings"]').click();
- assert.match(await page.locator('main.content').innerText(),/Partitures Festeres Web — W2\.16/);
+ assert.match(await page.locator('main.content').innerText(),/Partitures Festeres Web — W2\.17/);
  await page.locator('.bottom-link[data-value="library"]').click();
  const original=makePdf();
  await page.locator('#import-input').setInputFiles({name:'QUADRES_W241.pdf',mimeType:'application/pdf',buffer:original});

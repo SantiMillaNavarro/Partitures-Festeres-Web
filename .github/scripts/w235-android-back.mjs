@@ -91,17 +91,17 @@ try{
  await back();
  assert.equal(await page.locator('.bottom-link.selected').getAttribute('data-value'),'library');
 
- // 4. When Android consumes Back to EXIT fullscreen instead of changing history,
- // the fullscreenchange event should close the score and step back exactly once.
+ // 4. La W2.17 no entra en fullscreen per evitar el cartell de Chrome.
+ // Enrere d'Android continua eixint del visor una sola vegada.
  await open('ALFA.pdf');
- await page.waitForFunction(()=>window.__androidNavigation.fullscreen);
+ assert.equal(await page.evaluate(()=>window.__androidNavigation.fullscreen),false,
+  'La PWA ja no demana fullscreen');
+ assert.equal(await page.evaluate(()=>window.__androidNavigation.events.includes('enterFullscreen')),false);
  const previousLength=await page.evaluate(()=>history.length);
- await page.evaluate(()=>document.exitFullscreen());
- await page.locator('.pf-reading-mode').waitFor({state:'detached',timeout:10000});
- await page.waitForFunction(()=>history.state?.pfwebViewer===false,{timeout:10000});
+ await back();
  assert.equal(await page.locator('.bottom-link.selected').getAttribute('data-value'),'library');
  assert.equal(await page.evaluate(()=>history.length),previousLength);
- assert.equal(await page.locator('main.content').count(),1,'One exit does not leave the PWA');
+ assert.equal(await page.locator('main.content').count(),1,'Un Enrere no abandona la PWA');
 
  // 5. Visible back arrow uses the SAME navigation history, and is not a page exit.
  await open('ALFA.pdf');
@@ -132,6 +132,6 @@ try{
  });
  assert.deepEqual(originalAfter,Array.from(original),'Back must not delete or change scores');
  assert.deepEqual(errors,[],'No runtime errors');
- console.log('PASS W2.3.5: system Back, fullscreen-only Back, back arrow, same tab, next-score, reload and clean session');
+ console.log('PASS W2.3.5: system Back sense fullscreen, back arrow, next-score, reload and clean session');
  await context.close();
 }finally{await browser.close();}

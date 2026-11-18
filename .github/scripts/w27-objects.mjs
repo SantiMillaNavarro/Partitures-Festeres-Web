@@ -58,7 +58,8 @@ try{
  const page=await context.newPage(),errors=[];
  page.on('pageerror',e=>errors.push(e.stack||e.message));
  await page.goto('http://127.0.0.1:8765/',{waitUntil:'domcontentloaded'});
- if(await page.locator('[data-action="welcome-done"]').count())await page.locator('[data-action="welcome-done"]').click();
+ await page.locator('[data-action="welcome-done"]').waitFor({timeout:18000});
+ await page.locator('[data-action="welcome-done"]').click();
  const data=pdf();
  await page.locator('#import-input').setInputFiles({name:'OBJECTES_W27.pdf',mimeType:'application/pdf',buffer:data});
  await page.locator('[data-action="open"][data-value="OBJECTES_W27.pdf"]').waitFor();

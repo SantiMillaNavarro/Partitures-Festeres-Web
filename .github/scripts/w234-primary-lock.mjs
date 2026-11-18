@@ -30,7 +30,6 @@ try{
   }});
   Object.defineProperty(screen.orientation,'lock',{configurable:true,value:async orientation=>{
    window.__lockTest.events.push('orientation:'+orientation);
-   if(!document.fullscreenElement)throw new DOMException('fullscreen required','SecurityError');
    if(orientation!=='landscape-primary')throw new Error('Expected stable landscape-primary lock');
   }});
   Object.defineProperty(screen.orientation,'unlock',{configurable:true,value:()=>{
@@ -47,8 +46,8 @@ try{
  await page.locator('.viewer-canvas').waitFor({timeout:15000});
  await page.waitForFunction(()=>window.__lockTest.events.some(x=>x.startsWith('orientation:')));
  const events=await page.evaluate(()=>window.__lockTest.events);
- assert.deepEqual(events.slice(0,2),['fullscreen-request','orientation:landscape-primary'],
-  'Fullscreen requested in the opening click and the exact landscape-primary is locked');
+ assert.deepEqual(events,['orientation:landscape-primary'],
+  'Sense fullscreen, el bloqueig natiu continua funcionant quan el navegador ho permet');
  assert.equal(await page.locator('.pf-reading-mode.landscape-css-fallback').count(),0,
   'Native lock and CSS orientation never overlap');
  assert.equal(await page.locator('.pf-reading-mode').evaluate(n=>getComputedStyle(n).transform),'none',
@@ -61,13 +60,14 @@ try{
  }
  await page.locator('#viewer-stage').click({position:{x:200,y:320}});
  await page.locator('[data-action="viewer-close"]').click();
- await page.waitForFunction(()=>window.__lockTest.events.includes('fullscreen-exit'));
+ await page.waitForFunction(()=>window.__lockTest.events.includes('orientation-unlock'));
  const after=await page.evaluate(()=>window.__lockTest.events);
- assert(after.indexOf('orientation-unlock')<after.indexOf('fullscreen-exit'));
- assert.equal(await page.evaluate(()=>window.__lockTest.fullscreen),false,'Fullscreen exits when closing PDF');
+ assert.deepEqual(after,['orientation:landscape-primary','orientation-unlock'],
+  'La lectura no obri ni tanca fullscreen, però desbloqueja l’orientació');
+ assert.equal(await page.evaluate(()=>window.__lockTest.fullscreen),false);
  assert.equal(await page.locator('.pf-reading-mode').count(),0);
  assert.equal(await page.locator('.bottom-link.selected').getAttribute('data-value'),'library');
  assert.deepEqual(errors,[]);
- console.log('PASS W2.3.4: only the PDF viewer requests fullscreen and primary-landscape orientation, then releases both');
+ console.log('PASS W2.3.4: orientació landscape-primary sense fullscreen ni avís Chrome, amb unlock en eixir');
  await context.close();
 }finally{await browser.close();}
