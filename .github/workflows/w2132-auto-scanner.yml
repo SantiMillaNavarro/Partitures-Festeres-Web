@@ -1,0 +1,29 @@
+name: W2.13.2 Deteccio automatica i capcalera
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+jobs:
+  document-camera:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install Chromium
+        run: |
+          npm install --no-save playwright
+          npx playwright install chromium --with-deps
+      - name: Start local server
+        run: python3 -m http.server 8765 --bind 127.0.0.1 >/tmp/pf-w2132.log 2>&1 &
+      - name: Check syntax
+        run: |
+          node --check app-w2132.js
+          node --check scanner-detection-w2132.js
+          node --check scanner-camera-w2132.js
+          node --check scanner-controller-w2132.js
+          node --check scanner-ui-w2132.js
+          node --check .github/scripts/w2132-auto-scanner.mjs
+      - name: Auto detect, rectify, capture and responsive header
+        run: node .github/scripts/w2132-auto-scanner.mjs
