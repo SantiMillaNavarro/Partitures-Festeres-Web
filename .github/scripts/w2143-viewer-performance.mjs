@@ -68,6 +68,20 @@ try{
  });
  await page.locator('#thumbnail-enabled').check();
  await page.locator('.bottom-nav [data-action="page"][data-value="library"]').click();
+ // Afegim un PDF NO cachejat després de preparar la simulació.
+ await page.evaluate(async()=>{
+  const {assembleScanPdf}=await import('./scanner-pdf-w2133.js');
+  const c=document.createElement('canvas');c.width=180;c.height=220;
+  const ctx=c.getContext('2d');ctx.fillStyle='#fff';ctx.fillRect(0,0,180,220);
+  ctx.fillStyle='#111';ctx.fillText('Nou PDF',30,30);
+  const img=await new Promise(done=>c.toBlob(done,'image/jpeg',.75));
+  const pdf=assembleScanPdf([{bytes:new Uint8Array(await img.arrayBuffer()),width:180,height:220}]);
+  const file=new File([pdf],'Nou sense miniatura.pdf',{type:'application/pdf'});
+  const input=document.getElementById('import-input'),dt=new DataTransfer();
+  dt.items.add(file);input.files=dt.files;
+  input.dispatchEvent(new Event('change',{bubbles:true}));
+ });
+ await page.locator('.score-row [data-action="open"][data-value="Nou sense miniatura.pdf"]').waitFor({timeout:15000});
  try{
   await page.waitForFunction(()=>window.__perf.thumbStarts>0,null,{timeout:9000});
  }catch(error){
@@ -101,7 +115,7 @@ try{
  assert.equal(during,inViewer.thumbStarts,'Cap miniatura nova mentre el visor està actiu');
  await page.locator('[data-action="viewer-close"]').click();
  await page.locator('.viewer').waitFor({state:'detached',timeout:20000});
- await page.waitForFunction(()=>document.querySelector('[data-pf-thumb="CIMO.pdf"] img')?.naturalWidth>0,null,{timeout:20000});
+ await page.waitForFunction(()=>document.querySelector('[data-pf-thumb="Nou sense miniatura.pdf"] img')?.naturalWidth>0,null,{timeout:20000});
  const after=await page.evaluate(()=>({...window.__perf}));
  assert(after.resumes>=1,'Es reprenen miniatures quan tanquem el PDF');
  assert(after.thumbStarts>during,'Es regenera una miniatura cancel·lada en tornar');
