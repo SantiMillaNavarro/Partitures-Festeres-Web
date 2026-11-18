@@ -90,7 +90,7 @@ try{
  await page.waitForTimeout(600);
  assert.equal((await page.evaluate(()=>window.__perf.thumbStarted)),during.thumbStarted,
   'No es comencen miniatures mentre el visor està actiu');
- await page.locator('[data-action="viewer-close"]').click();
+ await page.locator('[data-action="viewer-close"]').evaluate(button=>button.click());
  await page.locator('.viewer').waitFor({state:'detached',timeout:20000});
  assert((await page.evaluate(()=>window.__perf.resume))>0,'Tornar a la llista reprén les miniatures');
  await page.waitForFunction(()=>document.querySelector('[data-pf-thumb="CIMO.pdf"] img')?.naturalWidth>0,
@@ -98,7 +98,7 @@ try{
  await page.locator('.score-row [data-action="open"][data-value="Alt.pdf"]').click();
  await page.waitForFunction(()=>document.querySelector('#viewer-stage canvas')?.width>0,
   null,{timeout:20000});
- await page.locator('[data-action="viewer-close"]').click();
+ await page.locator('[data-action="viewer-close"]').evaluate(button=>button.click());
  assert.deepEqual(errors,[],'Errors JavaScript: '+errors.join('\n'));
  console.log('PASS W2.14.3: AbortController PDF.js realista, visor prioritari, miniatures suspeses i represes; '+elapsed+' ms');
  await context.close();
