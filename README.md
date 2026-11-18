@@ -1,4 +1,30 @@
-# Partitures Festeres Web — W2.7 · Editor d'objectes i text d'un sol ús
+# Partitures Festeres Web — W2.8 · Retalls de partitura i teclat «Fet»
+
+La fase **W2.8** incorpora dues millores vinculades al visor de la versió Android v1.11.15.
+
+## Teclat Android
+
+- Quan l'editor de text rep **Enter/Fet** del teclat, **guarda i tanca** el quadre (també amb el mètode `beforeinput` d'alguns teclats virtuals).
+- Per a escriure diversos paràgrafs, utilitza el nou botó **↵** de la barra de text o **Majúscules+Enter** en un teclat físic.
+- Quan la composició de text/accents d'un teclat IME encara està activa, no tanquem l'editor accidentalment.
+- El navegador controla la icona exacta de la tecla del teclat virtual: `enterkeyhint="done"` sol·licita «Fet», però no tots els teclats mostren la mateixa icona.
+
+## Retalls
+
+- Amb **Retall** en el rosetó pots arrossegar un rectangle damunt del PDF i convertir-lo en un **fragment d'imatge JPEG local**, fidel a la pàgina que es veu.
+- El retall queda seleccionat automàticament. Pots **moure'l, redimensionar-lo, girar-lo, copiar-lo, apegar-lo en una altra pàgina i desfer** des del menú **Objectes**.
+- Les imatges es comprimeixen a una mida limitada i es validen abans de guardar. Els retalls grans poden ser rebutjats amb avís en lloc de sobreescriure o corrompre les anotacions.
+- El PDF original no canvia. Les imatges dels retalls viatgen dins del document d'anotacions i s'inclouen en les còpies ZIP de la biblioteca.
+- **Limitació conscient:** el pressupost d'anotacions per partitura continua limitat a 512 KiB. El nombre de retalls per partitura depén de la compressió i la mida de cada retall; no és un editor fotogràfic sense límits.
+- Les anotacions d'anys anteriors continuen sent compatibles i es guarden en `version: 1` com a registre addicional opcional.
+
+## Proves
+
+CI comprova l'edició de text amb IME/Fet, Shift+Enter, nou salt de línia, captura i persistència de retall, selecció, moviment/transformació, còpia entre pàgines, desfés i bytes del PDF intactes.
+
+---
+
+## Històric W2.7 — Editor d'objectes i text d'un sol ús
 
 La fase **W2.6** s'ha desenvolupat prenent com a model directe el codi Android **v1.11.15**, sobretot la funció `startInlineTextEditor`, el component `InlineAnnotationTextEditor` i `finishInlineTextEditor` de `PdfViewerScreen.kt`, i el model `AnnotationText` de `AnnotationStore.kt`.
 

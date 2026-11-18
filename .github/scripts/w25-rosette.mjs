@@ -73,8 +73,9 @@ try{
  await page.locator('.pf-rosette-core').click();
  assert.equal(await level(),'root');
  await pick('crop');
- assert.match(await page.locator('.toast').innerText(),/retall|recorte/i,'Unsupported crop is transparently explained');
- assert.equal(await level(),'root','Crop does not enable a broken tool');
+ assert.equal(await level(),'root','Retall remains in the root rosette');
+ assert.equal(await page.locator('.viewer-annotation-layer').evaluate(el=>getComputedStyle(el).pointerEvents),'auto',
+  'Crop is a real tool, not an unavailable placeholder');
 
  await pick('symbols');
  assert.equal(await level(),'symbols');
