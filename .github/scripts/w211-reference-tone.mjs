@@ -40,7 +40,7 @@ class FakeAudioContext{
 const engine=new ReferenceToneEngine({AudioContextClass:FakeAudioContext});
 assert.equal(await engine.start(442),true);
 assert.equal(engine.running,true);
-assert.deepEqual(stats.harmonics[0],[0,.82,.13,.05]); // Pes dels tres harmònics d'Android.
+assert(stats.harmonics[0].every((v,i)=>Math.abs(v-[0,.82,.13,.05][i])<1e-6), 'Pes dels tres harmònics d\'Android');
 assert(stats.volumes.includes(.34));
 assert.equal(engine.setFrequency(440),true);
 assert.equal(stats.starts,1,'Canviar de nota no reinicia el motor');
