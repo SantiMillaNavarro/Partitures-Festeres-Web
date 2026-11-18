@@ -1,3 +1,36 @@
+# Partitures Festeres Web — W2.19 · Edició avançada i còpies ZIP segures
+
+Esta fase recupera ferramentes d'Android 1.11.15 (PdfViewerScreen.kt) sense alterar el PDF original.
+
+## Desfer i Refer
+
+- **Desfer** i **Refer** disponibles en rosetó i en anotacions clàssiques.
+- Historial de 24 passos per pàgina mentre el PDF roman obert. Després de desfer, un canvi nou inicia una altra branca.
+- En ordinador també funcionen Ctrl/Cmd+Z i Ctrl/Cmd+Shift+Z o Ctrl/Cmd+Y, sense interferir amb el teclat del text.
+- Els trasllats entre pàgines es registren de manera atòmica; desfer comprova que l'origen no ha sigut modificat després.
+
+## Objectes
+
+- En Anotar → Objectes: **Duplicar**, **Tallar**, **Portar avant**, **Enviar arrere**, **Copiar** i **Apegar**.
+- Tallar espera l'apegat abans de suprimir l'objecte original; així es pot cancel·lar sense perdre'l.
+- Portar avant i Enviar arrere modifica l'ordre de superposició un pas.
+- El quadre de text seleccionat admet desplaçament fi amb ↑ ↓ ← → de 0,3 % del full.
+- Els rectangles i les el·lipses tenen cinc opcions d'ompliment: **0, 15, 35, 60 i 100 %**; apareixen al rosetó, Objectes i al panell clàssic.
+- Les anotacions antigues continuen llegint-se sense cap migració i sense ompliment.
+
+## Còpies de seguretat
+
+- Exporta preferències de visor i ajustos individuals W2.18 de les obres, també amb carpetes reals en la ruta (per exemple Instruments/1r/Marxes/Obra.pdf).
+- Si els ajustos no caben en el manifest, l'exportació s'atura amb un error explícit; no es crea un ZIP incomplet.
+- En substituir la biblioteca, la restauració recupera els PDFs, les anotacions i les preferències. En afegir, incorpora les preferències dels PDF nous i respecta les existents.
+- Conserva SHA-256 de verificació i compatibilitat amb ZIP d'etapes anteriors.
+
+**Prova manual:** crea dos objectes, desfés i refés; selecciona un text i usa les fletxes; dibuixa un rectangle al 35 %; duplica i ordena. Després fes una còpia ZIP amb obres en subcarpetes, restaura-la i comprova anotacions, zoom i retall de pàgina.
+
+**Pròxima fase:** W2.20, configuració completa de papers i biblioteques reals d'Android.
+
+---
+
 # Partitures Festeres Web — W2.18 · Ajustos individuals de pàgina
 
 L'app Android 1.11.15 guarda per pàgina un **gir**, un **retall visual** i el **contrast** sense alterar el fitxer PDF. W2.18 incorpora estes opcions al visor web amb el mateix principi no destructiu.

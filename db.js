@@ -218,6 +218,11 @@ export async function commitStagedBackup(mode, prefs, expectedCount, annotationR
         if (mode === 'replace') {
           preferences.clear();
           for (const pref of prefs) preferences.put(pref);
+        } else {
+          // Només per a partitures noves; backup.js exclou les preferències prèvies.
+          for(const pref of prefs)if(typeof pref.key==='string'&&
+            (pref.key.startsWith('viewer:')||pref.key.startsWith('w218:page:')))
+            preferences.put(pref);
         }
         staging.clear();
       }

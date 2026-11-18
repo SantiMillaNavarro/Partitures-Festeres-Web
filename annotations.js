@@ -33,7 +33,8 @@ export function normalizeAnnotations(input){
       !between(stroke.width,.001,.12)||!Array.isArray(stroke.points)||stroke.points.length<1||stroke.points.length>MAX_POINTS||
       (ANNOTATION_SHAPES.includes(stroke.tool)&&stroke.points.length!==2)||
       ((stroke.tool==='text'||stroke.tool==='symbol'||stroke.tool==='crop')&&stroke.points.length!==1)||
-      (stroke.rotationDegrees!==undefined&&!between(stroke.rotationDegrees,-180,180)))
+      (stroke.rotationDegrees!==undefined&&!between(stroke.rotationDegrees,-180,180))||
+      (stroke.fillOpacity!==undefined&&(!['rectangle','ellipse'].includes(stroke.tool)||!between(stroke.fillOpacity,0,1))))
      throw new Error('Traç d’anotació no vàlid.');
    const coords=stroke.points.map(point=>{
     if(!Array.isArray(point)||point.length!==2||!between(point[0],0,1)||!between(point[1],0,1))
@@ -85,6 +86,7 @@ export function normalizeAnnotations(input){
     out.push(record);
    }else{
     const record={tool:stroke.tool,color:stroke.color,width:stroke.width,points:coords};
+    if(stroke.fillOpacity!==undefined)record.fillOpacity=clean(stroke.fillOpacity);
     if(stroke.rotationDegrees!==undefined)record.rotationDegrees=clean(stroke.rotationDegrees);
     out.push(record);
    }

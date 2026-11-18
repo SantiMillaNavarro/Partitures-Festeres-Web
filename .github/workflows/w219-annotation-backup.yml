@@ -1,0 +1,43 @@
+name: W2.19 Edicio avançada i copies segures
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+jobs:
+  editing-and-backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install Playwright
+        run: npm install --no-save playwright
+      - name: Chrome preinstal·lat
+        shell: bash
+        run: |
+          for browser in google-chrome google-chrome-stable chromium chromium-browser; do
+            if command -v "$browser" >/dev/null 2>&1; then
+              echo "PF_CHROMIUM_PATH=$(command -v "$browser")" >> "$GITHUB_ENV"
+              exit 0
+            fi
+          done
+          echo "Chrome no disponible" >&2
+          exit 1
+      - name: Run local server
+        run: python3 -m http.server 8765 --bind 127.0.0.1 >/tmp/w219.log 2>&1 &
+      - name: Check JS syntax
+        run: |
+          node --check app-w219.js
+          node --check viewer-w219.js
+          node --check rosette-w219.js
+          node --check rosette-ui-w219.js
+          node --check annotations.js
+          node --check backup.js
+          node --check db.js
+          node --check .github/scripts/w219-annotation-backup.mjs
+      - name: Verify editing and backup with real PDF
+        run: node .github/scripts/w219-annotation-backup.mjs

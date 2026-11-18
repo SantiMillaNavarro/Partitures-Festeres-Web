@@ -1,6 +1,7 @@
 import {getAllScores, getScore, getAllPrefs, getAllAnnotations, clearStaging, stageBatch, commitStagedBackup} from './db.js';
 import {normalizeScoreMetadata} from './metadata.js';
 import {normalizeAnnotations,MAX_ANNOTATION_BYTES} from './annotations.js';
+import {normalizePageAdjustments} from './page-adjustments-w218.js';
 
 // Format obert (ZIP), sense servidor ni autoritzacions externes.
 export const BACKUP_MANIFEST = 'partitures-festeres-copia.json';
@@ -11,6 +12,7 @@ const annotationEntry=path=>ANNOTATION_PREFIX+encodeURIComponent(path)+'.json';
 const MAX_PDF_BYTES = 100*1024*1024; // límit de cada PDF heretat de W1.0
 const MAX_FILES = 20000;
 const MAX_MANIFEST_BYTES = 5*1024*1024;
+const MAX_BACKUP_PREFS=2*MAX_FILES+200;
 
 const validPath = path => typeof path === 'string' && path.length>0 && path.length <= 500 &&
   !path.startsWith('/') && !path.includes('\\') && /\.pdf$/i.test(path) &&
@@ -25,9 +27,32 @@ async function isPdf(blob) {
   const bytes=await blob.slice(0,1024).arrayBuffer();
   return new TextDecoder('ascii').decode(bytes).includes('%PDF-');
 }
-function safePrefs(prefs) {
-  return prefs.filter(p=>p && typeof p.key==='string' && p.key.length <= 100 && /^[A-Za-z0-9_.:-]+$/.test(p.key) &&
-    JSON.stringify(p.value)?.length <= 100000 && p.value !== undefined).map(({key,value})=>({key,value}));
+function prefScorePath(key){
+ if(key.startsWith('viewer:'))return key.slice(7);
+ if(key.startsWith('w218:page:'))return key.slice(10);
+ return null;
+}
+function safePrefKey(key){
+ if(typeof key!=='string'||key.length>560)return false;
+ const path=prefScorePath(key);
+ return path!==null?validPath(path):/^[A-Za-z0-9_.:-]+$/.test(key);
+}
+function safePrefs(prefs){
+ return prefs.filter(p=>p&&safePrefKey(p.key)&&p.value!==undefined&&
+   JSON.stringify(p.value)?.length<=250000).map(({key,value})=>({key,value}));
+}
+function validatePagePreferences(prefs,known){
+ for(const item of prefs){
+  const path=prefScorePath(item.key);
+  if(path!==null&&!known.has(path))throw new Error('La còpia conté preferències de partitures inexistents.');
+  if(item.key.startsWith('w218:page:')){
+   if(!item.value||typeof item.value!=='object'||Array.isArray(item.value))
+    throw new Error('Ajustos de pàgina incorrectes en la còpia.');
+   const clean=normalizePageAdjustments(item.value);
+   if(Object.keys(item.value).some(k=>!Object.hasOwn(clean,k)&&Object.keys(item.value[k]||{}).length>0))
+    throw new Error('Ajustos de pàgina corruptes en la còpia.');
+  }
+ }
 }
 function assertManifest(m, zip) {
   if (!m || m.kind!==BACKUP_KIND || m.schemaVersion!==1 || !Array.isArray(m.files))
@@ -60,10 +85,11 @@ function assertManifest(m, zip) {
       seenAnnotations.add(record.path);
     }
   }
-  if (!Array.isArray(m.preferences) || m.preferences.length>100 || safePrefs(m.preferences).length!==m.preferences.length)
+  if (!Array.isArray(m.preferences) || m.preferences.length>MAX_BACKUP_PREFS || safePrefs(m.preferences).length!==m.preferences.length)
     throw new Error('Les preferències de la còpia no són vàlides.');
   if (new Set(m.preferences.map(x=>x.key)).size!==m.preferences.length)
     throw new Error('La còpia conté preferències repetides.');
+  validatePagePreferences(m.preferences,seen);
   return m;
 }
 
@@ -72,7 +98,12 @@ export async function createBackup(onProgress=()=>{}) {
   const zip=new window.JSZip();
   const scores=(await getAllScores()).sort((a,b)=>a.path.localeCompare(b.path));
   if (scores.length>MAX_FILES) throw new Error('Hi ha massa partitures en esta biblioteca.');
-  const preferences=safePrefs(await getAllPrefs());
+  const allPrefs=await getAllPrefs();
+  const preferences=safePrefs(allPrefs);
+  if(preferences.length>MAX_BACKUP_PREFS||allPrefs.some(p=>typeof p.key==='string'&&
+      (p.key.startsWith('viewer:')||p.key.startsWith('w218:page:'))&&
+      !preferences.some(saved=>saved.key===p.key)))
+   throw new Error('Hi ha ajustos de partitura que no caben en la còpia. No s’ha exportat un ZIP incomplet.');
   const files=[]; let totalBytes=0;
   for (let i=0;i<scores.length;i++) {
     const s=scores[i];
@@ -98,8 +129,10 @@ export async function createBackup(onProgress=()=>{}) {
     zip.file(annotationEntry(record.path),json,{compression:'DEFLATE'});
     annotations.push({path:record.path,size:blob.size,sha256:sha});
   }
-  const manifest={kind:BACKUP_KIND,schemaVersion:1,appVersion:'W2.8',createdAt:new Date().toISOString(),scoreCount:files.length,totalBytes,files,preferences,annotations};
-  zip.file(BACKUP_MANIFEST,JSON.stringify(manifest,null,2));
+  const manifest={kind:BACKUP_KIND,schemaVersion:1,appVersion:'W2.19',createdAt:new Date().toISOString(),scoreCount:files.length,totalBytes,files,preferences,annotations};
+  const manifestText=JSON.stringify(manifest,null,2);
+  if(manifestText.length>MAX_MANIFEST_BYTES)throw new Error('La biblioteca té massa ajustos per a este ZIP. No s’ha creat una còpia incompleta.');
+  zip.file(BACKUP_MANIFEST,manifestText);
   zip.file('LLEGIU-ME.txt',`PARTITURES FESTERES WEB - COPIA DE SEGURETAT\nData: ${manifest.createdAt}\nPartitures: ${files.length}\nRestaura esta copia des d'Ajustos > Restaurar copia en Partitures Festeres Web.\nNo es necessari publicar este ZIP en GitHub.\n`);
   const blob=await zip.generateAsync({type:'blob',compression:'STORE',streamFiles:true}, meta=>onProgress({phase:'zip',percent:meta.percent}));
   const time=new Date().toISOString().slice(0,19).replace(/[T:]/g,'-');
@@ -151,7 +184,11 @@ export async function restoreBackup(prepared,mode,onProgress=()=>{}) {
       catch{throw new Error('No s’han pogut validar les anotacions de la còpia.');}
       annotationRecords.push({path:item.path,document});
     }
-    const copied=await commitStagedBackup(mode,manifest.preferences,manifest.files.length,annotationRecords);
+    const incomingPrefs=mode==='merge'?manifest.preferences.filter(p=>{
+      const score=prefScorePath(p.key);
+      return score!==null&&!previous?.has(score);
+    }):manifest.preferences;
+    const copied=await commitStagedBackup(mode,incomingPrefs,manifest.files.length,annotationRecords);
     success=true;
     return copied;
   } finally {
