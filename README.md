@@ -1,3 +1,25 @@
+# Partitures Festeres Web — W2.15.2 · Cercar i saltar dins del visor
+
+Continuació de W2.15.1 amb el **selector de partitures del visor** equivalent a `ScorePickerDialog` de `PdfViewerScreen.kt` (Android v1.11.15), consultat directament.
+
+## Funcionament
+
+- Amb una partitura oberta, mostra els controls del visor i prem **Cercar i saltar** (icona de lupa en pantalles amples; **indicador de posició del repertori** tàctil en pantalla mòbil). El selector no obliga a eixir del PDF o anar a Repertoris.
+- S'obri un diàleg amb totes les obres de la **seqüència activa**, el seu **número original**, el nom de la partitura, el camí de carpeta quan existix, i un indicador **Actual** per a la partitura que sona.
+- **Busca instantània** per nom, fitxer, carpeta i compositor; ignora accents, majúscules i permet diverses paraules. El número original **no canvia** després de filtrar; tens botó per **netejar la cerca** i missatge quan no hi ha coincidències.
+- Tocar una obra tanca el selector i obri **la seua primera pàgina**, igual que Android; si està en mode Actuació, **continua la mateixa sessió i el mateix ordre circular**. El PDF anterior conserva les anotacions i les preferències.
+- En Biblioteca, Favorits i Recents, el selector utilitza la seqüència de partitures disponible, però **no activa un repertori circular** si no s'està actuant.
+- El selector es pot tancar amb **×, Escape, tocant fora o amb Enrere d'Android/PWA**. Enrere tanca només el diàleg, no el visor. Les fletxes i el teclat dins del diàleg no passen les pàgines del PDF que hi ha darrere.
+- Els textos són **valencià / castellà**, amb botons accessibles i indicador d'element actual.
+- La llista és **lleugera, sense miniatures ni descodificar PDF**. Es filtra dins d'un component independent afegit al `body`, sense `render()` de l'aplicació: **el canvas del visor i PDF.js no es remunten quan s'escriu una cerca**. Es manté la prioritat de càrrega W2.14.3.
+- Per a protegir l'edició, el botó es desactiva mentre es fan anotacions. En acabar d'editar, torna a estar disponible.
+
+## Proves
+
+El workflow `W2.15.2 Selector de partitures dins del visor` comprova amb **tres PDFs reals**, inclosa una obra amb tres pàgines: cerca accent-insensible i per compositor, números originals, ressaltat Actual, canvas intacte en escriure, tancament amb Escape i botó Enrere, salt a la primera pàgina d'una altra obra, persistència d'anotacions, continuïtat del repertori, i comportament normal fora d'Actuació. També s'executen les regressions anteriors.
+
+---
+
 # Partitures Festeres Web — W2.15.1 · Duplicar repertoris i mode Actuació
 
 La web incorpora dos comportaments que la versió Android 1.11.15 ja tenia. S'han llegit directament **`PartituresFesteresApp.kt`, `RepertoiresScreen.kt` i `PdfViewerActivity.kt`** per a reproduir-los fidelment.
