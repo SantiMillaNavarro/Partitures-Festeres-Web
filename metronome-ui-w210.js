@@ -44,6 +44,6 @@ export function renderMetronomeMarkup({bpm=100,signature='4/4',running=false,act
       str('El BPM correspon a cada temps principal.','El BPM corresponde a cada tiempo principal.'))+'</p>'+
     '<p class="pf-metro-sounds">'+str('Dos sons: primer pols accentuat i un mateix clic per a la resta.','Dos sonidos: primer pulso acentuado y un mismo clic para el resto.')+'</p>'+
    '</div></div>'+
-   '<p class="pf-tools-coming">'+str('Pròximament: Dictat Musical.','Próximamente: Dictado Musical.')+'</p>'+
+   '<p class="pf-tools-coming">'+str('Dictat Musical i Marina ja disponibles en Eines.','Dictado Musical y Marina ya disponibles en Herramientas.')+'</p>'+
   '</section>';
 }
