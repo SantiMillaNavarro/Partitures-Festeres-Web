@@ -1,3 +1,31 @@
+# Partitures Festeres Web — W2.17 · Fletxes laterals i visor sense avís de pantalla completa
+
+Canvis sol·licitats després de provar **W2.16** en Android amb una captura on Chrome mostra una notificació sobre com eixir de **pantalla completa** per damunt de la partitura. Eixe avís és del navegador, no del PDF. Per eliminar-lo deixem de demanar `requestFullscreen()` en entrar al lector.
+
+## Visor sense avís
+
+- La PWA **ja no sol·licita pantalla completa** en obrir PDFs. Així Chrome no mostra l'avís sobre com eixir-ne.
+- Conservem l'intent de `screen.orientation.lock('landscape-primary')` quan està activa l'opció d'horitzontal. Si Chrome el rebutja perquè necessitaria fullscreen, s'activa la **rotació CSS alternativa** que ja teníem, sense avís.
+- L'opció d'orientació de W2.16 continua vigent; si es desactiva, respecta la posició actual. En ordinador, el lector s'adapta a la finestra.
+- No es força cap doble rotació i l'orientació del navegador es desbloqueja quan es tanca la partitura.
+
+## Fletxes discretes als laterals
+
+- Sempre que es llig una partitura, es mostren dues **fletxes ‹ ›** als laterals. També són visibles en mode net **Zen**, amb baixa opacitat.
+- Les fletxes canvien de pàgina i, en arribar als extrems, respecten la navegació entre obres i el **mode Actuació circular**. No hi ha retorn circular cap arrere.
+- Quan no es pot retrocedir o avançar, la fletxa corresponent queda deshabilitada.
+- El símbol és menut, però la superfície tàctil és còmoda (42×76 px; 36×66 px en mòbil). Funciona en **vertical i horitzontal** i en rotació visual alternativa.
+- En entrar a **anotacions**, desapareixen completament: no tapen el rosetó, figures, text o gestos. Tornen al tancar l'edició.
+- Mantenim les zones de toc configurables de W2.16, el zoom i la selecció de repertoris. Els botons tenen noms accessibles en valencià i castellà.
+
+## Proves i seguretat
+
+Sense canvis de PDF, anotacions, repertoris o còpies ZIP. El test **W2.17 Fletxes i visor sense pantalla completa** simula el rebuig d'orientació en Android, verifica que no es crida `requestFullscreen()` i comprova, amb PDFs reals, fletxes, límits, mode Zen, anotacions i retorn circular. Continua tota la CI anterior.
+
+**Següent fase:** els ajustos individuals de pàgina d'Android (retall visual, contrast i rotació). Requerixen mantindre sincronitzada la geometria del PDF i de les anotacions per evitar desplaçaments; per seguretat es desenvolupen com a fase dedicada, conservant els arxius originals.
+
+---
+
 # Partitures Festeres Web — W2.16 · TOTS els ajustos avançats del visor d'Android
 
 Fase completa, sense subdivisió. Revisió directa del codi original **Android 1.11.15**: `data/SettingsStore.kt`, `ui/SettingsScreen.kt`, `ui/PdfViewerScreen.kt` i `ui/PdfViewerActivity.kt`. Les huit opcions de configuració del visor trobades s'han reproduït en un únic panell **Ajustos → Ajustos avançats del visor**, en valencià i castellà. No s'han afegit opcions suposades d'Android ni s'han alterat els PDFs.
