@@ -36,6 +36,8 @@ export class MetronomeController{
  }
  async start(){
   const sequence=++this.generation;
+  // Evitar més d'un bucle de visualització durant canvis de compàs o BPM.
+  if(this.frame){cancelAnimationFrame(this.frame);this.frame=0;}
   if(!this.engine)this.engine=new WebMetronomeEngine();
   const engine=this.engine;
   this.pending=true;
