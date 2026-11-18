@@ -21,7 +21,8 @@ assert.equal(writeNavigation(fakeStorage,sample),true);
 assert.deepEqual(readNavigation(fakeStorage),sample);
 fakeStorage.data='{invalid';
 assert.equal(readNavigation(fakeStorage),null,'Invalid storage never blocks startup');
-assert.deepEqual(APP_PAGES,['library','repertoires','index','recents','favorites','settings']);
+assert.deepEqual(APP_PAGES,['library','repertoires','index','recents','favorites','tools','settings']);
+assert.equal(validateNavigation({...sample,page:'tools'},{scores:items,repertoires,paper:'1er'}).page,'tools','Eines returns correctly after reload');
 assert.equal(NAVIGATION_VERSION,1);
 
 function pdf(){
@@ -109,7 +110,7 @@ try{
   await page.locator('.bottom-link.selected[data-value="'+tab+'"]').waitFor({timeout:15000});
   assert.equal(await page.locator('.bottom-link.selected').getAttribute('data-value'),tab,tab+' remains active');
  }
- assert.match(await page.locator('main.content').innerText(),/W2\.8/,'Updated version appears in Ajustos');
+ assert.match(await page.locator('main.content').innerText(),/W2\.9/,'Updated version appears in Ajustos');
 
  // If a score was removed while the app was not in use, the old view is not reopened.
  await page.locator('.bottom-link[data-value="library"]').click();

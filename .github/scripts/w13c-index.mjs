@@ -88,6 +88,7 @@ try{
  await page.locator('[data-action="paper"][data-value="root"].active').waitFor();
  assert.equal(await page.locator('.index-score-row').count(),5);
  await page.reload();
+ await page.locator('#index-group-by').waitFor({timeout:15000}); // IndexedDB s'obri de forma asíncrona després de recarregar.
  assert.equal(await page.locator('#index-group-by').count(),1,'Reload preserves Index instead of returning to Library');
  assert.equal(await page.locator('#index-group-by').inputValue(),'year','Grouping preference survives reload');
  assert.equal(await page.locator('#index-sort-by').inputValue(),'year','Sorting preference survives reload');

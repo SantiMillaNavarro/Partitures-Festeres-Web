@@ -1,0 +1,29 @@
+name: W2.9 Eines - metronom Android i Web Audio
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+jobs:
+  metronome:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install Chromium
+        run: |
+          npm install --no-save playwright
+          npx playwright install chromium --with-deps
+      - name: Start local web server
+        run: python3 -m http.server 8765 --bind 127.0.0.1 >/tmp/pf-w29.log 2>&1 &
+      - name: Check syntax
+        run: |
+          node --check app-w29.js
+          node --check metronome-w29.js
+          node --check metronome-ui-w29.js
+          node --check metronome-controller-w29.js
+          node --check navigation-state.js
+          node --check .github/scripts/w29-metronome.mjs
+      - name: Test six rhythms, timing, navigation and offline lifecycle
+        run: node .github/scripts/w29-metronome.mjs
