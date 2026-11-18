@@ -1902,6 +1902,7 @@ document.addEventListener('fullscreenchange',()=>{
 window.addEventListener('popstate',()=>{
  if(!hasViewerHistory()&&(state.view||viewerPendingOpen))closeViewer(false);
 });
+document.addEventListener('visibilitychange',()=>{void viewerWakeLock.onVisibilityChange();});
 window.addEventListener('pagehide',()=>{
    void viewerWakeLock.setEnabled(false);
    pdfThumbnails.pause();
