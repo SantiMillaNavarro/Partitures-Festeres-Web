@@ -1,3 +1,30 @@
+# Partitures Festeres Web — W2.12.1 · Dictat Musical i Marina
+
+Primera subfase de **Dictat Musical**, traslladada directament de `DictationMarinaPanel.kt`, `TunerEngine.kt` i `DictationExportPolicy.kt` d'Android v1.11.15.
+
+## Ja disponible
+
+- En **Eines** ara hi ha quatre pestanyes: **Metrònom**, **Afinador**, **Nota de referència** i **Dictat Musical**.
+- **Dictat Musical:** micròfon sota pulsació explícita, reconeixement d'altures amb el mateix algorisme **YIN** de l'afinador, captura de notes estables després de 150 ms i nova nota només si canvia l'altura o hi ha silenci (320 ms).
+- **Transposició instrumental Android:** els mateixos **16 instruments**, incloent clarinets i trompetes en Sib, saxos en Sib/Mib, trompa en Fa, flautí, i clau de fa en fagot/trombó/bombardí/tuba. Canviar l'instrument neteja el dictat, i l'instrument triat es guarda en les preferències locals.
+- **Mode Dictat Marina:** inclou la **il·lustració original de Marina** adaptada a WebP lleuger, reconeixement de la veu més ràpid (70 ms), repetició de notes cada 220 ms i adaptació de les octaves de veu al pentagrama de sol (Do4–Si5), exactament com en Android.
+- Pentagrama SVG continu amb **clau de sol o fa**, línies addicionals, sostinguts, bemolls, i les notes dibuixades com a **negres**; 6, 8 o 10 notes per pentagrama segons la grandària de la pantalla. No es força el scroll en incorporar notes.
+- **Començar dictat / Acabar dictat / Netejar**. La transcripció es conserva mentre es canvia a una altra ferramenta i es torna, fins que la neteges o canvies el mode o instrument.
+- **Privacitat:** no s'emmagatzema ni puja l'àudio. Micròfon desactivat en canviar de pestanya, eixir d'Eines, ocultar l'app o tancar. Sense permís previ no s'activa cap captura. Es compartix la referència de La4 de l'afinador.
+- L'aplicació continua funcional sense connexió una vegada la PWA s'ha preparat. Cap modificació de PDF, anotacions, repertoris, índex o còpies de seguretat.
+
+## Limitacions deliberades (com Android)
+
+Esta primera versió reconeix **altures, no duracions ni figures rítmiques reals**: totes les notes es dibuixen com negres. **Dictat Marina** és una funció creativa de veu, no un sistema rigorós de reconeixement de parla.
+
+L'exportació d'imatges i la funció **Compartir** es duran a terme en **W2.12.2**, prenent com a referència la política d'Android (màxim **60 notes per imatge**). En W2.12.1 el dictat només es conserva a la pantalla de la sessió actual; no es guarda automàticament entre recàrregues.
+
+## Proves
+
+El workflow `W2.12.1 Dictat Musical i Marina` comprova transposició, cadència de captura, detecció YIN amb àudio sintètic, pentagrama, fitxer original de Marina, permisos del micròfon, parades automàtiques i persistència de l'instrument. També han de passar totes les regressions anteriors abans de fusionar a main.
+
+---
+
 # Partitures Festeres Web — W2.11 · Nota de referència
 
 La fase W2.11 porta a la web el panell **Nota de referència** d'Android v1.11.15, contrastat directament amb `ToolsScreen.kt` i `ReferenceToneEngine.kt`.
