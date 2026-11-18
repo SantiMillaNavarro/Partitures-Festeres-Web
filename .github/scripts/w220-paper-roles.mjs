@@ -126,8 +126,9 @@ try{
  assert.equal(await page.locator('[data-action="paper"][data-value="role:2"]').first().getAttribute('aria-pressed'),'true',
    'No es restaura el paper actiu al recarregar.');
  await page.locator('[data-action="paper"][data-value="root"]').first().click();
- assert(await page.locator('.cards').first().innerText().then(s=>s.includes('Saxo Alt')),
-   'Arrel real no mostra les carpetes superiors.');
+ await page.waitForFunction(()=>document.querySelector('.crumbs')?.textContent?.includes('Arrel')&&
+     document.querySelector('.cards')?.textContent?.includes('Saxo Alt'),{timeout:10000})
+   .catch(()=>{throw Error('Arrel real no mostra les carpetes superiors.');});
  assert.deepEqual(errors,[],'Excepcions JavaScript: '+errors.join('\n'));
  console.log('PASS W2.20: migration 1r-3r, nested virtual roots, Index, dynamic role, folder search, duplicate reassign, safe removal, ZIP restore, persistence.',dbChecks);
  await context.close();
