@@ -1,3 +1,29 @@
+# Partitures Festeres Web — W2.12.2 · Guardar i compartir dictats
+
+La fase W2.12.2 completa l'exportació de **Dictat Musical** i **Dictat Marina** en Eines, prenent literalment de `DictationExportPolicy.kt` i `renderScoreBitmap` en `DictationMarinaPanel.kt` del projecte Android v1.11.15.
+
+## Guardar imatge i Compartir
+
+Després d'acabar un dictat amb notes, apareixen els botons **Guardar imatge** i **Compartir**. Estan ocults mentre el micròfon escolta, com a Android, i es desactiven durant l'exportació.
+
+- Cada PNG es dibuixa a **1600 px d'amplària**, amb **10 notes per pentagrama**, **240 px per fila** i **200 px de marges verticals**, fons de pergamí (RGB 250/242/226), títol i subtítol amb el nom de l'instrument si escau, clau de sol/fa, alteracions, línies addicionals i notes negres.
+- Política de l'Android: **60 notes per imatge màxim**, sense perdre notes. Una partitura de 61 notes genera exactament **dos PNG**.
+- **Guardar imatge**: una imatge es descarrega directament com a **PNG**. Quan hi ha múltiples imatges, es descarrega un **ZIP** amb tots els PNG, perquè els navegadors bloquegen sovint les descàrregues múltiples i no poden guardar-los automàticament en un àlbum de fotos.
+- **Compartir**: utilitza **Web Share amb fitxers PNG**, un fitxer si és un sol pentagrama o múltiples fitxers si el dictat ocupa diverses imatges. Si el navegador o el dispositiu no ho admet, guarda els arxius com a PNG o ZIP i mostra el missatge corresponent. Una cancel·lació voluntària de l'usuari no provoca una descàrrega.
+- Els fitxers es generen i romanen **localment al navegador**; no hi ha servidor, pujada de dades ni enregistrament d'àudio.
+- La preparació d'imatges evita el bitmap únic il·limitat que podria esgotar la memòria d'una tauleta. Es recicla el canvas de cada pàgina una vegada s'ha obtingut el PNG.
+- Els documents PDF importats, les anotacions, els repertoris, les dades IndexedDB i les ferramentes anteriors no es modifiquen.
+
+## Diferències inevitables entre Android i web
+
+Android pot enviar imatges a la galeria del sistema (**Pictures/Partitures Festeres**) amb MediaStore. La web no té accés directe a la galeria ni pot garantir el destí final de la descàrrega. Les imatges van a les **Descàrregues** del navegador o al gestor del sistema; en mòbil, pot aparéixer el quadre de compartir o de guardar en Fitxers.
+
+## Validació
+
+Workflow nou `W2.12.2 Exportar i compartir Dictat`, amb proves dels límits 60/61, dimensions 1600×1640, color del fons, signatura real PNG, títol Marina/Musical, ZIP, simulació del menú Compartir i aturada segura del micròfon. També s'executen les proves de les 27 funcions preexistents.
+
+---
+
 # Partitures Festeres Web — W2.12.1 · Dictat Musical i Marina
 
 Primera subfase de **Dictat Musical**, traslladada directament de `DictationMarinaPanel.kt`, `TunerEngine.kt` i `DictationExportPolicy.kt` d'Android v1.11.15.
