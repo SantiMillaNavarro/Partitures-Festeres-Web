@@ -1048,6 +1048,8 @@ function applyRosetteOption(id){
   alignment:v.textStyle.alignment||'left'};
  const option=rosetteOptions(level,ctx).find(o=>o.id===id);
  if(!option)return;
+ // En triar Text o Retall, el panell Objectes es tanca i no tapa el PDF.
+ if(option.tool&&option.tool!=='select')state.objectMenuOpen=false;
  if(option.unavailable){
   toast(state.lang==='va'?'El retall avançat arribarà en una pròxima fase.':'El recorte avanzado llegará en una próxima fase.');
   return;
