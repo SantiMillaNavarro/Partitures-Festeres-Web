@@ -110,6 +110,14 @@ export class LinkedLocalLibrary{
    if(cached){
     this.scores=cached.scores;this.folders=cached.folders;this.unreadable=cached.unreadable;
     this.lastScannedAt=cached.scannedAt;this.status='cached';
+    // En Android, reconstruir un FileSystemFileHandle a partir de la ruta
+    // pot fallar tot i que el handle retornat per entries() siga llegible.
+    // Conservem els handles originals sempre que el navegador permeta
+    // clonar-los a IndexedDB: només són referències, NO contingut de PDF.
+    const known=new Set(cached.scores.map(item=>item.path));
+    if(Array.isArray(saved.fileHandles))
+     this.files=new Map(saved.fileHandles.filter(entry=>Array.isArray(entry)&&
+      known.has(entry[0])&&entry[1]?.kind==='file').slice(0,MAX_PDFS));
    }
    return true;
   }
@@ -132,7 +140,9 @@ export class LinkedLocalLibrary{
   this.unreadable=sameEntry?old.unreadable:0;this.lastScannedAt=sameEntry?old.lastScannedAt:0;
   this.files=sameEntry?old.files:new Map();
   const index=this.lastScannedAt?this.snapshot():null;
-  try{await inRootStore('readwrite',store=>store.put({key:LINK_KEY,id:this.id,name:this.name,handle,index}));}
+  try{
+   await this.persistIndex({handle,index});
+  }
   catch(error){
    Object.assign(this,old);
    throw Error('No es pot recordar esta carpeta. '+error.message);
@@ -186,10 +196,7 @@ export class LinkedLocalLibrary{
     // Guardem una vegada per escaneig. El pròxim inici no torna a recórrer
     // centenars de PDF. Un error de quota no invalida la sessió actual.
     try{
-     const index=this.snapshot();
-     await inRootStore('readwrite',store=>store.put({
-      key:LINK_KEY,id:this.id,name:this.name,handle:this.handle,index
-     }));
+     await this.persistIndex();
     }catch(error){
      console.warn('No s’ha pogut guardar l’índex de la carpeta:',error);
      this.error='No s’ha pogut guardar l’índex per a la pròxima obertura.';
@@ -214,51 +221,88 @@ export class LinkedLocalLibrary{
   return {version:1,scores:this.scores.map(({path,size,added})=>({path,size,added})),
    folders:[...this.folders],unreadable:this.unreadable,scannedAt:this.lastScannedAt};
  }
- async fileHandleFor(path){
-  if(this.files.has(path))return this.files.get(path);
-  // Després d'obrir de nou el navegador només disposem de l'índex i
-  // l'handle de la carpeta arrel. Resolem únicament el fitxer demanat,
-  // sense recórrer el catàleg complet una altra vegada.
+ async persistIndex({handle=this.handle,index=this.snapshot()}={}){
+  const base={key:LINK_KEY,id:this.id,name:this.name,handle,index};
+  // En Chrome Chromium es poden clonar FileSystemFileHandle a IndexedDB.
+  // Guardar-los permet reobrir PDFs encara que la reconstrucció amb
+  // getFileHandle() falle en proveïdors de documents d'Android.
+  if(this.files.size&&this.files.size<=2500){
+   try{
+    await inRootStore('readwrite',store=>store.put({...base,fileHandles:[...this.files]}));
+    return;
+   }catch(error){
+    console.warn('No es poden conservar els handles individuals:',error);
+   }
+  }
+  // Pla B: només índex + arrel. No perdem l'índex perquè un proveïdor
+  // no permeta serialitzar els handles de fitxers.
+  await inRootStore('readwrite',store=>store.put(base));
+ }
+ async fileHandleFor(path,{forceEnumeration=false}={}){
+  if(!forceEnumeration&&this.files.has(path))return this.files.get(path);
+  // Alguns proveïdors d'Android permeten entries() però fallen quan
+  // Chrome invoca getDirectoryHandle()/getFileHandle(). En eixe cas
+  // busquem el nom enumerant NOMÉS la branca demanada.
   let directory=this.handle;
   const parts=path.split('/');
-  for(const name of parts.slice(0,-1)){
-   if(typeof directory.getDirectoryHandle==='function'){
-    directory=await directory.getDirectoryHandle(name);
-   }else{
-    let found=null;
-    const it=typeof directory.entries==='function'?directory.entries():directory.values();
-    for await(const entry of it){
-     const item=Array.isArray(entry)?entry[1]:entry;
-     if(item?.name===name&&item.kind==='directory'){found=item;break;}
-    }
-    if(!found)throw Error('La subcarpeta ja no existix: '+name);
-    directory=found;
-   }
-  }
-  const filename=parts.at(-1);
-  let handle;
-  if(typeof directory.getFileHandle==='function')handle=await directory.getFileHandle(filename);
-  else{
-   const it=typeof directory.entries==='function'?directory.entries():directory.values();
-   for await(const entry of it){
+  const find=async(dir,name,kind)=>{
+   const iterator=typeof dir.entries==='function'?dir.entries():
+    typeof dir.values==='function'?dir.values():null;
+   if(!iterator)throw Error('Este proveïdor no permet explorar els arxius.');
+   for await(const entry of iterator){
     const item=Array.isArray(entry)?entry[1]:entry;
-    if(item?.name===filename&&item.kind==='file'){handle=item;break;}
+    if(item?.name===name&&item.kind===kind)return item;
    }
+   throw Object.assign(new Error('No s’ha trobat: '+name),{name:'NotFoundError'});
+  };
+  for(const name of parts.slice(0,-1)){
+   let child=null,primaryError=null;
+   if(!forceEnumeration&&typeof directory.getDirectoryHandle==='function'){
+    try{child=await directory.getDirectoryHandle(name);}
+    catch(error){primaryError=error;}
+   }
+   if(!child){
+    try{child=await find(directory,name,'directory');}
+    catch(error){throw primaryError&&error?.name==='NotFoundError'?primaryError:error;}
+   }
+   directory=child;
   }
-  if(!handle)throw Error('La partitura ja no està en la carpeta original.');
-  this.files.set(path,handle);return handle;
+  const name=parts.at(-1);
+  let handle=null,primaryError=null;
+  if(!forceEnumeration&&typeof directory.getFileHandle==='function'){
+   try{handle=await directory.getFileHandle(name);}
+   catch(error){primaryError=error;}
+  }
+  if(!handle){
+   try{handle=await find(directory,name,'file');}
+   catch(error){throw primaryError&&error?.name==='NotFoundError'?primaryError:error;}
+  }
+  this.files.set(path,handle);
+  return handle;
  }
  async getScore(path){
-  if(!this.ready)throw Error('La carpeta no està autoritzada. Torna a donar permís des de Biblioteca.');
+  if(!this.ready)throw Error('No s’ha pogut llegir la biblioteca vinculada.');
   if(!validateLinkedPath(path)||!this.scores.some(item=>item.path===path))return null;
+  let firstError=null;
   try{
    const handle=await this.fileHandleFor(path);
-   const file=await handle.getFile();
+   try{
+    const file=await handle.getFile();
+    return {path,size:file.size,added:file.lastModified||0,blob:file};
+   }catch(error){firstError=error;this.files.delete(path);}
+   // Una referència serialitzada o retornada per getFileHandle() pot ser
+   // caducada. Recorrem la branca mitjançant entries() i ho provem
+   // amb el handle original del proveïdor una única vegada més.
+   const fresh=await this.fileHandleFor(path,{forceEnumeration:true});
+   const file=await fresh.getFile();
    return {path,size:file.size,added:file.lastModified||0,blob:file};
   }catch(error){
-   if(error?.name==='NotAllowedError'||error?.name==='SecurityError')
-    throw Error('El navegador necessita tornar a autoritzar esta carpeta. Prem Actualitzar biblioteca o Canviar carpeta.');
-   throw Error('No es pot llegir '+path+'. Actualitza la biblioteca si el fitxer ha canviat o s’ha mogut.');
+   console.warn('No es pot obrir un PDF vinculat:',{path,firstError,error});
+   const denied=[error,firstError].some(e=>['NotAllowedError','SecurityError'].includes(e?.name));
+   const missing=[error,firstError].some(e=>e?.name==='NotFoundError');
+   if(denied)throw new Error('Chrome no permet llegir esta partitura concreta. Actualitzar la llista no renova el permís del PDF. Prova Canviar carpeta i torna a seleccionar la mateixa carpeta; si continua fallant, el proveïdor de fitxers no permet l’accés web.');
+   if(missing)throw new Error('La partitura no es troba en la carpeta original. Si s’ha mogut o canviat de nom, prem Actualitzar biblioteca.');
+   throw new Error('El proveïdor d’arxius no ha pogut obrir este PDF ('+(error?.name||'error')+'). La resta de la biblioteca es conserva.');
   }
  }
  async forget(){

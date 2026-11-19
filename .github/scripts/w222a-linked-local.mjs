@@ -197,14 +197,54 @@ try{
   const {LinkedLocalLibrary}=await import('./linked-library-w222a.js');
   const restored=new LinkedLocalLibrary();
   if(!(await restored.restore()))throw Error('No s’ha conservat la carpeta.');
-  if(restored.status!=='cached'||restored.scores.length!==3||restored.files.size)
+  if(restored.status!=='cached'||restored.scores.length!==3)
    throw Error('No s’ha guardat l’índex lleuger.');
+  if(restored.files.size&&restored.files.size!==3)
+   throw Error('No s’han conservat les referències directes de forma íntegra.');
   const read=await restored.getScore('1r/Marxes/CIMO.pdf');
   if(!read?.blob?.size)throw Error('L’índex persistit no permet obrir un PDF individual.');
-  if(restored.files.size!==1)throw Error('S’han llegit tots els handles en lloc d’un.');
+  if(restored.files.size!==1&&restored.files.size!==3)
+   throw Error('La consulta ha invalidat les referències als PDF.');
   return {scores:restored.scores.length,folders:restored.folders.length,bytes:read.blob.size};
  });
  assert.equal(cached.scores,3);
+ // Emula un proveïdor Android/SAF que retorna un NotAllowedError
+ // quan es crida getFileHandle(), però els handles enumerats sí funcionen.
+ const androidFiles=await page.evaluate(async()=>{
+  const {LinkedLocalLibrary}=await import('./linked-library-w222a.js');
+  const wrap=real=>({
+   name:real.name,kind:'directory',
+   async getDirectoryHandle(){throw new DOMException('No direct traversal','NotAllowedError');},
+   async getFileHandle(){throw new DOMException('No direct filename','NotAllowedError');},
+   async *entries(){
+    for await(const [name,item] of real.entries())
+     yield [name,item.kind==='directory'?wrap(item):item];
+   }
+  });
+  const lib=new LinkedLocalLibrary();
+  lib.id='fake-saf';lib.name='Partitures';
+  lib.status='cached';lib.handle=wrap(window.__w222folder);
+  lib.scores=[{path:'1r/Marxes/CIMO.pdf',size:0,added:0}];
+  const first=await lib.getScore('1r/Marxes/CIMO.pdf');
+  if(!first?.blob?.size)throw Error('El proveïdor Android no permet obrir el PDF via entries.');
+  lib.files.set('1r/Marxes/CIMO.pdf',{
+   kind:'file',async getFile(){throw new DOMException('Stale handle','NotAllowedError');}
+  });
+  const second=await lib.getScore('1r/Marxes/CIMO.pdf');
+  if(!second?.blob?.size)throw Error('No es recupera un handle antic via entries.');
+  const denied=new LinkedLocalLibrary();
+  denied.id='fake-denied';denied.name='Partitures';denied.status='cached';
+  denied.scores=[{path:'1r/Marxes/CIMO.pdf',size:0,added:0}];
+  denied.handle={kind:'directory',name:'Partitures',
+   async *entries(){throw new DOMException('Blocked','NotAllowedError');}};
+  let message='';
+  try{await denied.getScore('1r/Marxes/CIMO.pdf');}
+  catch(error){message=error.message;}
+  if(!message.includes('Chrome')||message.includes('importar'))
+   throw Error('No hi ha diagnòstic clar del PDF bloquejat.');
+  return {first:first.blob.size,second:second.blob.size,message};
+ });
+ assert(androidFiles.first>0&&androidFiles.second>0);
  await page.reload({waitUntil:'domcontentloaded'});
  await page.locator('[data-action="source-linked"]').first().waitFor({timeout:15000});
  await page.waitForFunction(()=>document.querySelector('.pf-source-status')?.textContent?.includes('Índex guardat'));

@@ -1215,7 +1215,18 @@ async function openPdf(path,requestedPage=null){
   ensureViewerHistory(); // L'entrada anterior sempre és el menú de procedència.
   requestViewerLandscape();
  }
- const record=await readActiveScore(path);
+ let record;
+ try{record=await readActiveScore(path);}
+ catch(error){
+  if(request===viewerRequest){
+   if(!state.view){
+    viewerPendingOpen=false;releaseViewerLandscape();
+    if(hasViewerHistory())history.back();
+   }
+   pdfThumbnails.resume();
+  }
+  throw error;
+ }
  if(request!==viewerRequest)return;
  if(!record?.blob){
   if(!state.view){viewerPendingOpen=false;releaseViewerLandscape();if(hasViewerHistory())history.back();}
@@ -2165,7 +2176,12 @@ document.addEventListener('dblclick',e=>{
  if(e.target.closest?.('#viewer-stage')&&!e.target.closest?.('.pf-inline-text-editor'))e.preventDefault();
 });
 
-document.addEventListener('click',e=>{const b=e.target.closest('[data-action]');if(b){e.preventDefault();handleClick(b).catch(err=>{console.error(err);toast(`${tr('error')} ${err.message}`,true);});}});
+document.addEventListener('click',e=>{const b=e.target.closest('[data-action]');if(b){e.preventDefault();handleClick(b).catch(err=>{
+ console.error(err);
+ // Error del navegador llegint una partitura: no és una importació.
+ const isOpen=['open','viewer-next-score','viewer-prev-score'].includes(b.dataset.action);
+ toast(isOpen?err.message:`${tr('error')} ${err.message}`,true);
+});}});
 document.addEventListener('input',e=>{
  if(state.modal==='drive-browser'&&['drive-client-id','drive-folder-ref'].includes(e.target?.id)){
   driveBrowser.update(e.target.id,e.target.value);return;

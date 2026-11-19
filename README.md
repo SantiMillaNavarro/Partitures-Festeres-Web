@@ -1,3 +1,17 @@
+## W2.22A.3 — Recuperació de PDF individuals en Android (2026-11-19)
+
+- S'investiga el cas Android en què l'índex guardat mostra tots els PDF, però una partitura concreta dona un error d'accés tot i que altres s'obrin.
+- El navegador pot concedir accés a la **carpeta** sense garantir que totes les referències a documents individuals es comporten igual. Les biblioteques web no poden fer `takePersistableUriPermission` com l'aplicació Android nativa, que utilitza `ActivityResultContracts.OpenDocumentTree` i el proveïdor SAF del sistema.
+- **Guardem els handles individuals** que ja retorna l'enumeració de la carpeta dins IndexedDB, només com a referències; no en guardem ni copiem els PDF. Si Chrome rebutja clonar-les, es conserva el catàleg lleuger de W2.22A.2 igualment.
+- Si `getDirectoryHandle()` o `getFileHandle()` fallen amb alguns proveïdors d'Android, provem la cerca mitjançant `entries()` només en la branca del fitxer que s'està obrint.
+- Si un handle ha caducat i `getFile()` falla, fem una única segona prova amb el handle retornat per l'enumeració de la carpeta. No es torna a reindexar la biblioteca completa.
+- Si el proveïdor realment denega el PDF, el visor informa de la **limitació de Chrome amb eixe fitxer** en lloc de mostrar el missatge genèric i incorrecte «No s'ha pogut importar el fitxer». «Actualitzar biblioteca» no es presenta com a renovació de permisos dels PDF.
+- Si falla la lectura, recuperem els controls de navegació i l'estat del visor.
+- Proves de regressió amb un proveïdor Android simulat que permet `entries()` però denega `getFileHandle()` i `getDirectoryHandle()`, handles caducats, i error d'accés real.
+
+### Límit tècnic
+Un navegador web està separat del ContentResolver natiu i no pot conservar exactament els mateixos permisos URI persistents que la versió APK d'Android. Si el proveïdor de documents denega la lectura real del fitxer des de Chrome, la web no el pot obrir sense que l'usuari li facilite eixe document per una altra via (per exemple, importació puntual o biblioteca Drive via API). Esta fase reforça la compatibilitat sense enganyar l'usuari ni copiar la biblioteca a la força.
+
 ## W2.22A.2 — Índex persistent i biblioteca ràpida (2026-11-19)
 
 - En escollir una carpeta, el primer recorregut en guarda a **IndexedDB un índex lleuger** amb noms, rutes, subcarpetes i data de l'última lectura, juntament amb la referència autoritzada a la carpeta original.
