@@ -2286,6 +2286,7 @@ html.reading-pdf,body.reading-pdf{background:#fff!important;background-image:non
 .pf-library-summary-text .pf-library-check.warn{color:#955b41}
 .pf-library-summary button{min-height:34px;padding:6px 9px;font-size:.8rem;flex-shrink:0}
 .pf-library-summary .quiet{border:1px solid #d6bda0;background:#fff9e9;border-radius:8px}
+.pf-library-summary .pf-library-activate{border:1px solid #b58a66;background:#f5e7cc;color:#602f39;font-weight:750}
 .pf-library-summary .pf-drive-quick{font-size:.77rem}
 .pf-library-manage{color:#603e40;font-weight:700}
 .pf-auto-sync-switch{
