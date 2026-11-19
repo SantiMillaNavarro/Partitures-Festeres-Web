@@ -1,3 +1,36 @@
+# Fase W2.22A — Biblioteca local vinculada (sense importar PDFs)
+
+La web recupera el model de la biblioteca Android: es tria la **carpeta real** de partitures i l'aplicació en llig directament els fitxers i les subcarpetes. Es basa en la File System Access API quan el navegador ho permet.
+
+## Funcionament
+- En Biblioteca apareix **Origen de la biblioteca**: Biblioteca importada / Carpeta vinculada. La carpeta local real es tria amb **Vincular carpeta** i el selector nadiu del navegador (Chrome/Edge compatibles).
+- **No es copien els PDF** al magatzem intern de la web quan es vincula la carpeta. Es guarda a IndexedDB una referència a la carpeta i s'indexen només les rutes, mides i dates. Quan s'obri una partitura o es genera una miniatura, es llig directament el File original.
+- Navegació, Índex, cerca, papers, favorits, repertoris, recents i lector PDF funcionen dins de la carpeta vinculada. Les subcarpetes reals, fins i tot les buides, apareixen a Biblioteca.
+- **Actualitzar biblioteca** torna a llegir les carpetes i detecta PDF afegits, moguts, renomenats o retirats. No hi ha monitorització automàtica de carpetes en esta fase.
+- Els **metadades, favorits, repertoris i configuració de papers** de cada origen s'emmagatzemen per separat. Les anotacions i els ajustos del visor s'associen al PDF i a la font vinculada, sense canviar el PDF original.
+- La referència a la carpeta es conserva entre sessions on el navegador permeta serialitzar handles. Si el permís ha caducat, apareix **Autoritzar lectura**. No es demana mai permís d'escriptura. Desvincular la carpeta no elimina cap arxiu original.
+- **Biblioteca importada** preserva tots els PDF, el visor i els repertoris previs. La funció Drive de W2.21 continua sent una importació a esta biblioteca, de forma independent, fins a W2.22B.
+- En navegadors sense showDirectoryPicker, **Importar una carpeta (còpia)** fa una importació puntual dels PDF preservant subcarpetes. No és una carpeta enllaçada.
+
+## Limitacions i proteccions
+- No escriu, mou, renomena ni elimina PDF originals. Els botons que podrien afectar l'origen es desactiven en mode vinculat. L'escàner passa a la biblioteca importada, evitant guardar un arxiu a un lloc inesperat.
+- Les còpies ZIP exporten **només la Biblioteca importada** (els PDF originals enllaçats no es dupliquen en les còpies). La configuració local de les carpetes i les referències es mantenen fora del ZIP.
+- La vinculació depén del navegador, del sistema operatiu i dels permisos. Firefox i Safari no oferixen este selector. Chrome per a Android el va incorporar en versions recents, però alguns proveïdors de documents poden no exposar carpetes al selector.
+- Les anotacions de la carpeta vinculada s'emmagatzemen **en el navegador actual**, no en els PDF originals ni en Drive. Una exportació específica de les anotacions vinculades queda pendent. Si es borren les dades del navegador, estos canvis locals es poden perdre: no és una còpia de seguretat.
+- Si un PDF és renomenat o mogut, el seu camí canvia i les anotacions anteriors no es traslladen automàticament; es tractarà en una altra fase.
+- Màxim de 10.000 PDF, 4.000 carpetes i 30 nivells per evitar bloquejos.
+
+## Com provar
+1. Des de Chrome o Edge, obri **Biblioteca → Vincular carpeta** i selecciona la teua carpeta de partitures.
+2. Comprova l'estructura i obri un PDF; assegura't que els PDF de la carpeta **no** s'han duplicat a la biblioteca importada.
+3. Afig un PDF a la carpeta externa i prem **Actualitzar biblioteca**.
+4. Marca una obra com a favorita i canvia de Biblioteca vinculada a Biblioteca importada i viceversa.
+5. Recarrega la web; si demana permís, prem **Autoritzar lectura**, i comprova que els PDF continuen estant en la carpeta original.
+
+**Pròxim pas: W2.22B — biblioteques Google Drive com a origen real**, amb la mateixa interfície, navegació i lectura sota demanda.
+
+---
+
 # Partitures Festeres Web — Fase W2.21 · Primera connexió Google Drive (només lectura)
 
 W2.21 prepara la connexió opcional de Google Drive a una biblioteca web **local** (IndexedDB), sense servidor de Partitures Festeres ni autorització d'escriptura a Drive.

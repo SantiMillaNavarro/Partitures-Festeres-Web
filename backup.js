@@ -38,7 +38,7 @@ function safePrefKey(key){
  return path!==null?validPath(path):/^[A-Za-z0-9_.:-]+$/.test(key);
 }
 function safePrefs(prefs){
- return prefs.filter(p=>p&&safePrefKey(p.key)&&!p.key.startsWith('w221:')&&p.value!==undefined&&
+ return prefs.filter(p=>p&&safePrefKey(p.key)&&!p.key.startsWith('w221:')&&!p.key.startsWith('w222a:')&&p.value!==undefined&&
    JSON.stringify(p.value)?.length<=250000).map(({key,value})=>({key,value}));
 }
 function validatePagePreferences(prefs,known){
@@ -139,7 +139,7 @@ export async function createBackup(onProgress=()=>{}) {
     zip.file(annotationEntry(record.path),json,{compression:'DEFLATE'});
     annotations.push({path:record.path,size:blob.size,sha256:sha});
   }
-  const manifest={kind:BACKUP_KIND,schemaVersion:1,appVersion:'W2.21',createdAt:new Date().toISOString(),scoreCount:files.length,totalBytes,files,preferences,annotations};
+  const manifest={kind:BACKUP_KIND,schemaVersion:1,appVersion:'W2.22A',createdAt:new Date().toISOString(),scoreCount:files.length,totalBytes,files,preferences,annotations};
   const manifestText=JSON.stringify(manifest,null,2);
   if(manifestText.length>MAX_MANIFEST_BYTES)throw new Error('La biblioteca té massa ajustos per a este ZIP. No s’ha creat una còpia incompleta.');
   zip.file(BACKUP_MANIFEST,manifestText);
