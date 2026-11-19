@@ -171,7 +171,7 @@ try{
   return (await (await march.getFileHandle('CIMO.pdf')).getFile()).size>0;
  });
  assert.equal(originalExists,true);
- assert.equal(await page.locator('[data-action="source-linked"]').count(),0);
+ await page.waitForFunction(()=>document.querySelector('[data-action="source-linked"]')===null,{timeout:10000});
  assert.deepEqual(errors,[],'Errors de navegador: '+errors.join(' | '));
  console.log('PASS W2.22A local library: live OPFS handles, recursive folders incl empty, no PDF imports, isolated favorites and metadata, native viewer, source switching, refresh external changes, reload persistence, forget leaves source intact.',linkedPrefs);
  await context.close();
