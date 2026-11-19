@@ -260,6 +260,7 @@ export class LinkedLocalLibrary{
    if(ask&&status==='denied'){
     preserveOrReset();
     this.error='El navegador no ha concedit l’accés. Torna a seleccionar la carpeta.';
+    this.checkState='unavailable';this.checkError=this.error;
     return false;
    }
    // Els estats 'prompt' i 'unsupported' no són sempre fiables en Android:
@@ -268,6 +269,7 @@ export class LinkedLocalLibrary{
     const listing=await scanLinkedDirectory(this.handle,{previousScores:this.scores});
     this.scores=listing.scores;this.folders=listing.folders;this.files=listing.files;
     this.unreadable=listing.unreadable;this.status='ready';this.error='';
+    this.checkState='ok';this.checkError='';
     this.lastScannedAt=Date.now();
     // Guardem una vegada per escaneig. El pròxim inici no torna a recórrer
     // centenars de PDF. Un error de quota no invalida la sessió actual.
@@ -284,6 +286,7 @@ export class LinkedLocalLibrary{
      this.error=typeof this.handle.requestPermission==='function'
       ?'El navegador ha bloquejat la lectura. Prem Autoritzar lectura o torna a seleccionar la carpeta.'
       :'No es pot llegir esta carpeta. Prem Canviar carpeta i selecciona-la de nou.';
+     this.checkState='unavailable';this.checkError=this.error;
      return false;
     }
     this.status=hadIndex?'cached':'error';
@@ -300,17 +303,10 @@ export class LinkedLocalLibrary{
   this.checkBusy=true;this.checkState='checking';this.checkError='';
   const id=this.id;
   try{
-   if(typeof this.handle.queryPermission==='function'){
-    let permission='unknown';
-    try{permission=await this.handle.queryPermission({mode:'read'});}
-    catch(error){console.warn('Comprovació de permisos no disponible:',error);}
-    // Mai mostrem un diàleg de permisos durant una comprovació automàtica.
-    if(permission==='prompt'||permission==='denied'){
-     this.checkState='unavailable';
-     this.checkError='Chrome necessita una autorització per a revisar els canvis.';
-     return {changed:false,unavailable:true};
-    }
-   }
+   // En Android/SAF, queryPermission() pot retornar "prompt" encara que
+   // entries() siga llegible. Intentem llegir els noms sense demanar permís:
+   // si Chrome ho bloqueja, la UI oferirà autorització amb una pulsació.
+   // requestPermission() mai no s'invoca sense gest de l'usuari.
    const beforeScores=this.scores, beforeFolders=this.folders;
    const scanned=await scanLinkedDirectory(this.handle,{previousScores:beforeScores});
    if(this.id!==id)return {skipped:true,changed:false};
@@ -320,6 +316,7 @@ export class LinkedLocalLibrary{
     scanned.folders.some((path,i)=>path!==beforeFolders[i]);
    this.files=scanned.files;
    this.lastAutoCheckedAt=Date.now();
+   this.status='ready';
    if(changed){
     this.scores=scanned.scores;this.folders=scanned.folders;
     this.unreadable=scanned.unreadable;
@@ -457,37 +454,45 @@ export class LinkedLocalLibrary{
  async getScore(path){
   if(!this.ready)throw Error('No s’ha pogut llegir la biblioteca vinculada.');
   if(!validateLinkedPath(path)||!this.scores.some(item=>item.path===path))return null;
+  // Les còpies offline són opcionals. No copiem cap PDF només per obrir-lo
+  // o generar-ne la miniatura. Preferim sempre l'original actualitzat.
+  const readOffline=async()=>{
+   try{
+    const blob=await cachedPdf(this.id,path);
+    if(blob?.size)return {path,size:blob.size,added:0,blob,offline:true};
+   }catch(error){console.warn('Còpia del PDF:',error);}
+   return null;
+  };
+  // Si ja sabem que el proveïdor ha revocat l'accés, evitem consultar-lo
+  // repetidament quan existeix una còpia voluntària.
+  if(this.checkState==='unavailable'&&this.cachedPaths.has(path)){
+   const local=await readOffline();
+   if(local)return local;
+  }
   let firstError=null;
-  // Primer usem la còpia local si ja existeix: això evita que un permís
-  // temporal de Chrome bloquege el PDF després de tancar l'aplicació.
-  let offline=null;
-  try{offline=await cachedPdf(this.id,path);}catch(error){console.warn('Còpia del PDF:',error);}
-  if(offline?.size)return {path,size:offline.size,added:0,blob:offline,offline:true};
   try{
    const handle=await this.fileHandleFor(path);
    try{
     const file=await handle.getFile();
-    // Guardar automàticament només un PDF que l'usuari obri permet que
-    // continue funcionant després d'eixir, fins i tot si Chrome perd
-    // l'autorització del proveïdor. No retarda el visor.
-    void saveCachedPdf(this.id,path,file).then(()=>this.cachedPaths.add(path))
-     .catch(error=>console.warn('Còpia local no disponible:',error));
     return {path,size:file.size,added:file.lastModified||0,blob:file};
    }catch(error){firstError=error;this.files.delete(path);}
-   // Una referència serialitzada o retornada per getFileHandle() pot ser
-   // caducada. Recorrem la branca mitjançant entries() i ho provem
-   // amb el handle original del proveïdor una única vegada més.
+   // Alguns proveïdors SAF deixen reconstruir el handle només amb entries().
    const fresh=await this.fileHandleFor(path,{forceEnumeration:true});
    const file=await fresh.getFile();
-   void saveCachedPdf(this.id,path,file).then(()=>this.cachedPaths.add(path))
-    .catch(error=>console.warn('Còpia local no disponible:',error));
    return {path,size:file.size,added:file.lastModified||0,blob:file};
   }catch(error){
+   // Si el permís s'ha perdut, una còpia preparada explícitament
+   // continua obrint-se sense modificar la partitura d'origen.
+   const local=await readOffline();
+   if(local)return local;
    console.warn('No es pot obrir un PDF vinculat:',{path,firstError,error});
    const denied=[error,firstError].some(e=>['NotAllowedError','SecurityError'].includes(e?.name));
    const missing=[error,firstError].some(e=>e?.name==='NotFoundError');
-   if(denied)throw new Error('Chrome no permet llegir esta partitura concreta. Actualitzar la llista no renova el permís del PDF. Prova Canviar carpeta i torna a seleccionar la mateixa carpeta; si continua fallant, el proveïdor de fitxers no permet l’accés web.');
-   if(missing)throw new Error('La partitura no es troba en la carpeta original. Si s’ha mogut o canviat de nom, prem Actualitzar biblioteca.');
+   if(denied){
+    this.checkState='unavailable';this.checkError='Cal autoritzar la lectura de la carpeta.';
+    throw new Error('Chrome no permet llegir esta partitura. Torna a Biblioteca i prem Activar biblioteca per renovar el permís de lectura. Si no apareix el permís, selecciona de nou la mateixa carpeta.');
+   }
+   if(missing)throw new Error('La partitura no es troba en la carpeta original. Si s’ha mogut o canviat de nom, actualitza la biblioteca.');
    throw new Error('El proveïdor d’arxius no ha pogut obrir este PDF ('+(error?.name||'error')+'). La resta de la biblioteca es conserva.');
   }
  }
