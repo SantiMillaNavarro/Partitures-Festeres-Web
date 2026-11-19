@@ -82,7 +82,7 @@ try{
  // L'usuari pot apagar l'actualització automàtica en Ajustos.
  await page.locator('[data-action="source-manage"]').first().click();
  await page.locator('[data-action="source-auto-toggle"]').click();
- assert.equal(await page.locator('[data-action="source-auto-toggle"]').getAttribute('aria-pressed'),'false');
+ await page.waitForFunction(()=>document.querySelector('[data-action="source-auto-toggle"]')?.getAttribute('aria-pressed')==='false');
  await page.locator('[data-action="page"][data-value="library"]').first().click();
  await page.evaluate(async bytes=>{
   const folder=await (await navigator.storage.getDirectory()).getDirectoryHandle('pf-w223-auto');
@@ -97,7 +97,7 @@ try{
  await page.locator('[data-action="source-refresh"]').first().click();
  await page.waitForFunction(()=>document.querySelector('#pf-source-config .pf-source-info')?.textContent?.includes('3 PDF'),{timeout:15000});
  await page.locator('[data-action="source-auto-toggle"]').click();
- assert.equal(await page.locator('[data-action="source-auto-toggle"]').getAttribute('aria-pressed'),'true');
+ await page.waitForFunction(()=>document.querySelector('[data-action="source-auto-toggle"]')?.getAttribute('aria-pressed')==='true');
  assert.deepEqual(errors,[],errors.join(' | '));
  console.log('PASS W2.23A: compact library UI, hidden advanced options, auto refresh after startup, no permission prompts, index retained on permission failure, toggle off and manual refresh.',safe);
  await context.close();

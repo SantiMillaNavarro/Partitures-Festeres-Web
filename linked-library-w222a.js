@@ -246,6 +246,11 @@ export class LinkedLocalLibrary{
    console.warn('API de permisos no disponible:',error);
    permission='unsupported';
   }
+  const hadIndex=this.lastScannedAt>0;
+  const preserveOrReset=()=>{
+   if(hadIndex){this.status='cached';return;}
+   this.status='permission';this.scores=[];this.folders=[];this.files=new Map();
+  };
   this.status='scanning';this.error='';
   return Promise.resolve(permission).catch(error=>{
    console.warn('API de permisos no disponible:',error);
@@ -253,7 +258,7 @@ export class LinkedLocalLibrary{
   }).then(async status=>{
    // La denegació explícita d'un requeriment de permís és definitiva.
    if(ask&&status==='denied'){
-    this.status='permission';this.scores=[];this.folders=[];this.files=new Map();
+    preserveOrReset();
     this.error='El navegador no ha concedit l’accés. Torna a seleccionar la carpeta.';
     return false;
    }
@@ -274,15 +279,14 @@ export class LinkedLocalLibrary{
     }
     return true;
    }catch(error){
-    this.scores=[];this.folders=[];this.files=new Map();
+    preserveOrReset();
     if(error?.name==='NotAllowedError'||error?.name==='SecurityError'){
-     this.status='permission';
      this.error=typeof this.handle.requestPermission==='function'
       ?'El navegador ha bloquejat la lectura. Prem Autoritzar lectura o torna a seleccionar la carpeta.'
       :'No es pot llegir esta carpeta. Prem Canviar carpeta i selecciona-la de nou.';
      return false;
     }
-    this.status='error';
+    this.status=hadIndex?'cached':'error';
     this.error=error?.message||String(error);
     throw error;
    }

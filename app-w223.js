@@ -282,7 +282,11 @@ async function checkLibraryInBackground(){
    // mai retorna "changed" quan no pot llegir la carpeta.
    await reloadCollections();
    validPaperSelection();
-   if(!state.view&&!state.modal)render();
+   if(!state.view&&!state.modal){
+    const y=window.scrollY||0;
+    render();
+    if(y)window.scrollTo(0,y);
+   }
   }else if(state.page==='settings'&&!state.view&&!state.modal){
    render();
   }
@@ -291,7 +295,8 @@ async function checkLibraryInBackground(){
   console.warn('Comprovació automàtica de Biblioteca:',error);
  }finally{
   autoCheckBusy=false;
-  if(linkedMode()&&!state.view&&!state.modal&&state.page==='library')render();
+  // Sense canvis, no reconstruir la pantalla: evita salts de scroll i
+  // miniatures reiniciades durant la navegació.
  }
 }
 let scoreViewer=null;

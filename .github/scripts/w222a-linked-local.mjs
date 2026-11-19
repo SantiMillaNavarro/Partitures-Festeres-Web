@@ -200,7 +200,7 @@ try{
  await page.locator('.pf-library-advanced summary').first().click();
  await page.locator('[data-action="source-cache"]').first().click();
  await page.waitForFunction(()=>
-  document.querySelector('.pf-source-offline')?.textContent?.includes('3 / 3')&&
+  document.querySelector('.pf-source-offline')?.textContent?.includes('3/3')&&
   !document.querySelector('[data-action="source-cache-stop"]'),
  {timeout:15000});
  const offlineSnapshot=await page.evaluate(async()=>{
