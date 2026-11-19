@@ -27,7 +27,10 @@ try{
  await cdp.send('Debugger.enable');
  cdp.on('Debugger.scriptFailedToParse',item=>{
   console.log('W222A SCRIPT PARSE',JSON.stringify({
-   url:item.url,message:item.errorMessage,line:item.startLine,column:item.startColumn
+   url:item.url,message:item.errorMessage,line:item.startLine,column:item.startColumn,
+   details:item.exceptionDetails,
+   failedAt:{startLine:item.startLine,endLine:item.endLine,startColumn:item.startColumn,endColumn:item.endColumn}
+
   }));
  });
  // CI headless Chrome may hide the native picker. Emulate only the
