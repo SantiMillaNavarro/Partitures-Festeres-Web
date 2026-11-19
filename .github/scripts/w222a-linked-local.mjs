@@ -25,6 +25,14 @@ try{
  const page=await context.newPage();
  const cdp=await context.newCDPSession(page);
  await cdp.send('Debugger.enable');
+ await cdp.send('Runtime.enable');
+ cdp.on('Runtime.exceptionThrown',event=>{
+  const e=event.exceptionDetails;
+  console.log('W222A RUNTIME EXCEPTION',JSON.stringify({
+   url:e.url,line:e.lineNumber,column:e.columnNumber,
+   text:e.text,description:e.exception?.description
+  }));
+ });
  cdp.on('Debugger.scriptFailedToParse',item=>{
   console.log('W222A SCRIPT PARSE',JSON.stringify({
    url:item.url,message:item.errorMessage,line:item.startLine,column:item.startColumn,
