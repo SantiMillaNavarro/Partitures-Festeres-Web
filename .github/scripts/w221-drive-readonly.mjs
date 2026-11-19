@@ -25,7 +25,7 @@ if(process.env.PF_CHROMIUM_PATH)options.executablePath=process.env.PF_CHROMIUM_P
 const browser=await chromium.launch(options),calls=[];
 const errors=[];
 try{
- const context=await browser.newContext({viewport:{width:1100,height:800}});
+ const context=await browser.newContext({viewport:{width:1100,height:800},serviceWorkers:'block'});
  const page=await context.newPage();
  page.on('pageerror',error=>errors.push(error.message));
  await page.addInitScript(()=>{
