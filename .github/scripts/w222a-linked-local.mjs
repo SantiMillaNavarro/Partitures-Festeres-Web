@@ -23,6 +23,11 @@ const browser=await chromium.launch(options);
 try{
  const context=await browser.newContext({viewport:{width:1100,height:800},serviceWorkers:'block'});
  const page=await context.newPage();
+ // CI headless Chrome may hide the native picker. Emulate only the
+ // user-triggered picker; the returned OPFS handle is genuine and clonable.
+ await page.addInitScript(()=>{
+  window.showDirectoryPicker=()=>Promise.resolve(window.__w222folder);
+ });
  page.on('pageerror',e=>errors.push(e.message));
  await page.goto('http://127.0.0.1:8765/',{waitUntil:'domcontentloaded'});
  await page.locator('[data-action="source-choose"]').waitFor({timeout:16000});
