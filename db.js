@@ -134,18 +134,25 @@ export async function getAllAnnotations(){
   req.onerror=()=>reject(req.error);
  });
 }
-export async function setAnnotations(path,document){
+export async function setAnnotations(path,document,{linkedLibraryId=null}={}){
+ if(linkedLibraryId!==null&&(!/^folder-[A-Za-z0-9-]{1,110}$/.test(linkedLibraryId)||
+  !path.startsWith('w222a-linked-'+linkedLibraryId+'/')||
+  !/\.pdf$/i.test(path)||path.length>650))
+  throw Error('Ruta d’anotacions vinculades no vàlida.');
  const clean=normalizeAnnotations(document);
  const db=await openDB();
  return new Promise((resolve,reject)=>{
-  const tx=db.transaction(['scores','annotations'],'readwrite');
-  const req=tx.objectStore('scores').get(path);
-  req.onsuccess=()=>{
-   if(!req.result){tx.abort();return;}
+  const tx=db.transaction(linkedLibraryId?['annotations']:['scores','annotations'],'readwrite');
+  const write=()=>{
    if(Object.keys(clean.pages).length)tx.objectStore('annotations').put({path,document:clean});
    else tx.objectStore('annotations').delete(path);
   };
-  req.onerror=()=>{try{tx.abort();}catch{}};
+  if(linkedLibraryId)write();
+  else{
+   const req=tx.objectStore('scores').get(path);
+   req.onsuccess=()=>{if(!req.result){tx.abort();return;}write();};
+   req.onerror=()=>{try{tx.abort();}catch{}};
+  }
   tx.oncomplete=()=>resolve(clean);
   tx.onerror=()=>reject(tx.error||new Error('No s’han pogut guardar les anotacions.'));
   tx.onabort=()=>reject(tx.error||new Error('La partitura no està disponible.'));
@@ -233,6 +240,48 @@ export async function commitStagedBackup(mode, prefs, expectedCount, annotationR
     tx.onerror = () => reject(tx.error || new Error('No s’ha pogut restaurar la biblioteca'));
     tx.onabort = () => reject(tx.error || new Error('Restauració interrompuda. La biblioteca original està intacta.'));
   });
+}
+
+
+// W2.24: les dades de la biblioteca vinculada es restauren en UNA transacció
+// sense tocar mai la store 'scores' dels PDF importats ni el handle de carpeta.
+export async function commitLinkedDataBackup({libraryId,prefPuts=[],prefDeletes=[],
+ annotationPuts=[],annotationDeletes=[]}){
+ if(typeof libraryId!=='string'||!/^folder-[A-Za-z0-9-]{1,110}$/.test(libraryId))
+  throw Error('Identificador de Biblioteca vinculada no vàlid.');
+ const prefixes=['w222a:lib:'+libraryId+':','w222a:'+libraryId+':viewer:',
+  'w222a:'+libraryId+':w218:page:','w222a:metadata:'+libraryId];
+ const annotationPrefix='w222a-linked-'+libraryId+'/';
+ const safePref=key=>typeof key==='string'&&
+  prefixes.some(prefix=>key===prefixes[3]&&prefix===prefixes[3]||
+   prefix!==prefixes[3]&&key.startsWith(prefix));
+ const safeAnnotation=key=>typeof key==='string'&&key.startsWith(annotationPrefix)&&
+  /\.pdf$/i.test(key)&&key.length<=650;
+ if(prefPuts.some(p=>!p||!safePref(p.key)||p.value===undefined)||
+  prefDeletes.some(key=>!safePref(key))||
+  annotationPuts.some(a=>!a||!safeAnnotation(a.path))||
+  annotationDeletes.some(key=>!safeAnnotation(key)))
+  throw Error('La còpia intenta modificar dades alienes a la biblioteca.');
+ const pSeen=new Set(),aSeen=new Set();
+ for(const key of [...prefPuts.map(p=>p.key),...prefDeletes])
+  if(pSeen.has(key))throw Error('Operació duplicada en preferències de còpia.');else pSeen.add(key);
+ for(const key of [...annotationPuts.map(a=>a.path),...annotationDeletes])
+  if(aSeen.has(key))throw Error('Operació duplicada en anotacions de còpia.');else aSeen.add(key);
+ const db=await openDB();
+ return new Promise((resolve,reject)=>{
+  const tx=db.transaction(['prefs','annotations'],'readwrite');
+  const prefs=tx.objectStore('prefs'),annotations=tx.objectStore('annotations');
+  try{
+   for(const key of prefDeletes)prefs.delete(key);
+   for(const item of prefPuts)prefs.put({key:item.key,value:item.value});
+   for(const key of annotationDeletes)annotations.delete(key);
+   for(const item of annotationPuts)
+    annotations.put({path:item.path,document:normalizeAnnotations(item.document)});
+  }catch(error){try{tx.abort();}catch{}reject(error);return;}
+  tx.oncomplete=()=>resolve({prefs:prefPuts.length,annotations:annotationPuts.length});
+  tx.onerror=()=>reject(tx.error||Error('No s’han pogut restaurar les dades vinculades.'));
+  tx.onabort=()=>reject(tx.error||Error('Restauració cancel·lada: els canvis no s’han aplicat.'));
+ });
 }
 
 
