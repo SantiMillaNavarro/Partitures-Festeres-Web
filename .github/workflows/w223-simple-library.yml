@@ -1,0 +1,37 @@
+name: W2.23A Biblioteca simple i comprovacio automatica
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+jobs:
+  library-auto-check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 13
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install Playwright
+        run: npm install --no-save playwright
+      - name: Use installed Chrome
+        run: |
+          for browser in google-chrome google-chrome-stable chromium chromium-browser; do
+            if command -v "$browser" >/dev/null 2>&1; then
+              echo "PF_CHROMIUM_PATH=$(command -v "$browser")" >> "$GITHUB_ENV"
+              exit 0
+            fi
+          done
+          exit 1
+      - name: Start local server
+        run: python3 -m http.server 8765 --bind 127.0.0.1 >/tmp/pf-w223.log 2>&1 &
+      - name: Syntax check
+        run: |
+          node --check app-w223.js
+          node --check library-source-ui-w223.js
+          node --check linked-library-w222a.js
+          node --check .github/scripts/w223-simple-library.mjs
+      - name: Test startup and permissions, no user interaction
+        run: node .github/scripts/w223-simple-library.mjs

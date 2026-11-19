@@ -101,7 +101,7 @@ try{
  // permission APIs are absent or return 'prompt'. Never report 0 PDFs.
  const permissionScenarios=await page.evaluate(async()=>{
   const {LinkedLocalLibrary}=await import('./linked-library-w222a.js');
-  const {renderSourceControls}=await import('./library-source-ui-w222a.js');
+  const {renderSourceControls}=await import('./library-source-ui-w223.js');
   const dir=window.__w222folder;
   const create=overrides=>{
    const linked=new LinkedLocalLibrary();
@@ -130,7 +130,7 @@ try{
  });
  assert.equal(permissionScenarios.noApi,2);
  await page.locator('[data-action="source-choose"]').first().click();
- await page.locator('.pf-source-choice.active[data-action="source-linked"]').waitFor({timeout:15000});
+ await page.waitForFunction(()=>document.querySelector('.pf-library-summary .pf-source-info')?.textContent?.includes('2 PDF'));
  await page.waitForFunction(()=>document.querySelector('.pf-source-info')?.textContent?.includes('2 PDF'));
  console.log('W222A folder state',JSON.stringify(await page.evaluate(()=>({
   folders:[...document.querySelectorAll('[data-action="folder"]')].map(e=>({value:e.dataset.value,text:e.textContent?.trim().slice(0,90)})),
@@ -173,13 +173,15 @@ try{
  const close=page.locator('[data-action="viewer-close"],[data-action="close-viewer"]').first();
  if(await close.count())await page.evaluate(()=>document.querySelector('[data-action="viewer-close"],[data-action="close-viewer"]')?.click());
  else await page.goBack({waitUntil:'domcontentloaded'});
+ await page.locator('[data-action="source-manage"]').first().click();
  await page.locator('[data-action="source-imported"]').first().waitFor({timeout:12000});
  await page.locator('[data-action="source-imported"]').first().click();
- await page.waitForFunction(()=>document.querySelector('.pf-source-choice.active')?.dataset.action==='source-imported');
+ await page.waitForFunction(()=>document.querySelector('.pf-library-summary strong')?.textContent?.includes('Biblioteca importada'));
  assert.equal(await page.locator('[data-action="open"][data-value="CIMO.pdf"]').count(),1);
  assert.equal(await page.locator('[data-action="open"][data-value="1r/Marxes/CIMO.pdf"]').count(),0);
+ await page.locator('[data-action="source-manage"]').first().click();
  await page.locator('[data-action="source-linked"]').first().click();
- await page.waitForFunction(()=>document.querySelector('.pf-source-choice.active')?.dataset.action==='source-linked');
+ await page.waitForFunction(()=>document.querySelector('.pf-library-summary .pf-source-info')?.textContent?.includes('2 PDF'));
  const add=await page.evaluate(async(pdfArray)=>{
   const root=window.__w222folder;
   const first=await root.getDirectoryHandle('1r');
@@ -190,10 +192,12 @@ try{
   return (await file.getFile()).size;
  },Array.from(pdf));
  assert(add>0);
+ await page.locator('[data-action="source-manage"]').first().click();
  await page.locator('[data-action="source-refresh"]').first().click();
- await page.waitForFunction(()=>document.querySelector('.pf-source-info')?.textContent?.includes('3 PDF'),{timeout:15000});
+ await page.waitForFunction(()=>document.querySelector('#pf-source-config .pf-source-info')?.textContent?.includes('3 PDF'),{timeout:15000});
  // W2.22A.4: una única preparació de les còpies offline ha d'evitar
  // qualsevol petició de permís posterior, també per a PDF no oberts abans.
+ await page.locator('.pf-library-advanced summary').first().click();
  await page.locator('[data-action="source-cache"]').first().click();
  await page.waitForFunction(()=>
   document.querySelector('.pf-source-offline')?.textContent?.includes('3 / 3')&&
@@ -266,13 +270,12 @@ try{
   return {first:first.blob.size,second:second.blob.size,message};
  });
  assert(androidFiles.first>0&&androidFiles.second>0);
+ await page.locator('[data-action="page"][data-value="library"]').first().click();
  await page.reload({waitUntil:'domcontentloaded'});
- await page.locator('[data-action="source-linked"]').first().waitFor({timeout:15000});
- await page.waitForFunction(()=>document.querySelector('.pf-source-status')?.textContent?.includes('Índex guardat'));
- const enumerations=await page.evaluate(()=>window.__directoryReadCount);
- assert.equal(enumerations,0,'La reobertura ha tornat a escanejar tota la carpeta.');
- const authorize=page.locator('[data-action="source-authorize"]');
- if(await authorize.count())await authorize.first().click();
+ await page.waitForFunction(()=>document.querySelector('.pf-library-summary .pf-source-info')?.textContent?.includes('3 PDF'),{timeout:15000});
+ // Després del render, la comprovació pot enumerar carpetes en segon pla.
+ // La restauració del catàleg no ha de necessitar autorització manual.
+
  await page.locator('[data-action="folder"][data-value="1r"]').waitFor({timeout:10000});
  await page.locator('[data-action="folder"][data-value="1r"]').click();
  await page.locator('[data-action="folder"][data-value="Marxes"]').click();
@@ -282,6 +285,7 @@ try{
  assert.equal(await page.locator('#meta-composer').inputValue(),'Ramón García i Soler');
  await page.locator('[data-action="close-modal"]').first().click();
  // Forgetting the pointer must never remove source files.
+ await page.locator('[data-action="source-manage"]').first().click();
  await page.locator('[data-action="source-forget"]').first().click();
  const originalExists=await page.evaluate(async()=>{
   const dir=await (await (await navigator.storage.getDirectory()).getDirectoryHandle('W222A-Partitures')).getDirectoryHandle('1r');

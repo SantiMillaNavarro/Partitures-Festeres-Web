@@ -1,3 +1,30 @@
+# Fase W2.23A — Biblioteca senzilla amb comprovació automàtica de canvis
+
+**Objectiu:** recuperar l'experiència immediata d'Android i eliminar la necessitat de gestionar permisos, descàrregues i sincronització des de la pantalla principal.
+
+## Com funciona
+- **Biblioteca** mostra una barra compacta amb el nom de la carpeta i el nombre de PDF. Les opcions de vinculació, ús sense connexió i gestió de còpies es mouen a **Ajustos → Biblioteca**. Els botons de papers i el visor continuen com abans.
+- La comprovació de carpetes locals està **activada per defecte** i és configurable a Ajustos. En obrir la web es presenta primer el **catàleg guardat**; després, sense bloquejar la pantalla, es revisen els noms de subcarpetes i PDF per detectar novetats. També es pot intentar en tornar a la pestanya després d'un temps, amb un interval mínim de 60 segons entre intents.
+- **No es descarreguen PDF ni es llig el contingut de cada fitxer durant la comprovació**: només s'enumeren les entrades de la carpeta. No es reemplacen ni es fan còpies massives automàticament. Les còpies offline existents i els imports previs continuen accessibles.
+- Si el navegador denega un permís o retorna \`prompt\`, la comprovació en segon pla **no mostra diàlegs de permisos ni esborra l'índex**. L'usuari veu les obres ja guardades i pot obrir les que disposen de còpia local; si cal accedir a un original denegat, la PWA no pot saltar les restriccions de Chrome.
+- Quan es detecten canvis, s'actualitza el catàleg i les col·leccions; es respecta la biblioteca en ús i no es reinicia la navegació al paper 1r ni a l'arrel.
+- **Ajustos → Biblioteca** conté un interruptor «Comprovar els canvis automàticament en obrir», una actualització manual opcional, la selecció de carpeta i opcions avançades plegades per defecte per a preparar o eliminar còpies locals.
+- **Drive**: les consultes de W2.21 continuen sent opcionals i de només lectura, però **encara no s'integren com a biblioteca directa amb sincronització automàtica**. La sessió OAuth actual és temporal i necessita un compte i Client ID configurats. No s'anuncia cap sincronització automàtica de Drive que no existisca.
+
+## Limitacions
+- Chrome Android pot deixar de donar accés a l'original quan es tanca l'app. Les còpies locals preparades en W2.22A.4 el fan accessible encara que el permís caduque. Una comprovació d'índex no renova permisos: no pot substituir el ContentResolver SAF de l'aplicació Android nativa.
+- La comprovació de novetats enumera les carpetes. Amb centenars de fitxers pot costar temps de processament, però es realitza després de mostrar la Biblioteca i sense consultar bytes de PDF; no es força en obrir cada partitura.
+- Les anotacions vinculades continuen sent locals; les còpies offline no es compartixen automàticament amb altres dispositius.
+- La UI manté la Biblioteca importada com a alternativa per a navegadors sense suport de carpetes.
+
+## Proves
+Les proves de W2.23A comproven que un PDF nou apareix després de reobrir la web **sense prémer Actualitzar**, que la pantalla inicial no mostra els controls tècnics, que les restriccions de permisos no provoquen sol·licituds automàtiques ni pèrdua de dades, que es pot desactivar la comprovació i que l'actualització manual continua funcionant.
+Les proves de regressió W2.18–W2.22A també es continuen executant.
+
+**Següent fase:** integrar Drive com a font real de Biblioteca amb OAuth i lectura de PDF sota demanda, i després simplificar la sincronització Android sense sacrificar l'accés offline.
+
+---
+
 ## W2.22A.4 — Còpies de lectura offline per a Chrome Android (19-11-2026)
 
 Per què: Chrome Android pot perdre permisos temporals dels `FileSystemFileHandle` en tancar la PWA. El catàleg persistit no concedeix permís per a llegir el PDF original. L'API web **no pot** utilitzar `takePersistableUriPermission()` d'Android.

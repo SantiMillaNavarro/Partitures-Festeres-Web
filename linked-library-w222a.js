@@ -158,6 +158,7 @@ export class LinkedLocalLibrary{
   this.scores=[];this.folders=[];this.files=new Map();this.unreadable=0;
   this.status='none';this.error='';this.lastScannedAt=0;
   this.cachedPaths=new Set();this.offlineBusy=false;this.offlineProgress=null;this.offlineCancelled=false;
+  this.checkBusy=false;this.checkState='idle';this.checkError='';this.lastAutoCheckedAt=0;
  }
  get exists(){return !!this.handle&&!!this.id;}
  get ready(){return this.status==='ready'||this.status==='cached';}
@@ -286,6 +287,53 @@ export class LinkedLocalLibrary{
     throw error;
    }
   });
+ }
+ // Comprovació oportunista sense demanar permisos nous ni alterar la vista.
+ // Si falla, conservem el catàleg, els repertoris i totes les còpies locals.
+ async checkForChanges(){
+  if(!this.exists||!this.ready||this.checkBusy||this.offlineBusy)
+   return {skipped:true,changed:false};
+  this.checkBusy=true;this.checkState='checking';this.checkError='';
+  const id=this.id;
+  try{
+   if(typeof this.handle.queryPermission==='function'){
+    let permission='unknown';
+    try{permission=await this.handle.queryPermission({mode:'read'});}
+    catch(error){console.warn('Comprovació de permisos no disponible:',error);}
+    // Mai mostrem un diàleg de permisos durant una comprovació automàtica.
+    if(permission==='prompt'||permission==='denied'){
+     this.checkState='unavailable';
+     this.checkError='Chrome necessita una autorització per a revisar els canvis.';
+     return {changed:false,unavailable:true};
+    }
+   }
+   const beforeScores=this.scores, beforeFolders=this.folders;
+   const scanned=await scanLinkedDirectory(this.handle,{previousScores:beforeScores});
+   if(this.id!==id)return {skipped:true,changed:false};
+   const changed=scanned.scores.length!==beforeScores.length||
+    scanned.folders.length!==beforeFolders.length||
+    scanned.scores.some((item,i)=>item.path!==beforeScores[i]?.path)||
+    scanned.folders.some((path,i)=>path!==beforeFolders[i]);
+   this.files=scanned.files;
+   this.lastAutoCheckedAt=Date.now();
+   if(changed){
+    this.scores=scanned.scores;this.folders=scanned.folders;
+    this.unreadable=scanned.unreadable;
+    this.lastScannedAt=this.lastAutoCheckedAt;
+    this.status='ready';
+    try{await this.persistIndex();}
+    catch(error){console.warn('No s’ha guardat l’índex automàtic:',error);}
+   }
+   this.checkState='ok';this.checkError='';
+   return {changed,added:changed?scanned.scores.length-beforeScores.length:0};
+  }catch(error){
+   this.checkState='unavailable';
+   this.checkError=error?.message||String(error);
+   // Important: mai buidem les 235 partitures per un permís caducat.
+   return {changed:false,unavailable:true};
+  }finally{
+   this.checkBusy=false;
+  }
  }
  snapshot(){
   return {version:1,scores:this.scores.map(({path,size,added})=>({path,size,added})),

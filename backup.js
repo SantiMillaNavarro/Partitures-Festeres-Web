@@ -139,7 +139,7 @@ export async function createBackup(onProgress=()=>{}) {
     zip.file(annotationEntry(record.path),json,{compression:'DEFLATE'});
     annotations.push({path:record.path,size:blob.size,sha256:sha});
   }
-  const manifest={kind:BACKUP_KIND,schemaVersion:1,appVersion:'W2.22A',createdAt:new Date().toISOString(),scoreCount:files.length,totalBytes,files,preferences,annotations};
+  const manifest={kind:BACKUP_KIND,schemaVersion:1,appVersion:'W2.23A',createdAt:new Date().toISOString(),scoreCount:files.length,totalBytes,files,preferences,annotations};
   const manifestText=JSON.stringify(manifest,null,2);
   if(manifestText.length>MAX_MANIFEST_BYTES)throw new Error('La biblioteca té massa ajustos per a este ZIP. No s’ha creat una còpia incompleta.');
   zip.file(BACKUP_MANIFEST,manifestText);
