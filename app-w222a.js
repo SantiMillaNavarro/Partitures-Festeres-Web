@@ -2213,7 +2213,7 @@ document.addEventListener('change',e=>{
   importFolderSnapshot(files).catch(error=>{console.error(error);toast(error?.message||String(error),true);});
   return;
  }
- if(e.target.id==='thumbnail-enabled'{
+ if(e.target.id==='thumbnail-enabled'){
   state.thumbnailEnabled=!!e.target.checked;
   setPref('w2142:thumbnailsEnabled',state.thumbnailEnabled).catch(error=>console.warn('Miniatures:',error));
   render();return;
