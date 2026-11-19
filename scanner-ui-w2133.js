@@ -7,15 +7,17 @@ export function scanCopy(language='va'){
  const va=language!=='es';
  return (v,e)=>va?v:e;
 }
-export function renderScannerMarkup({pages=[],name='Nova partitura',folder='',repertoires=[],addToRep=false,repId='',busy=false,progress=0,error='',language='va',scores=[]}={}){
+export function renderScannerMarkup({pages=[],name='Nova partitura',folder='',repertoires=[],addToRep=false,repId='',busy=false,progress=0,error='',language='va',scores=[],folders:linkedFolders=[],linked=false,newFolder=''}={}){
  const tr=scanCopy(language),hasPages=pages.length>0;
  const folders=scanFolderChoices(scores);
+ if(linked)for(const path of linkedFolders||[])if(path&&!folders.includes(path))folders.push(path);
+ folders.sort((a,b)=>a===''?-1:b===''?1:a.localeCompare(b,'ca',{numeric:true}));
  if(folder&&!folders.includes(folder))folders.push(folder);
  const choices=folders.map(value=>'<option value="'+esc(value)+'"'+(value===folder?' selected':'')+'>'+esc(value||tr('Carpeta arrel','Carpeta raíz'))+'</option>').join('');
  const repertories=repertoires.map(r=>'<option value="'+esc(r.id)+'"'+(r.id===repId?' selected':'')+'>'+esc(r.name)+'</option>').join('');
  const pathConflict=(()=>{
   try{
-   const path=[folder,normalizeScanName(name)].filter(Boolean).join('/');
+   const path=[folder,linked?newFolder.trim():'',normalizeScanName(name)].filter(Boolean).join('/');
    if(!(scores||[]).some(s=>s.path===path))return '';
    return uniqueScanPath(path,new Set(scores.map(s=>s.path)));
   }catch{return '';}
@@ -49,7 +51,7 @@ export function renderScannerMarkup({pages=[],name='Nova partitura',folder='',re
    '<button class="pf-scan-camera" type="button" data-action="scan-camera"'+(busy||pages.length>=SCAN_PAGE_LIMIT?' disabled':'')+'>▣ '+tr('Escàner automàtic','Escáner automático')+'</button>'+
    '<button class="pf-scan-gallery" type="button" data-action="scan-gallery"'+(busy||pages.length>=SCAN_PAGE_LIMIT?' disabled':'')+'>▤ '+tr('Afegir fotos','Añadir fotos')+'</button>'+
    '<button class="pf-scan-system" type="button" data-action="scan-camera-file"'+(busy||pages.length>=SCAN_PAGE_LIMIT?' disabled':'')+'>▣ '+tr('Foto del sistema','Foto del sistema')+'</button>'+
-   '<button class="pf-scan-import" type="button" data-action="scan-import"'+(busy?' disabled':'')+'>↓ '+tr('Importar PDF','Importar PDF')+'</button>'+
+   '<button class="pf-scan-import" type="button" data-action="scan-import"'+(busy||linked?' disabled':'')+' title="'+(linked?tr('Importa PDFs des del gestor d’arxius a la carpeta vinculada','Importa PDF desde el gestor de archivos a la carpeta vinculada'):'')+'">↓ '+tr('Importar PDF','Importar PDF')+'</button>'+
   '</div><p class="pf-scan-browser-hint">'+
    tr('L’escàner detecta la fulla i la captura automàticament quan està quieta. Si no reconeix les vores, pots capturar-la manualment o utilitzar «Foto del sistema». Tot es processa en el dispositiu.',
       'El escáner detecta la hoja y la captura automáticamente cuando está quieta. Si no reconoce los bordes, puedes capturarla manualmente o usar «Foto del sistema». Todo se procesa en el dispositivo.')+
@@ -65,6 +67,11 @@ export function renderScannerMarkup({pages=[],name='Nova partitura',folder='',re
    tr('Dades de la partitura','Datos de la partitura')+'</h3>'+
    '<label for="scan-name">'+tr('Nom','Nombre')+'</label><input id="scan-name" type="text" maxlength="119" autocomplete="off" value="'+esc(name)+'"'+(busy?' disabled':'')+'>'+
    '<label for="scan-folder">'+tr('Guardar en','Guardar en')+'</label><select id="scan-folder"'+(busy?' disabled':'')+'>'+choices+'</select>'+
+   (linked?'<label for="scan-new-folder">'+tr('Crear subcarpeta (opcional)','Crear subcarpeta (opcional)')+'</label>'+
+    '<input id="scan-new-folder" type="text" maxlength="90" autocomplete="off" placeholder="'+
+    tr('Nom de la subcarpeta','Nombre de la subcarpeta')+'" value="'+esc(newFolder)+'"'+(busy?' disabled':'')+'>'+
+    '<p class="pf-scan-hint">'+tr('La nova partitura es guardarà directament a la carpeta vinculada. Chrome pot demanar permís d’escriptura en prémer Guardar. No es copiarà a la Biblioteca importada.',
+      'La nueva partitura se guardará directamente en la carpeta vinculada. Chrome puede solicitar permiso de escritura al pulsar Guardar. No se copiará a la Biblioteca importada.')+'</p>':'')+
    (repertoires.length?
     '<label class="pf-scan-rep-check"><input id="scan-to-rep" type="checkbox"'+(addToRep?' checked':'')+(busy?' disabled':'')+'> '+tr('Afegir a un repertori','Añadir a un repertorio')+'</label>'+
     (addToRep?'<label for="scan-rep">'+tr('Repertori','Repertorio')+'</label><select id="scan-rep"'+(busy?' disabled':'')+'>'+repertories+'</select>':''):
@@ -77,8 +84,7 @@ export function renderScannerMarkup({pages=[],name='Nova partitura',folder='',re
     (busy?tr('Creant PDF…','Creando PDF…'):tr('Guardar partitura PDF','Guardar partitura PDF'))+'</button>'+
    (busy?'<p id="scan-progress" class="pf-scan-progress" role="status">'+tr('Processant','Procesando')+' '+progress+'/'+pages.length+'</p>':'')+
    (error?'<p class="pf-scan-error" role="alert">'+esc(error)+'</p>':'')+
-   '<p class="pf-scan-hint">'+tr('El PDF es desa a la Biblioteca local i s’inclourà en les còpies de seguretat ZIP.',
-    'El PDF se guarda en la Biblioteca local y se incluirá en las copias de seguridad ZIP.')+'</p>'+
+   '<p class="pf-scan-hint">'+(linked?tr('El PDF es desa a la carpeta original autoritzada, sense duplicar-lo.','El PDF se guarda en la carpeta original autorizada, sin duplicarlo.'):tr('El PDF es desa a la Biblioteca local i s’inclourà en les còpies de seguretat ZIP.','El PDF se guarda en la Biblioteca local y se incluirá en las copias de seguridad ZIP.'))+'</p>'+
   '</section></div>'+
   '<p class="pf-scan-limit">'+tr('Fins a 30 pàgines. Pots retallar cadascuna, ajustar les quatre cantonades i previsualitzar la perspectiva abans de guardar el PDF.',
    'Hasta 30 páginas. Puedes recortar cada una, ajustar las cuatro esquinas y previsualizar la perspectiva antes de guardar el PDF.')+'</p>'+
