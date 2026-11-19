@@ -57,8 +57,12 @@ function friendlyStatus(status){
 }
 function assertId(id){if(!ID.test(trim(id)))throw Error('Identificador de Drive no vàlid.');return id;}
 export class DriveReadOnly{
- constructor({fetchImpl=fetch,globalObject=typeof window!=='undefined'?window:null}={}){
-  this.fetchImpl=fetchImpl;this.global=globalObject;
+ constructor({fetchImpl=null,globalObject=typeof window!=='undefined'?window:null}={}){
+  this.global=globalObject;
+  // Preserve Window as the receiver of the browser's native fetch().
+  // Calling an extracted Window.fetch with a foreign this can throw before
+  // the HTTP request is issued (and evade network interceptors).
+  this.fetchImpl=fetchImpl||((...args)=>this.global.fetch(...args));
   this.clientId='';this.token=null;this.expiresAt=0;this.busyAuth=false;
  }
  get authorized(){return !!this.token&&Date.now()<this.expiresAt;}
