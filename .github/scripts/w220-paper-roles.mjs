@@ -49,7 +49,7 @@ try{
  assert.equal(status.paths.length,4);
  await page.reload({waitUntil:'domcontentloaded'});
  await page.locator('[data-action="paper-setup"]').first().waitFor({timeout:20000});
- assert.match(await page.locator('body').innerText(),/W2\.20/);
+ assert.match(await page.locator('body').innerText(),/W2\.\d+/);
  await page.locator('[data-action="paper-setup"]').first().click();
  await page.locator('[data-action="paper-help"]').click();
  assert.match(await page.locator('#paper-help-title').innerText(),/Ajuda/);

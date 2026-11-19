@@ -1,3 +1,40 @@
+# Partitures Festeres Web — Fase W2.21 · Primera connexió Google Drive (només lectura)
+
+W2.21 prepara la connexió opcional de Google Drive a una biblioteca web **local** (IndexedDB), sense servidor de Partitures Festeres ni autorització d'escriptura a Drive.
+
+## Què funciona en W2.21
+- En **Biblioteca**, **Índex** i **Ajustos** hi ha un accés «Drive» que obri el nou explorador.
+- Des del diàleg, configura un **Client ID OAuth 2.0 de tipus Aplicació web** i connecta el compte de Google mitjançant el flux de token de Google Identity Services (GIS), en una finestra de consentiment. Només es demana el permís **drive.readonly**.
+- Admet enganxar l'ID de la carpeta o un enllaç https://drive.google.com/drive/folders/... inclòs el paràmetre resourcekey quan existeix.
+- Consulta els continguts de cada carpeta **només quan l'usuari la visita**. La navegació admet subcarpetes i fitxers PDF. Es tracten totes les pàgines de resultats de files.list fins al límit de 5.000 elements.
+- Es pot **baixar una partitura PDF concreta** de Drive a IndexedDB, accessible després sense Internet. La còpia local apareix en Drive/<nom carpeta>/<subcarpetes>/<fitxer.pdf>.
+- Els fitxers es comproven: només PDF, cap fitxer buit, límit de 100 MB, verificació de capçalera i nom de ruta segur. Si el destí ja existeix, es crea un nom nou amb (2), (3), etc.; no se sobreescriu el PDF existent ni les seues anotacions.
+- El token d'accés només roman en memòria RAM de la pestanya; no s'escriu en IndexedDB, localStorage, arxius, log, ZIP ni GitHub. En tancar/actualitzar la pestanya, el token desapareix. «Desconnectar» a més demana la revocació al servei de Google.
+- El Client ID i l'últim enllaç de carpeta es guarden localment per comoditat, però **s'exclouen de les còpies ZIP**. No introduïsques mai un client secret en esta pàgina.
+
+## Configuració OAuth imprescindible (no és una credencial inclosa en el codi)
+1. Accedix a [Google Cloud Console](https://console.cloud.google.com/apis/credentials) i selecciona o crea un projecte.
+2. Activa **Google Drive API** al projecte. Configura la **Pantalla de consentiment OAuth**. Si el projecte està en fase de prova, dona accés al teu compte com a usuari de prova.
+3. Crea un **ID de client OAuth** de tipus **Aplicació web** i incorpora com a **Origen JavaScript autoritzat** l'origen exacte que mostra l'explorador de Partitures Festeres (normalment https://santimillanavarro.github.io en GitHub Pages). No cal publicar cap client secret ni introduir-lo a la web.
+4. Guarda el **Client ID** públic en el diàleg Drive de Partitures Festeres Web, connecta i accepta el permís de lectura.
+5. Copia l'enllaç d'una carpeta de Drive, enganxa'l i prem **Obrir carpeta**. Navega i usa **Baixar** per a importar una partitura.
+
+**Important:** el permís drive.readonly és un scope OAuth restringit. Google pot exigir verificació de l'aplicació (i en producció altres controls de compliment). Un projecte en mode prova amb comptes autoritzats pot funcionar per a les proves inicials; la publicació general dependrà dels requisits de Google. No es pot connectar automàticament a Drive sense configurar un Client ID vàlid.
+
+## Què NO fa encara
+- No sincronitza els canvis de Drive amb els PDF locals; cada descàrrega és una còpia independent.
+- No descarrega carpetes completes ni actualitza automàticament les partitures.
+- No sincronitza les anotacions de la versió Android, els arxius personals PFA ni els repertoris.
+- No escriu, mou, renomena, reemplaça ni esborra fitxers en Drive.
+- No revalida les credencials automàticament: en recarregar l'app cal connectar de nou, encara que la biblioteca importada és sempre accessible sense connexió.
+
+## Seguretat i proves
+S'han afegit proves amb una implementació simulada de Google (GIS OAuth i Drive REST), sense credencials ni accés a dades reals. Cobrixen la connexió, navegació, paginació, importació repetida sense sobreescriptura, restriccions de ruta, revocació i exclusió de credencials en les còpies ZIP.
+
+**Pròxima fase W2.22:** importació segura d'una carpeta completa, comparació de canvis i descàrrega per a ús sense connexió, mantenint-se en mode lectura fins a consolidar la sincronització.
+
+---
+
 # Partitures Festeres Web — W2.20 · Papers virtuals i carpetes configurables
 
 ## Referència Android 1.11.15
