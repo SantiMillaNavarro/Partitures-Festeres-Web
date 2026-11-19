@@ -1899,9 +1899,22 @@ async function handleClick(el){
       toast(state.lang==='es'?'No hay cambios en la partitura.':'No hi ha canvis en la partitura.');
       state.modal='metadata-edit';state.organizePath=null;render();break;
     }
+    // Si és vinculada, requestPermission ha d'eixir del clic (abans del primer await).
+    const linkedMove=linkedMode();
+    let authorization=null;
+    if(linkedMove){
+     try{authorization=linkedLocal.requestWriteAccess();}
+     catch(error){toast(error.message,true);break;}
+    }
     state.organizeBusy=true;el.disabled=true;
     try{
-      await moveScoreSafely(original,destination);
+      if(linkedMove){
+       await authorization;
+       await linkedLocal.movePdf(original,destination,{
+        newFolder:!!($('#organize-new-folder')?.value||'').trim(),
+        updateData:(from,to)=>moveLinkedScoreData(linkedLocal.id,from,to)
+       });
+      }else await moveScoreSafely(original,destination);
       pdfThumbnails.invalidate(original);
       state.scores=await activeScoreIndex();
       await reloadCollections();
