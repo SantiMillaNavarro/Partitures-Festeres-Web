@@ -140,6 +140,7 @@ try{
    throw Error('El ZIP inclou opcions privades de Drive.');
   return {count:records.length,size:first.blob.size,paths:records.map(x=>x.path),zipSize:zip.blob.size};
  });
+ console.log('W2.21 DEBUG RESULT',JSON.stringify(result));
  assert.equal(result.count,2);
  assert(result.paths.includes('Drive/Arxiu Musical/1r/CIMO.pdf'));
  assert(result.paths.includes('Drive/Arxiu Musical/1r/CIMO (2).pdf'));
