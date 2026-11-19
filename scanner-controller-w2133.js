@@ -6,26 +6,27 @@ import {generateScannedPdf,normalizeScanName,uniqueScanPath,
  SCAN_PAGE_LIMIT,SCAN_FILE_LIMIT,SCAN_TOTAL_LIMIT,SCAN_FILTERS} from './scanner-pdf-w2133.js';
 import {renderScannerMarkup} from './scanner-ui-w2133.js';
 import {validCrop,cloneCrop} from './scanner-crop-geometry-w2133.js';
+import {validFolderSegment} from './score-organize-w2141.js';
 export class ScannerController{
  constructor({onUpdate=()=>{},onWarning=()=>{},onSaved=async()=>{}}={}){
   this.onUpdate=onUpdate;this.onWarning=onWarning;this.onSaved=onSaved;
   this.sequence=0;this.pages=[];this.name='Nova partitura';this.folder='';
   this.addToRepertoire=false;this.repertoireId='';this.busy=false;this.progress=0;this.error='';
-  this.language='va';this.scores=[];this.repertoires=[];
+  this.language='va';this.scores=[];this.repertoires=[];this.folders=[];this.linked=false;this.newFolder='';
  }
  open({folder='',repertoires=[]}={}){
   this.clear({notify:false});
-  this.name='Nova partitura';this.folder=folder;this.error='';
+  this.name='Nova partitura';this.folder=folder;this.newFolder='';this.error='';
   this.repertoireId=repertoires?.[0]?.id||'';this.addToRepertoire=false;
   this.onUpdate();
  }
- markup({scores=[],repertoires=[],language='va'}={}){
-  this.language=language;this.scores=scores;this.repertoires=repertoires;
+ markup({scores=[],folders=[],linked=false,repertoires=[],language='va'}={}){
+  this.language=language;this.scores=scores;this.repertoires=repertoires;this.folders=folders;this.linked=linked;
   if(!repertoires.some(r=>r.id===this.repertoireId))this.repertoireId=repertoires[0]?.id||'';
   return renderScannerMarkup({pages:this.pages,name:this.name,folder:this.folder,
    addToRep:this.addToRepertoire,repId:this.repertoireId,
    busy:this.busy,progress:this.progress,error:this.error,
-   scores,repertoires,language});
+   scores,folders,linked,newFolder:this.newFolder,repertoires,language});
  }
  clear({notify=true}={}){
   if(this.busy)return false;
@@ -104,6 +105,7 @@ export class ScannerController{
   if(this.busy)return;
   if(id==='scan-name')this.name=value;
   else if(id==='scan-folder')this.folder=value;
+  else if(id==='scan-new-folder')this.newFolder=String(value||'');
   else if(id==='scan-to-rep'){this.addToRepertoire=!!value;this.onUpdate();}
   else if(id==='scan-rep')this.repertoireId=value;
  }
@@ -118,12 +120,18 @@ export class ScannerController{
   }
   const folder=this.folder||'';
   if(folder&&(!folder.split('/').every(p=>p&&p!=='.'&&p!=='..'&&!/[\\\x00-\x1f]/.test(p))||
-    !this.scores.some(s=>s.path.startsWith(folder+'/')))){
+    !this.folders.includes(folder)&&!this.scores.some(s=>s.path.startsWith(folder+'/')))){
    this.error=this.language==='es'?'La carpeta seleccionada ya no está disponible.':
     'La carpeta seleccionada ja no està disponible.';
    this.onUpdate();return false;
   }
-  const basePath=[folder,name].filter(Boolean).join('/');
+  let newFolder='';
+  if(this.linked&&this.newFolder.trim()){
+   try{newFolder=validFolderSegment(this.newFolder);}catch(error){
+    this.error=error.message;this.onUpdate();return false;
+   }
+  }
+  const basePath=[folder,newFolder,name].filter(Boolean).join('/');
   const path=uniqueScanPath(basePath,new Set(this.scores.map(s=>s.path)));
   if(this.addToRepertoire&&!this.repertoires.some(r=>r.id===this.repertoireId)){
    this.error=this.language==='es'?'Selecciona un repertorio válido.':'Selecciona un repertori vàlid.';
@@ -142,7 +150,7 @@ export class ScannerController{
    // Les dades de la biblioteca només s'escriuen després que tot el PDF és vàlid.
    const pdfStart=new Uint8Array(await pdf.slice(0,5).arrayBuffer());
    if(String.fromCharCode(...pdfStart)!=='%PDF-')throw new Error('El PDF no té una capçalera vàlida.');
-   await this.onSaved({path,blob:pdf,repertoireId:repId,pageCount:snapshot.length});
+   await this.onSaved({path,blob:pdf,repertoireId:repId,pageCount:snapshot.length,newFolder:!!newFolder});
    success=true;
    this.busy=false;
    this.clear({notify:false});
