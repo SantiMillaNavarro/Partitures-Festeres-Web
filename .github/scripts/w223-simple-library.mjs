@@ -115,7 +115,7 @@ try{
   });
   const saved=await new Promise((resolve,reject)=>{
    const req=db.transaction('cachedPdfs','readonly').objectStore('cachedPdfs')
-    .get(lib.id+'\\u0000Directa.pdf');
+    .get(lib.id+'\u0000Directa.pdf');
    req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error);
   });
   db.close();
