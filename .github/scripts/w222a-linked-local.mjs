@@ -130,7 +130,8 @@ try{
  await page.waitForFunction(()=>document.querySelector('#viewer-stage')?.dataset?.path==='1r/Marxes/CIMO.pdf');
  // Close viewer through its own button, preserving browser back history.
  const close=page.locator('[data-action="viewer-close"],[data-action="close-viewer"]').first();
- if(await close.count())await close.click();else await page.goBack({waitUntil:'domcontentloaded'});
+ if(await close.count())await page.evaluate(()=>document.querySelector('[data-action="viewer-close"],[data-action="close-viewer"]')?.click());
+ else await page.goBack({waitUntil:'domcontentloaded'});
  await page.locator('[data-action="source-imported"]').first().waitFor({timeout:12000});
  await page.locator('[data-action="source-imported"]').first().click();
  await page.waitForFunction(()=>document.querySelector('.pf-source-choice.active')?.dataset.action==='source-imported');
