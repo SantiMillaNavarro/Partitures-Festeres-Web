@@ -13,7 +13,10 @@ export function renderSourceControls({linked,mode='imported',lang='va',supported
  const status=active&&exists
   ?ready?(es?'Leyendo los PDF originales sin copiarlos':'Llegint els PDF originals sense copiar-los')
    :linked.status==='scanning'?(es?'Leyendo carpetas…':'Llegint carpetes…')
-   :(es?'Es necesario recuperar el permiso de lectura':'Cal recuperar el permís de lectura')
+   :linked.status==='error'?(es?'No se ha podido leer la carpeta':'No s’ha pogut llegir la carpeta')
+    :!linked.handle?.requestPermission
+     ?(es?'Pulsa Cambiar carpeta para volver a seleccionarla':'Prem Canviar carpeta per a tornar a seleccionar-la')
+     :(es?'Es necesario recuperar el permiso de lectura':'Cal recuperar el permís de lectura')
   :es?'Los archivos importados siguen guardados aquí':'Els arxius importats continuen guardats ací';
  const controls='<div class="pf-source-switch" role="group" aria-label="'+title+'">'+
   '<button type="button" class="pf-source-choice '+(!active?'active':'')+'" data-action="source-imported" aria-pressed="'+(!active)+'">'+imported+'</button>'+
@@ -21,10 +24,12 @@ export function renderSourceControls({linked,mode='imported',lang='va',supported
  const choose=supported?
    '<button type="button" class="secondary" data-action="source-choose">'+(exists?replace:select)+'</button>':
    '<button type="button" class="secondary" data-action="source-fallback">'+(es?'Importar una carpeta (copia)':'Importar una carpeta (còpia)')+'</button>';
- const operations=(exists&&active?'<button type="button" class="secondary" data-action="'+(ready?'source-refresh':'source-authorize')+'">'+(ready?refresh:grant)+'</button>':'')+
+ const canRequest=exists&&typeof linked.handle?.requestPermission==='function';
+ const operations=(exists&&active&&(ready||canRequest)?'<button type="button" class="secondary" data-action="'+(ready?'source-refresh':'source-authorize')+'">'+(ready?refresh:grant)+'</button>':'')+
   (exists?'<button type="button" class="quiet pf-source-unlink" data-action="source-forget">'+unlink+'</button>':'');
- const message=active&&exists?(es?'Carpeta: ':'Carpeta: ')+linked.name+' · '+linked.scores.length+' PDF'+
-  (linked.unreadable?' · '+linked.unreadable+' '+(es?'sin acceso':'sense accés'):''):'';
+ const message=active&&exists?(es?'Carpeta: ':'Carpeta: ')+linked.name+
+  (ready?' · '+linked.scores.length+' PDF'+(linked.unreadable?' · '+linked.unreadable+' '+(es?'sin acceso':'sense accés'):'')
+   :es?' · lectura pendiente':' · lectura pendent'):'';
  return '<section class="pf-source-panel '+(compact?'pf-source-compact':'')+'" aria-label="'+title+'">'+
   '<div class="pf-source-header"><strong>📂 '+title+'</strong><small>'+(active&&exists?esc(linked.name):imported)+'</small></div>'+
   controls+'<div class="pf-source-actions">'+choose+operations+'</div>'+

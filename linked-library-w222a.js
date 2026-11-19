@@ -35,12 +35,17 @@ export function validateLinkedPath(path){
  path.split('/').every(validLocalPart)&&/\.pdf$/i.test(path);
 }
 export async function scanLinkedDirectory(root,{maxFiles=MAX_PDFS,maxFolders=MAX_FOLDERS,maxDepth=MAX_DEPTH}={}){
- if(!root||root.kind!=='directory'||typeof root.entries!=='function')throw Error('La carpeta seleccionada no és accessible.');
+ if(!root||root.kind!=='directory'||(typeof root.entries!=='function'&&typeof root.values!=='function'))
+  throw Error('El navegador no permet examinar esta carpeta. Torna a triar-la o utilitza la importació de carpeta.');
  const records=[],folders=[],fileHandles=new Map(),visited=new Set();
  async function visit(directory,segments,depth){
   if(depth>maxDepth)throw Error('Hi ha massa nivells de subcarpetes.');
   const entries=[];
-  for await(const entry of directory.entries())entries.push(entry);
+  if(typeof directory.entries==='function'){
+   for await(const entry of directory.entries())entries.push(entry);
+  }else if(typeof directory.values==='function'){
+   for await(const handle of directory.values())entries.push([handle.name,handle]);
+  }else throw Error('No es poden llegir les subcarpetes d’este proveïdor.');
   entries.sort((a,b)=>natural(a[0],b[0]));
   for(const [name,handle] of entries){
    if(!validLocalPart(name)||!handle||!['file','directory'].includes(handle.kind))continue;
@@ -93,7 +98,14 @@ export class LinkedLocalLibrary{
  async save(handle){
   if(!handle||handle.kind!=='directory')throw Error('La selecció no és una carpeta.');
   const old={id:this.id,name:this.name,handle:this.handle,status:this.status,scores:this.scores,folders:this.folders,files:this.files};
-  this.id='folder-'+(typeof crypto.randomUUID==='function'?crypto.randomUUID():Date.now()+'-'+Math.random().toString(36).slice(2));
+  // En tornar a seleccionar la mateixa carpeta, conservem la identitat i
+  // per tant també els favorits, anotacions i repertoris associats.
+  let sameEntry=false;
+  if(old.handle&&typeof old.handle.isSameEntry==='function'){
+   try{sameEntry=await old.handle.isSameEntry(handle);}
+   catch{/* La identitat no es pot assegurar. */}
+  }
+  this.id=sameEntry&&old.id?old.id:'folder-'+(typeof crypto.randomUUID==='function'?crypto.randomUUID():Date.now()+'-'+Math.random().toString(36).slice(2));
   this.name=handle.name||'Biblioteca';this.handle=handle;this.status='permission';
   this.scores=[];this.folders=[];this.files=new Map();
   try{await inRootStore('readwrite',store=>store.put({key:LINK_KEY,id:this.id,name:this.name,handle}));}
@@ -114,32 +126,52 @@ export class LinkedLocalLibrary{
  }
  scan({ask=false}={}){
   if(!this.exists)return Promise.reject(Error('Selecciona una carpeta abans de continuar.'));
-  // Request before any async gaps (user activation is transient).
-  const permission=ask&&typeof this.handle.requestPermission==='function'
-    ?this.handle.requestPermission({mode:'read'})
-    :typeof this.handle.queryPermission==='function'
-      ?this.handle.queryPermission({mode:'read'})
-      :Promise.resolve('prompt');
+  // En Android/SAF, el selector pot funcionar encara que queryPermission()
+  // o requestPermission() no estiguen implementats. La prova fiable és
+  // enumerar la carpeta real, no exigir una resposta 'granted'.
+  // requestPermission() s'ha d'invocar síncronament des del clic de l'usuari.
+  let permission;
+  try{
+   if(ask&&typeof this.handle.requestPermission==='function')
+    permission=this.handle.requestPermission({mode:'read'});
+   else if(typeof this.handle.queryPermission==='function')
+    permission=this.handle.queryPermission({mode:'read'});
+   else permission='unsupported';
+  }catch(error){
+   console.warn('API de permisos no disponible:',error);
+   permission='unsupported';
+  }
   this.status='scanning';this.error='';
-  return Promise.resolve(permission).then(async status=>{
-   if(status!=='granted'){
+  return Promise.resolve(permission).catch(error=>{
+   console.warn('API de permisos no disponible:',error);
+   return 'unsupported';
+  }).then(async status=>{
+   // La denegació explícita d'un requeriment de permís és definitiva.
+   if(ask&&status==='denied'){
     this.status='permission';this.scores=[];this.folders=[];this.files=new Map();
-    this.error='Cal autoritzar la lectura de la carpeta.';
+    this.error='El navegador no ha concedit l’accés. Torna a seleccionar la carpeta.';
     return false;
    }
+   // Els estats 'prompt' i 'unsupported' no són sempre fiables en Android:
+   // provem només la lectura d'entries(), mai l'escriptura.
    try{
     const listing=await scanLinkedDirectory(this.handle);
     this.scores=listing.scores;this.folders=listing.folders;this.files=listing.files;
     this.unreadable=listing.unreadable;this.status='ready';this.error='';
     return true;
    }catch(error){
-    this.status='error';this.error=error?.message||String(error);
-    // A failed scan must not silently show a partial index as valid.
     this.scores=[];this.folders=[];this.files=new Map();
+    if(error?.name==='NotAllowedError'||error?.name==='SecurityError'){
+     this.status='permission';
+     this.error=typeof this.handle.requestPermission==='function'
+      ?'El navegador ha bloquejat la lectura. Prem Autoritzar lectura o torna a seleccionar la carpeta.'
+      :'No es pot llegir esta carpeta. Prem Canviar carpeta i selecciona-la de nou.';
+     return false;
+    }
+    this.status='error';
+    this.error=error?.message||String(error);
     throw error;
    }
-  }).catch(error=>{
-   this.status='error';this.error=error?.message||String(error);throw error;
   });
  }
  async getScore(path){

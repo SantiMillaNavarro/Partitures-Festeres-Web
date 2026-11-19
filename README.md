@@ -1,3 +1,12 @@
+## W2.22A.1 — Correcció de permisos per a Chrome Android (2026-11-19)
+
+- El lector ja no exigeix que `queryPermission()` retorne exactament `granted` abans d'intentar llegir la carpeta. Si la carpeta és llegible, també funciona amb estats `prompt` o amb API de permisos incompleta (Android/SAF).
+- Es respecta una denegació explícita i es distingeixen errors reals d'accés dels errors d'altre tipus, amb indicacions per a tornar a seleccionar la carpeta.
+- Quan encara no hi ha lectura autoritzada, la UI indica **lectura pendent** en lloc de mostrar falsament **0 PDF**, i no presenta botons de permisos inexistents.
+- Si es torna a vincular exactament la mateixa carpeta (quan `isSameEntry` està disponible), es conserva la identitat de la biblioteca i les dades locals associades.
+- El recorregut accepta `entries()` o `values()` segons el navegador.
+- La prova E2E W2.22A inclou un cas d'Android sense mètodes de permisos, un cas `prompt` però llegible, un cas de denegació, un cas NotAllowedError i la verificació que no aparega `0 PDF` sense lectura.
+
 # Fase W2.22A — Biblioteca local vinculada (sense importar PDFs)
 
 La web recupera el model de la biblioteca Android: es tria la **carpeta real** de partitures i l'aplicació en llig directament els fitxers i les subcarpetes. Es basa en la File System Access API quan el navegador ho permet.

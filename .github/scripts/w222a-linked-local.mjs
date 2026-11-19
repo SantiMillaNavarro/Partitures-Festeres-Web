@@ -88,6 +88,38 @@ try{
   return {support:typeof window.showDirectoryPicker,root:root.name};
  },Array.from(pdf));
  assert.equal(bootstrap.support,'function');
+ // Android SAF regression: a selected directory may be readable even if
+ // permission APIs are absent or return 'prompt'. Never report 0 PDFs.
+ const permissionScenarios=await page.evaluate(async()=>{
+  const {LinkedLocalLibrary}=await import('./linked-library-w222a.js');
+  const {renderSourceControls}=await import('./library-source-ui-w222a.js');
+  const dir=window.__w222folder;
+  const create=overrides=>{
+   const linked=new LinkedLocalLibrary();
+   linked.id='test-android';linked.name='Partitures';
+   linked.handle={kind:'directory',name:'Partitures',entries:()=>dir.entries(),...overrides};
+   linked.status='permission';
+   return linked;
+  };
+  const noApi=create({});
+  if(!(await noApi.scan({ask:false}))||noApi.scores.length!==2)throw Error('Android sense queryPermission: bloqueig incorrecte.');
+  const prompt=create({queryPermission:async()=> 'prompt',requestPermission:async()=> 'prompt'});
+  if(!(await prompt.scan({ask:false}))||prompt.scores.length!==2)throw Error('Permís prompt però carpeta llegible.');
+  if(!(await prompt.scan({ask:true}))||prompt.scores.length!==2)throw Error('Reautorització prompt però carpeta llegible.');
+  const denied=create({requestPermission:async()=> 'denied'});
+  if(await denied.scan({ask:true})||denied.status!=='permission')throw Error('Denegació explícita ignorada.');
+  const unreadable=create({entries:async function*(){throw new DOMException('Blocked','NotAllowedError')}});
+  if(await unreadable.scan({ask:false})||unreadable.status!=='permission')throw Error('Error d’accés no identificat.');
+  const notReadyUI=renderSourceControls({linked:unreadable,mode:'linked',lang:'va',supported:true});
+  if(notReadyUI.includes('0 PDF')||notReadyUI.includes('data-action="source-authorize"'))
+   throw Error('El visor mostra 0 PDF falsos o oferix un botó inoperant.');
+  const same=new LinkedLocalLibrary();
+  await same.save(dir);const id=same.id;await same.save(dir);
+  if(same.id!==id)throw Error('Tornar a triar la mateixa carpeta esborra la identitat dels repertoris.');
+  await same.forget();
+  return {noApi:noApi.scores.length,prompt:prompt.scores.length,denied:denied.status,unreadable:unreadable.status};
+ });
+ assert.equal(permissionScenarios.noApi,2);
  await page.locator('[data-action="source-choose"]').first().click();
  await page.locator('.pf-source-choice.active[data-action="source-linked"]').waitFor({timeout:15000});
  await page.waitForFunction(()=>document.querySelector('.pf-source-info')?.textContent?.includes('2 PDF'));
