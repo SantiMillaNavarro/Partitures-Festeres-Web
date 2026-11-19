@@ -1,3 +1,24 @@
+# Fase W2.25 — Escàner en carpeta vinculada i organització segura
+
+**La Biblioteca continua obrint els PDF originals sense duplicar-los.** En W2.25 la lectura es manté igual; només es demana permís d'escriptura quan l'usuari intenta **guardar un escaneig** o **moure/renomenar un PDF**.
+
+## Escàner
+- **Escanejar** no canvia mai de Biblioteca vinculada a Biblioteca importada. Si la carpeta vinculada està activa, el PDF multipàgina nou es desa directament a la carpeta real, sense copiar-se en IndexedDB.
+- Es pot seleccionar una carpeta existent, incloses les que no tenen cap PDF, o escriure el nom d'una **subcarpeta nova** per a crear-la en guardar.
+- En prémer Guardar, es demana el permís `readwrite` des del gest de l'usuari. Si Chrome no concedix el permís o el proveïdor SAF no exposa escriptura, es mostra l'error i **es conserven les fotografies de l'escàner** per a reintentar o canviar d'origen.
+- Es comprova el contingut PDF i la col·lisió de noms amb el directori real. Un nom repetit genera `(2)`, `(3)`, etc., i mai no se sobreescriu un original. El PDF nou es pot afegir al repertori en el moment de guardar.
+- El botó «Importar PDF» de l'escàner queda desactivat en mode vinculat perquè l'usuari no envie, per error, un PDF a la Biblioteca importada. Els PDF externs es poden afegir a la carpeta amb el gestor d'arxius del dispositiu i apareixen en actualitzar Biblioteca.
+
+## Organitzar
+- Des de les metadades d'una partitura vinculada es pot intentar **moure o renomenar**. S'utilitza exclusivament `FileSystemFileHandle.move()` natiu amb un permís explícit d'escriptura i **si el proveïdor ho suporta**. No se simula un moviment amb còpia + eliminació de l'original.
+- En un moviment compatible, es traslladen les anotacions locals, metadades, preferències del visor, ajustos de pàgina, favorits, recents i referències dels repertoris. La migració de dades es fa en una transacció, i si falla s'intenta revertir el moviment del fitxer.
+- **Chrome Android/Drive pot rebutjar `move()`**. En eixe cas el PDF original queda intacte i es recomana fer el canvi des del gestor d'arxius, seguit d'Actualitzar Biblioteca.
+- Cap operació modifica fitxers en segon pla ni obliga a duplicar els PDF per a funcionar sense connexió.
+
+**Proves W2.25:** escaneig real de foto a PDF en subcarpeta nova, comprovació del PDF original, no duplicació en IndexedDB, noms repetits, no sobreescriptura i moviment natiu amb migració de dades quan la plataforma ho permet.
+
+---
+
 # Fase W2.24 — Còpia de seguretat de dades de biblioteques vinculades (sense PDF)
 
 **Objectiu:** protegir anotacions, metadades, repertoris i preferències d’una carpeta vinculada sense duplicar, reescriure ni descarregar els PDF originals.
