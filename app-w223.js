@@ -904,7 +904,7 @@ function renderModal(){if(!state.modal)return '';
  if(state.modal==='paper-remove')return renderPaperRemove(state.paperRemoveRole,state.lang);
  if(state.modal==='score-organize'){
   const score=state.scores.find(s=>s.path===state.organizePath);
-  return renderOrganizeModal({score,scores:state.scores,language:state.lang,busy:state.organizeBusy,linked:linkedMode()});
+  return renderOrganizeModal({score,scores:state.scores,language:state.lang,busy:state.organizeBusy,linked:linkedMode(),linkedFolders:linkedMode()?linkedLocal.folders:[]});
  }
  if(state.modal==='welcome')return `<div class="modal-backdrop" role="dialog" aria-modal="true"><div class="modal"><img src="./assets/icon-192.png" alt="Partitures Festeres"/><h2>Benvingut · Bienvenido</h2><p>Tria l’idioma · Elige el idioma</p><label><input type="radio" name="welcome-lang" value="va" ${state.lang==='va'?'checked':''}/> Valencià</label><label><input type="radio" name="welcome-lang" value="es" ${state.lang==='es'?'checked':''}/> Castellano</label><div class="modal-actions"><button class="primary" data-action="welcome-done">Començar · Empezar</button></div></div></div>`;
  if(state.modal==='restore-linked-choice'&&state.restore&&linkedMode()){
