@@ -1,6 +1,7 @@
 import {openDB, getAllScores, getScore, saveBatch, setScoreMetadata, deleteScore, clearScores, getPref, setPref, getAnnotations, setAnnotations, moveScoreSafely} from './db.js';
 import {normalizeScoreMetadata, scoreDisplayTitle, hasScoreMetadata} from './metadata.js';
 import {BACKUP_MANIFEST, createBackup, inspectBackup, restoreBackup} from './backup.js';
+import {createLinkedDataBackup,inspectLinkedDataBackup,linkedBackupMatch,restoreLinkedDataBackup} from './linked-backup-w224.js';
 import {ScoreViewer} from './viewer-w219.js';
 import {DriveBrowser} from './drive-ui-w221.js';
 import {availableDrivePath} from './drive-w221.js';
@@ -34,7 +35,7 @@ import {duplicatedRepertoire,buildPerformanceSession,performanceStep,performance
 import {ViewerScorePicker} from './viewer-score-picker-w2152.js';
 
 // Font única de la versió visible tant en Ajustos com al peu de la navegació.
-const APP_VERSION='W2.23C';
+const APP_VERSION='W2.24';
 
 const I = {
   copy:'<svg viewBox="0 0 24 24"><rect x="7" y="7" width="13" height="13" rx="2"/><path d="M4 16H3a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v1"/></svg>',
@@ -213,7 +214,7 @@ const esc = value => String(value??'').replace(/[&<>"']/g, c => ({'&':'&amp;','<
 const norm = value => (value??'').toLocaleLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
 const sort = (a,b) => a.localeCompare(b,'ca',{numeric:true,sensitivity:'base'});
 const scoreSearch = s => norm(s.path+' '+(s.metadata?.title||''));
-const state={source:'imported',autoCheck:true,lang:'va',page:'library',paper:'root',paperConfig:defaultPaperRoles(),paperMigrationPending:false,paperEditRole:null,paperFolderSearch:'',paperRemoveRole:null,cwd:[],scores:[],search:'',view:null,blobUrl:null,modal:null,toastTimer:null,loading:false,online:navigator.onLine,storage:null,backup:null,restore:null,zen:false,favorites:[],recents:[],repertoires:[],repertoireOpen:null,performance:null,modalRepId:null,pickerPath:null,repAddSearch:'',repAddChosen:[],metaPath:null,organizePath:null,organizeBusy:false,thumbnailEnabled:true,viewerSettings:normalizeViewerSettings(),viewerSettingsDraft:null,annotating:false,advanced:blankAdvancedFilters(),advancedOpen:false,indexGroupBy:'folder',indexSortBy:'title',indexCollapsed:new Set(),annotationGroup:'strokes',symbolGroup:'notes',textDraft:null,rosetteExpanded:false,rosetteLevel:'root',rosetteLegacy:false,rosetteX:.5,rosetteY:.56,rosetteSymbolPage:0,objectMenuOpen:false,toolTab:'metronome'};
+const state={source:'imported',autoCheck:true,lang:'va',page:'library',paper:'root',paperConfig:defaultPaperRoles(),paperMigrationPending:false,paperEditRole:null,paperFolderSearch:'',paperRemoveRole:null,cwd:[],scores:[],search:'',view:null,blobUrl:null,modal:null,toastTimer:null,loading:false,online:navigator.onLine,storage:null,backup:null,restore:null,restoreTargetId:null,zen:false,favorites:[],recents:[],repertoires:[],repertoireOpen:null,performance:null,modalRepId:null,pickerPath:null,repAddSearch:'',repAddChosen:[],metaPath:null,organizePath:null,organizeBusy:false,thumbnailEnabled:true,viewerSettings:normalizeViewerSettings(),viewerSettingsDraft:null,annotating:false,advanced:blankAdvancedFilters(),advancedOpen:false,indexGroupBy:'folder',indexSortBy:'title',indexCollapsed:new Set(),annotationGroup:'strokes',symbolGroup:'notes',textDraft:null,rosetteExpanded:false,rosetteLevel:'root',rosetteLegacy:false,rosetteX:.5,rosetteY:.56,rosetteSymbolPage:0,objectMenuOpen:false,toolTab:'metronome'};
 const linkedLocal=new LinkedLocalLibrary();
 const linkedMode=()=>state.source==='linked'&&linkedLocal.exists;
 const libPrefKey=key=>linkedMode()?'w222a:lib:'+linkedLocal.id+':'+key:key;
@@ -501,7 +502,8 @@ function rememberScroll(){
 // Les còpies i restauracions esperen sempre les escriptures d'anotacions pendents.
 let annotationSaveQueue=Promise.resolve();
 function savePdfAnnotations(path,document){
- const write=annotationSaveQueue.catch(()=>{}).then(()=>setAnnotations(path,document));
+ const linkedLibraryId=linkedMode()?linkedLocal.id:null;
+ const write=annotationSaveQueue.catch(()=>{}).then(()=>setAnnotations(path,document,{linkedLibraryId}));
  annotationSaveQueue=write;
  return write;
 }
@@ -1383,16 +1385,16 @@ async function updateStorageInfo() {
 }
 function updateProgress(msg){const text=$('#import-progress-text');if(text)text.textContent=msg;}
 async function doBackup(){
-  if(linkedMode()){toast(state.lang==='es'?'Cambia a Biblioteca importada para hacer una copia ZIP.':'Canvia a Biblioteca importada per a fer una còpia ZIP.',true);return;}
-  if(state.loading) return;
-  if(!state.scores.length){toast(tr('backupNoScores'),true);return;}
+  if(state.loading)return;
+  if(!state.scores.length&&!linkedMode()){toast(tr('backupNoScores'),true);return;}
   state.loading=true;progress(true,tr('backupCreating'));
   try{
     await annotationSaveQueue;
-    const backup=await createBackup(p=>{
-      if(p.phase==='read') updateProgress(`${p.done} / ${p.total} ${tr('scoreCount')}`);
-      if(p.phase==='zip') updateProgress(`${tr('backupCreating')} ${Math.round(p.percent||0)} %`);
-    });
+    const onProgress=p=>{
+      if(p.phase==='read')updateProgress(p.done+' / '+p.total+' '+tr('scoreCount'));
+      if(p.phase==='zip')updateProgress(tr('backupCreating')+' '+Math.round(p.percent||0)+' %');
+    };
+    const backup=linkedMode()?await createLinkedDataBackup(linkedLocal,onProgress):await createBackup(onProgress);
     if(state.backup?.url) URL.revokeObjectURL(state.backup.url);
     state.backup={blob:backup.blob,name:backup.filename,url:URL.createObjectURL(backup.blob)};
     state.page='settings';render();toast(tr('backupExported'));
@@ -1416,7 +1418,11 @@ async function shareBackup(){
 async function chooseRestoreFile(file){
   if(!file || state.loading)return;
   state.loading=true;progress(true,tr('restorePending'));
-  try{state.restore=await inspectBackup(file);state.modal='restore-choice';render();}
+  try{
+    state.restore=linkedMode()?await inspectLinkedDataBackup(file):await inspectBackup(file);
+    state.restoreTargetId=linkedMode()?linkedLocal.id:null;
+    state.modal=linkedMode()?'restore-linked-choice':'restore-choice';render();
+   }
   catch(e){console.error(e);toast(`${tr('error')} ${e.message}`,true);}
   finally{state.loading=false;progress(false);$('#restore-input').value='';}
 }
@@ -1808,13 +1814,13 @@ async function handleClick(el){
    if(linkedMode()){toast(state.lang==='es'?'La carpeta vinculada es de solo lectura. Cambia a Biblioteca importada para añadir PDF.':'La carpeta vinculada és de només lectura. Canvia a Biblioteca importada per a afegir PDF.',true);break;}
    if(!(state.page==='add'&&scanner.busy))$('#import-input').click();break;
   case 'backup-create':await doBackup();break;
-  case 'backup-choose':
-   if(linkedMode()){toast(state.lang==='es'?'Cambia a Biblioteca importada para restaurar ZIP.':'Canvia a Biblioteca importada per a restaurar ZIP.',true);break;}
-   $('#restore-input').click();break;
+  case 'backup-choose':$('#restore-input').click();break;
   case 'backup-save':saveBackup();break;
   case 'backup-share':await shareBackup();break;
   case 'restore-merge':await doRestore('merge');break;
   case 'restore-replace':await doRestore('replace');break;
+  case 'linked-restore-merge':await doRestoreLinked('merge');break;
+  case 'linked-restore-replace':await doRestoreLinked('replace');break;
 
 
   case 'organize-open':{
@@ -2125,7 +2131,7 @@ async function handleClick(el){
    state.modal='clear';render();break;
   case 'close-modal':
     if(state.modal==='annotation-text')scoreViewer?.setAnnotationTool('select');
-    scoreViewer?.discardPendingTextBox();state.modal=null;state.textDraft=null;state.metaPath=null;state.organizePath=null;state.modalRepId=null;state.pickerPath=null;state.repAddSearch='';state.repAddChosen=[];state.restore=null;render();break;
+    scoreViewer?.discardPendingTextBox();state.modal=null;state.textDraft=null;state.metaPath=null;state.organizePath=null;state.modalRepId=null;state.pickerPath=null;state.repAddSearch='';state.repAddChosen=[];state.restore=null;state.restoreTargetId=null;render();break;
   case 'confirm-delete-one':{
     if(linkedMode())break;
     const path=state.view?.path;if(path)await deleteScore(path);
