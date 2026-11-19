@@ -2253,3 +2253,20 @@ html.reading-pdf,body.reading-pdf{background:#fff!important;background-image:non
  .pf-source-choice{padding:8px 10px;font-size:.84rem}
  .pf-source-actions button{font-size:.83rem}
 }
+
+
+/* W2.22A.4 — Preparar còpies dels PDFs per a lectura offline fiable. */
+.pf-source-offline{
+ border:1px solid #c5af88;
+ background:rgba(255,250,238,.86);
+ border-radius:12px;padding:11px 12px;
+ display:flex;flex-direction:column;gap:7px;
+}
+.pf-source-offline strong{font-size:.93rem;color:#63343b}
+.pf-source-offline p{font-size:.83rem;margin:0;color:#554b40;line-height:1.4}
+.pf-source-offline p[role="status"]{color:#285c41;font-weight:700}
+.pf-source-offline-actions{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.pf-source-offline-actions button{min-height:38px;max-width:100%;white-space:normal}
+.pf-source-offline button.primary{background:#793c47;color:#fffaf4}
+.pf-source-offline button.quiet{font-size:.83rem}
+.pf-source-offline .help{font-size:.79rem;line-height:1.45}

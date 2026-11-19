@@ -1580,6 +1580,7 @@ async function handleClick(el){
    await setLibraryPref('paper',val);render();break;
   }
   case 'source-imported':
+   if(linkedLocal.offlineBusy){toast(state.lang==='es'?'Detén primero la preparación de las partituras.':'Para primer la preparació de les partitures.',true);break;}
    if(state.source!=='imported')await activateLibrarySource('imported');
    break;
   case 'source-linked':
@@ -1587,7 +1588,7 @@ async function handleClick(el){
    if(!linkedLocal.ready)await linkedLocal.scan({ask:false});
    await activateLibrarySource('linked');break;
   case 'source-choose':{
-   if(state.view||viewerPendingOpen||state.loading)break;
+   if(state.view||viewerPendingOpen||state.loading||linkedLocal.offlineBusy)break;
    let selected;
    try{
     // La crida directa manté l'activació de l'usuari per al diàleg nadiu.
@@ -1604,7 +1605,7 @@ async function handleClick(el){
    break;
   }
   case 'source-refresh':case 'source-authorize':{
-   if(!linkedLocal.exists||state.view||viewerPendingOpen)break;
+   if(!linkedLocal.exists||state.view||viewerPendingOpen||linkedLocal.offlineBusy)break;
    // requestPermission() s'ha d'invocar en el mateix clic.
    const scan=linkedLocal.scan({ask:action==='source-authorize'||linkedLocal.cached});
    state.loading=true;
@@ -1618,10 +1619,54 @@ async function handleClick(el){
    break;
   }
   case 'source-forget':{
-   if(!linkedLocal.exists)break;
+   if(!linkedLocal.exists||linkedLocal.offlineBusy)break;
    if(linkedMode())await activateLibrarySource('imported');
    await linkedLocal.forget();render();
    toast(state.lang==='es'?'Carpeta desvinculada. Los archivos originales no se han modificado.':'Carpeta desvinculada. Els arxius originals no s’han modificat.');
+   break;
+  }
+  case 'source-cache':case 'source-cache-update':{
+   if(!linkedMode()||!linkedLocal.ready||linkedLocal.offlineBusy||state.view)break;
+   // L'usuari sol·licita explícitament còpies locals per a alliberar-se
+   // dels permisos de carpeta d'Android que caduquen en tancar Chrome.
+   pdfThumbnails.pause();
+   linkedLocal.offlineProgress=state.lang==='es'?'Preparando partituras…':'Preparant partitures…';
+   render();
+   try{
+    const refresh=action==='source-cache-update';
+    const result=await linkedLocal.prepareOffline({refresh,onProgress:progress=>{
+     linkedLocal.offlineProgress=(state.lang==='es'?'Preparadas: ':'Preparades: ')+progress.done+'/'+progress.total+
+      ' · '+(state.lang==='es'?'nuevas: ':'noves: ')+progress.saved+
+      (progress.failed?' · '+progress.failed+' '+(state.lang==='es'?'errores':'errors'):'');
+     if(state.page==='library'||state.page==='settings')render();
+    }});
+    const message=(state.lang==='es'?'Partituras disponibles sin conexión: ':'Partitures disponibles sense connexió: ')+
+      result.available+'/'+result.total+
+      (result.failed?' · '+result.failed+' '+(state.lang==='es'?'no se han podido guardar':'no s’han pogut guardar'):'');
+    toast(message,!!result.failed&&!result.saved);
+    if(result.failed&&result.lastError)
+     console.warn('Còpies no disponibles:',result.lastError);
+   }catch(error){toast(error?.message||String(error),true);}
+   finally{
+    linkedLocal.offlineProgress=null;
+    pdfThumbnails.resume();
+    render();updateStorageInfo();
+   }
+   break;
+  }
+  case 'source-cache-stop':
+   linkedLocal.cancelOffline();
+   linkedLocal.offlineProgress=state.lang==='es'?'Deteniendo después del PDF actual…':'Parant després del PDF actual…';
+   render();break;
+  case 'source-cache-clear':{
+   if(!linkedMode()||linkedLocal.offlineBusy)break;
+   const confirmed=window.confirm(state.lang==='es'
+    ?'¿Eliminar las copias sin conexión? Los PDF originales y las anotaciones no se modificarán.'
+    :'Vols eliminar les còpies sense connexió? Els PDF originals i les anotacions no es modificaran.');
+   if(!confirmed)break;
+   try{await linkedLocal.clearOffline();render();
+    toast(state.lang==='es'?'Copias locales eliminadas.':'Còpies locals eliminades.');}
+   catch(error){toast(error?.message||String(error),true);}
    break;
   }
   case 'source-fallback':$('#source-folder-input')?.click();break;

@@ -192,7 +192,28 @@ try{
  assert(add>0);
  await page.locator('[data-action="source-refresh"]').first().click();
  await page.waitForFunction(()=>document.querySelector('.pf-source-info')?.textContent?.includes('3 PDF'),{timeout:15000});
- // Guardem l'índex però MAI el blob ni els handles individuals.
+ // W2.22A.4: una única preparació de les còpies offline ha d'evitar
+ // qualsevol petició de permís posterior, també per a PDF no oberts abans.
+ await page.locator('[data-action="source-cache"]').first().click();
+ await page.waitForFunction(()=>
+  document.querySelector('.pf-source-offline')?.textContent?.includes('3 / 3')&&
+  !document.querySelector('[data-action="source-cache-stop"]'),
+ {timeout:15000});
+ const offlineSnapshot=await page.evaluate(async()=>{
+  const {LinkedLocalLibrary}=await import('./linked-library-w222a.js');
+  const library=new LinkedLocalLibrary();
+  if(!(await library.restore()))throw Error('La carpeta vinculada no s’ha recuperat.');
+  if(library.offlineCount!==3)throw Error('No s’han guardat les tres còpies locals.');
+  library.handle={name:'Permís revocat',kind:'directory',
+   async *entries(){throw new DOMException('Permission expired','NotAllowedError');}};
+  library.files.clear();
+  const record=await library.getScore('2n/Dianes.PDF');
+  if(!record?.blob?.size||!record.offline)throw Error('No s’obri el PDF després de revocar el permís.');
+  return {count:library.offlineCount,size:record.blob.size};
+ });
+ assert.equal(offlineSnapshot.count,3);
+ // Guardem l'índex però MAI el blob dins de l'índex; ara les
+ // còpies offline sí estan en un magatzem separat d'IndexedDB.
  const cached=await page.evaluate(async()=>{
   const {LinkedLocalLibrary}=await import('./linked-library-w222a.js');
   const restored=new LinkedLocalLibrary();

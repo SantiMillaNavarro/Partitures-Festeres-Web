@@ -3,13 +3,22 @@
    Les referències FileSystemDirectoryHandle es guarden en IndexedDB,
    no el contingut dels documents. Permisos sempre controlats per l'usuari. */
 const LINK_DB='partitures-festeres-linked-w222a',LINK_KEY='active',MAX_PDFS=10000,MAX_FOLDERS=4000,MAX_DEPTH=30;
+const CACHE_LIMIT_BYTES=100*1024*1024;
+const cacheKey=(libraryId,path)=>libraryId+'\u0000'+path;
 let dbPromise;
 function openLinkDB(){
  if(dbPromise)return dbPromise;
  if(!globalThis.indexedDB)return Promise.reject(Error('IndexedDB no disponible.'));
  dbPromise=new Promise((resolve,reject)=>{
-  const req=indexedDB.open(LINK_DB,1);
-  req.onupgradeneeded=()=>{if(!req.result.objectStoreNames.contains('roots'))req.result.createObjectStore('roots',{keyPath:'key'});};
+  const req=indexedDB.open(LINK_DB,2);
+  req.onupgradeneeded=()=>{
+   const db=req.result;
+   if(!db.objectStoreNames.contains('roots'))db.createObjectStore('roots',{keyPath:'key'});
+   if(!db.objectStoreNames.contains('cachedPdfs')){
+    const store=db.createObjectStore('cachedPdfs',{keyPath:'key'});
+    store.createIndex('libraryId','libraryId',{unique:false});
+   }
+  };
   req.onsuccess=()=>resolve(req.result);
   req.onerror=()=>reject(req.error||Error('No es pot obrir la biblioteca vinculada.'));
   req.onblocked=()=>reject(Error('Tanca les altres pestanyes de Partitures Festeres.'));
@@ -92,20 +101,80 @@ function validIndex(index){
  return {scores,folders,unreadable:Number.isFinite(index.unreadable)?index.unreadable:0,
   scannedAt:Number.isFinite(index.scannedAt)?index.scannedAt:0};
 }
+
+// Les còpies de lectura es desen separades de la Biblioteca importada, per
+// evitar duplicitats de noms i protegir les anotacions i repertoris existents.
+async function cachedPdf(libraryId,path){
+ const db=await openLinkDB();
+ return new Promise((resolve,reject)=>{
+  const request=db.transaction('cachedPdfs','readonly').objectStore('cachedPdfs')
+   .get(cacheKey(libraryId,path));
+  request.onsuccess=()=>resolve(request.result?.blob||null);
+  request.onerror=()=>reject(request.error);
+ });
+}
+async function saveCachedPdf(libraryId,path,blob){
+ if(!libraryId||!validateLinkedPath(path)||!blob||!blob.size||blob.size>CACHE_LIMIT_BYTES)
+  throw Error('La partitura no es pot guardar sense connexió (màxim 100 MB per PDF).');
+ const db=await openLinkDB();
+ return new Promise((resolve,reject)=>{
+  const tx=db.transaction('cachedPdfs','readwrite');
+  tx.objectStore('cachedPdfs').put({key:cacheKey(libraryId,path),libraryId,path,blob,savedAt:Date.now()});
+  tx.oncomplete=()=>resolve(blob.size);
+  tx.onerror=()=>reject(tx.error||Error('No hi ha prou espai per a guardar la còpia local.'));
+  tx.onabort=()=>reject(tx.error||Error('No s’ha pogut guardar la còpia local.'));
+ });
+}
+async function cachedPdfPaths(libraryId){
+ const db=await openLinkDB();
+ return new Promise((resolve,reject)=>{
+  const req=db.transaction('cachedPdfs','readonly').objectStore('cachedPdfs').index('libraryId').getAllKeys(libraryId);
+  req.onsuccess=()=>resolve(new Set(req.result.map(key=>String(key).slice(libraryId.length+1))));
+  req.onerror=()=>reject(req.error);
+ });
+}
+async function deleteLibraryCache(libraryId){
+ if(!libraryId)return;
+ const db=await openLinkDB();
+ return new Promise((resolve,reject)=>{
+  const tx=db.transaction('cachedPdfs','readwrite');
+  const cursor=tx.objectStore('cachedPdfs').index('libraryId').openKeyCursor(libraryId);
+  cursor.onsuccess=()=>{
+   const row=cursor.result;
+   if(row){tx.objectStore('cachedPdfs').delete(row.primaryKey);row.continue();}
+  };
+  cursor.onerror=()=>{try{tx.abort();}catch{}};
+  tx.oncomplete=()=>resolve();
+  tx.onerror=()=>reject(tx.error||Error('No s’han pogut eliminar les còpies.'));
+ });
+}
+export function isQuotaError(error){
+ return error?.name==='QuotaExceededError'||/quota|espai|space|disk/i.test(error?.message||'');
+}
+
 export class LinkedLocalLibrary{
  constructor(){
   this.id=null;this.name='';this.handle=null;
   this.scores=[];this.folders=[];this.files=new Map();this.unreadable=0;
   this.status='none';this.error='';this.lastScannedAt=0;
+  this.cachedPaths=new Set();this.offlineBusy=false;this.offlineProgress=null;this.offlineCancelled=false;
  }
  get exists(){return !!this.handle&&!!this.id;}
  get ready(){return this.status==='ready'||this.status==='cached';}
  get cached(){return this.status==='cached';}
+ get offlineCount(){return this.cachedPaths.size;}
+ get uncachedCount(){return this.scores.filter(item=>!this.cachedPaths.has(item.path)).length;}
+ async refreshCachedPaths(){
+  this.cachedPaths=await cachedPdfPaths(this.id);
+  return this.cachedPaths;
+ }
+ cancelOffline(){this.offlineCancelled=true;}
  async restore(){
   const saved=await inRootStore('readonly',store=>store.get(LINK_KEY));
   if(saved?.id&&saved?.handle?.kind==='directory'){
    this.id=saved.id;this.name=saved.name||saved.handle.name||'Biblioteca';
    this.handle=saved.handle;this.status='permission';this.error='';
+   try{await this.refreshCachedPaths();}catch(error){console.warn('Còpies locals:',error);}
    const cached=validIndex(saved.index);
    if(cached){
     this.scores=cached.scores;this.folders=cached.folders;this.unreadable=cached.unreadable;
@@ -139,6 +208,7 @@ export class LinkedLocalLibrary{
   this.scores=sameEntry?old.scores:[];this.folders=sameEntry?old.folders:[];
   this.unreadable=sameEntry?old.unreadable:0;this.lastScannedAt=sameEntry?old.lastScannedAt:0;
   this.files=sameEntry?old.files:new Map();
+  this.cachedPaths=sameEntry?this.cachedPaths:new Set();
   const index=this.lastScannedAt?this.snapshot():null;
   try{
    await this.persistIndex({handle,index});
@@ -280,14 +350,76 @@ export class LinkedLocalLibrary{
   this.files.set(path,handle);
   return handle;
  }
+ async prepareOffline({onProgress=()=>{},refresh=false}={}){
+  if(!this.ready)throw Error('Cal llegir la carpeta original abans de preparar les còpies.');
+  if(this.offlineBusy)throw Error('Ja hi ha una descàrrega de la biblioteca en marxa.');
+  this.offlineBusy=true;this.offlineCancelled=false;
+  let saved=0,skipped=0,failed=0,lastError='',bytes=0;
+  const items=[...this.scores];
+  try{
+   await this.refreshCachedPaths();
+   for(let i=0;i<items.length;i++){
+    if(this.offlineCancelled)break;
+    const item=items[i],path=item.path;
+    if(!refresh&&this.cachedPaths.has(path)){skipped++;continue;}
+    try{
+     // Cada consulta és individual i no es conserva tot el conjunt en RAM.
+     const handle=await this.fileHandleFor(path);
+     let blob;
+     try{blob=await handle.getFile();}
+     catch(error){
+      const fresh=await this.fileHandleFor(path,{forceEnumeration:true});
+      blob=await fresh.getFile();
+     }
+     if(!blob.size||blob.size>CACHE_LIMIT_BYTES)
+      throw Error('PDF buit o massa gran (màxim 100 MB).');
+     const header=await blob.slice(0,1024).text();
+     if(!header.includes('%PDF-'))throw Error('El document no és un PDF vàlid.');
+     const estimate=typeof navigator!=='undefined'&&navigator.storage?.estimate
+      ?await navigator.storage.estimate().catch(()=>null):null;
+     if(estimate?.quota&&estimate.usage+blob.size>estimate.quota*.96)
+      throw Object.assign(Error('Queda poc espai lliure per a les còpies.'),{name:'QuotaExceededError'});
+     await saveCachedPdf(this.id,path,blob);
+     this.cachedPaths.add(path);saved++;bytes+=blob.size;
+    }catch(error){
+     failed++;lastError=error.message||String(error);
+     if(isQuotaError(error)){onProgress({done:i+1,total:items.length,saved,skipped,failed,bytes,lastError});break;}
+    }
+    if(i%3===0||i===items.length-1){
+     onProgress({done:i+1,total:items.length,saved,skipped,failed,bytes,lastError});
+     // Cedir un torn al navegador perquè el progrés es pinte en Android.
+     await new Promise(resolve=>setTimeout(resolve,0));
+    }
+   }
+   return {saved,skipped,failed,bytes,cancelled:this.offlineCancelled,lastError,
+    available:this.offlineCount,total:items.length};
+  }finally{
+   this.offlineBusy=false;this.offlineCancelled=false;this.offlineProgress=null;
+  }
+ }
+ async clearOffline(){
+  if(this.offlineBusy)throw Error('Para abans la descàrrega de les còpies.');
+  await deleteLibraryCache(this.id);
+  this.cachedPaths.clear();
+ }
  async getScore(path){
   if(!this.ready)throw Error('No s’ha pogut llegir la biblioteca vinculada.');
   if(!validateLinkedPath(path)||!this.scores.some(item=>item.path===path))return null;
   let firstError=null;
+  // Primer usem la còpia local si ja existeix: això evita que un permís
+  // temporal de Chrome bloquege el PDF després de tancar l'aplicació.
+  let offline=null;
+  try{offline=await cachedPdf(this.id,path);}catch(error){console.warn('Còpia del PDF:',error);}
+  if(offline?.size)return {path,size:offline.size,added:0,blob:offline,offline:true};
   try{
    const handle=await this.fileHandleFor(path);
    try{
     const file=await handle.getFile();
+    // Guardar automàticament només un PDF que l'usuari obri permet que
+    // continue funcionant després d'eixir, fins i tot si Chrome perd
+    // l'autorització del proveïdor. No retarda el visor.
+    void saveCachedPdf(this.id,path,file).then(()=>this.cachedPaths.add(path))
+     .catch(error=>console.warn('Còpia local no disponible:',error));
     return {path,size:file.size,added:file.lastModified||0,blob:file};
    }catch(error){firstError=error;this.files.delete(path);}
    // Una referència serialitzada o retornada per getFileHandle() pot ser
@@ -295,6 +427,8 @@ export class LinkedLocalLibrary{
    // amb el handle original del proveïdor una única vegada més.
    const fresh=await this.fileHandleFor(path,{forceEnumeration:true});
    const file=await fresh.getFile();
+   void saveCachedPdf(this.id,path,file).then(()=>this.cachedPaths.add(path))
+    .catch(error=>console.warn('Còpia local no disponible:',error));
    return {path,size:file.size,added:file.lastModified||0,blob:file};
   }catch(error){
    console.warn('No es pot obrir un PDF vinculat:',{path,firstError,error});
@@ -306,6 +440,8 @@ export class LinkedLocalLibrary{
   }
  }
  async forget(){
+  if(this.offlineBusy)throw Error('Para primer la descàrrega de còpies.');
+  await deleteLibraryCache(this.id);
   await inRootStore('readwrite',store=>store.delete(LINK_KEY));
   this.id=null;this.name='';this.handle=null;this.scores=[];this.folders=[];
   this.files=new Map();this.status='none';this.error='';this.lastScannedAt=0;

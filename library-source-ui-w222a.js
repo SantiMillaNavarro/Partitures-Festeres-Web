@@ -33,6 +33,23 @@ export function renderSourceControls({linked,mode='imported',lang='va',supported
    ?(es?' · Última actualización: ':' · Última actualització: ')+
      new Date(linked.lastScannedAt).toLocaleString(es?'es-ES':'ca-ES',{dateStyle:'short',timeStyle:'short'})
    :'';
+ const offlineInfo=active&&exists&&ready
+  ?'<div class="pf-source-offline"><strong>☁ '+(es?'Uso sin conexión':'Ús sense connexió')+'</strong>'+
+    '<p>'+(es?'Partituras preparadas: ':'Partitures preparades: ')+
+    linked.offlineCount+' / '+linked.scores.length+
+    (linked.offlineCount>=linked.scores.length&&linked.scores.length?' ✓':'')+'</p>'+
+    (linked.offlineBusy
+     ?'<button type="button" class="secondary" data-action="source-cache-stop">'+(es?'Detener descarga':'Parar descàrrega')+'</button>'+
+      (linked.offlineProgress?'<p role="status">'+linked.offlineProgress+'</p>':'')
+     :'<div class="pf-source-offline-actions">'+
+      (linked.uncachedCount?
+       '<button type="button" class="primary" data-action="source-cache">'+(es?'Preparar partituras sin conexión':'Preparar partitures sense connexió')+'</button>':'')+
+      (linked.offlineCount?
+       '<button type="button" class="secondary" data-action="source-cache-update">'+(es?'Actualizar copias':'Actualitzar còpies')+'</button>'+
+       '<button type="button" class="quiet" data-action="source-cache-clear">'+(es?'Eliminar copias locales':'Eliminar còpies locals')+'</button>':'')+
+      '</div>')+
+    '<p class="help">'+(es?'Las copias se guardan en este navegador; los PDF originales no se modifican. Puedes abrirlos sin permiso de la carpeta después de prepararlos. Los cambios de los originales requieren actualizar las copias.':'Les còpies es guarden en este navegador; els PDF originals no es modifiquen. Podràs obrir-los sense permís de carpeta després de preparar-los. Els canvis dels originals requerixen actualitzar les còpies.')+'</p>'+
+   '</div>':'';
  const message=active&&exists?(es?'Carpeta: ':'Carpeta: ')+linked.name+
   (ready?' · '+linked.scores.length+' PDF'+(linked.unreadable?' · '+linked.unreadable+' '+(es?'sin acceso':'sense accés'):'')+lastUpdated
    :es?' · lectura pendiente':' · lectura pendent'):'';
@@ -40,6 +57,7 @@ export function renderSourceControls({linked,mode='imported',lang='va',supported
   '<div class="pf-source-header"><strong>📂 '+title+'</strong><small>'+(active&&exists?esc(linked.name):imported)+'</small></div>'+
   controls+'<div class="pf-source-actions">'+choose+operations+'</div>'+
   (message?'<div class="pf-source-info">'+esc(message)+'</div>':'')+
+  offlineInfo+
   '<p class="pf-source-status" role="status">'+esc(linked?.error&&active?linked.error:status)+'</p>'+
   (!supported?'<p class="help">'+(es?'Tu navegador no ofrece vinculación permanente; el botón de importar crea una copia. Prueba Chrome o Edge recientes.':'El navegador no oferix vinculació permanent; importar una carpeta crea una còpia. Prova Chrome o Edge recents.')+'</p>':'')+
   (active?'<p class="help">'+(es?'Solo lectura: tus PDF originales no se modifican. Las anotaciones y los repertorios se guardan en este navegador. Para añadir o mover archivos, usa el gestor de archivos y pulsa Actualizar.':'Només lectura: els PDF originals no es modifiquen. Les anotacions i els repertoris es guarden en este navegador. Per afegir o moure fitxers, usa el gestor d’arxius i prem Actualitzar.')+'</p>':'')+

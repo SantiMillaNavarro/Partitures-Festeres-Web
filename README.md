@@ -1,3 +1,21 @@
+## W2.22A.4 — Còpies de lectura offline per a Chrome Android (19-11-2026)
+
+Per què: Chrome Android pot perdre permisos temporals dels `FileSystemFileHandle` en tancar la PWA. El catàleg persistit no concedeix permís per a llegir el PDF original. L'API web **no pot** utilitzar `takePersistableUriPermission()` d'Android.
+
+Solució:
+- Una vegada oberta la carpeta, prem **Preparar partitures sense connexió**. La web guarda, amb el consentiment de l'usuari, una **còpia de cada PDF** en una base de dades separada de la Biblioteca importada, organitzada per identificador de la carpeta i ruta. El document original no es modifica.
+- Després de preparar les còpies, les partitures es poden obrir immediatament després de reiniciar, fins i tot si Chrome ha retirat el permís de la carpeta o no hi ha connexió. El catàleg es continua recuperant immediatament des d'IndexedDB.
+- En obrir per primera vegada una partitura encara no preparada, la web intenta conservar automàticament eixa còpia. Això no paralitza el visor ni duplica documents a la Biblioteca importada.
+- La preparació és progressiva, d'una partitura a cada torn, amb un comptador **N / total**, errors parcials i botó **Parar descàrrega**. Es poden completar només les pendents o **Actualitzar còpies** per tornar a descarregar-les després de canvis en els originals.
+- Limitació individual de 100 MB per PDF i comprovació d'espai lliure quan el navegador ho permet. Si queda poc espai, el procés finalitza sense esborrar les còpies ja disponibles. El navegador continua podent esborrar dades privades per quota o neteja de dades; no és una còpia de seguretat externa.
+- **Eliminar còpies locals** elimina només la caché local de PDFs del dispositiu actual; els originals, les anotacions i els repertoris es mantenen. **Desvincular** també elimina les còpies locals de la carpeta desvinculada per no abandonar documents ocults al navegador.
+- **Actualitzar biblioteca** reindexa noms i carpetes; no substitueix automàticament els PDFs de la caché. Quan hi haja modificacions en els PDFs, s'ha de prémer **Actualitzar còpies**.
+- La configuració de Drive i els imports existents no canvien. En un navegador diferent, les còpies s'han de preparar una vegada en eixe navegador.
+
+Proves automàtiques addicionals: una carpeta de prova amb PDF d'OPFS; preparació de tots els fitxers; reobertura quan la carpeta retorna `NotAllowedError`; comprovació que la lectura es fa des de la caché; regressions del visor i la biblioteca importada.
+
+**Nota:** no podem prometre permisos SAF persistents dins de Chrome, però esta solució evita haver de renovar-los una vegada preparades les còpies.
+
 ## W2.22A.3 — Recuperació de PDF individuals en Android (2026-11-19)
 
 - S'investiga el cas Android en què l'índex guardat mostra tots els PDF, però una partitura concreta dona un error d'accés tot i que altres s'obrin.
