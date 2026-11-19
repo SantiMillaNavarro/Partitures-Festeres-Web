@@ -285,6 +285,74 @@ export async function commitLinkedDataBackup({libraryId,prefPuts=[],prefDeletes=
 }
 
 
+
+/* W2.25 — Quan un proveïdor permet moure un PDF amb move() natiu,
+ * les claus de dades associades es migren en una transacció IndexedDB.
+ * Mai es toca la store scores dels PDFs importats.
+ */
+export async function moveLinkedScoreData(libraryId,oldPath,newPath){
+ if(typeof libraryId!=='string'||!/^folder-[A-Za-z0-9-]{1,110}$/.test(libraryId)||
+  typeof oldPath!=='string'||typeof newPath!=='string'||oldPath===newPath||
+  !/\.pdf$/i.test(oldPath)||!/\.pdf$/i.test(newPath)||
+  oldPath.length>500||newPath.length>500)
+  throw Error('Ruta de partitura vinculada incorrecta.');
+ const p='w222a:lib:'+libraryId+':',s='w222a:'+libraryId+':';
+ const anno='w222a-linked-'+libraryId+'/',metadata='w222a:metadata:'+libraryId;
+ const keys={
+  metadata,
+  oldAnn:anno+oldPath,newAnn:anno+newPath,
+  oldViewer:s+'viewer:'+oldPath,newViewer:s+'viewer:'+newPath,
+  oldPages:s+'w218:page:'+oldPath,newPages:s+'w218:page:'+newPath,
+  fav:p+'w13:favorites',rec:p+'w13:recents',reps:p+'w13:repertoires'
+ };
+ const db=await openDB();
+ return new Promise((resolve,reject)=>{
+  const tx=db.transaction(['annotations','prefs'],'readwrite');
+  const annotations=tx.objectStore('annotations'),prefs=tx.objectStore('prefs');
+  const requests={
+   metadata:prefs.get(keys.metadata),
+   oldAnn:annotations.get(keys.oldAnn),newAnn:annotations.get(keys.newAnn),
+   oldViewer:prefs.get(keys.oldViewer),newViewer:prefs.get(keys.newViewer),
+   oldPages:prefs.get(keys.oldPages),newPages:prefs.get(keys.newPages),
+   fav:prefs.get(keys.fav),rec:prefs.get(keys.rec),reps:prefs.get(keys.reps)
+  };
+  let remaining=Object.keys(requests).length,reason=null;
+  const fail=message=>{
+   reason=message instanceof Error?message:Error(message);
+   try{tx.abort();}catch{}
+  };
+  const replace=items=>Array.isArray(items)?[...new Set(items.map(x=>x===oldPath?newPath:x))]:[];
+  const apply=()=>{
+   const data=Object.fromEntries(Object.entries(requests).map(([key,r])=>[key,r.result]));
+   const meta=data.metadata?.value||{};
+   if(!meta||typeof meta!=='object'||Array.isArray(meta))return fail('Metadades vinculades invàlides.');
+   if(Object.hasOwn(meta,newPath)||data.newAnn||data.newViewer||data.newPages)
+    return fail('El destí ja té anotacions o metadades. No es poden substituir.');
+   const updated={...meta};
+   if(Object.hasOwn(updated,oldPath)){
+    updated[newPath]=updated[oldPath];
+    delete updated[oldPath];
+    prefs.put({key:metadata,value:updated});
+   }
+   if(data.oldAnn){annotations.put({...data.oldAnn,path:keys.newAnn});annotations.delete(keys.oldAnn);}
+   for(const [src,dst] of [['oldViewer','newViewer'],['oldPages','newPages']]){
+    if(data[src]){prefs.put({key:keys[dst],value:data[src].value});prefs.delete(keys[src]);}
+   }
+   if(data.fav)prefs.put({key:keys.fav,value:replace(data.fav.value)});
+   if(data.rec)prefs.put({key:keys.rec,value:replace(data.rec.value)});
+   if(data.reps)prefs.put({key:keys.reps,value:Array.isArray(data.reps.value)?
+    data.reps.value.map(rep=>({...rep,paths:replace(rep.paths)})):[]});
+  };
+  for(const req of Object.values(requests)){
+   req.onsuccess=()=>{if(--remaining===0)try{apply();}catch(error){fail(error);}};
+   req.onerror=()=>fail(req.error||Error('No s’han pogut llegir les dades vinculades.'));
+  }
+  tx.oncomplete=()=>resolve({path:newPath});
+  tx.onerror=()=>reject(reason||tx.error||Error('Error migrant les dades de la partitura.'));
+  tx.onabort=()=>reject(reason||tx.error||Error('Migració de dades cancel·lada.'));
+ });
+}
+
 /* W2.14.1 — Trasllat/renomenat ATÒMIC dins d'una transacció IndexedDB.
  * Es preserva el mateix Blob, les metadades, anotacions, estat de visor,
  * favorits, recents i repertoris. Cap PDF existent es pot sobreescriure.

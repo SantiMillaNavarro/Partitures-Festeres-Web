@@ -1,4 +1,4 @@
-import {openDB, getAllScores, getScore, saveBatch, setScoreMetadata, deleteScore, clearScores, getPref, setPref, getAnnotations, setAnnotations, moveScoreSafely} from './db.js';
+import {openDB, getAllScores, getScore, saveBatch, setScoreMetadata, deleteScore, clearScores, getPref, setPref, getAnnotations, setAnnotations, moveScoreSafely, moveLinkedScoreData} from './db.js';
 import {normalizeScoreMetadata, scoreDisplayTitle, hasScoreMetadata} from './metadata.js';
 import {BACKUP_MANIFEST, createBackup, inspectBackup, restoreBackup} from './backup.js';
 import {createLinkedDataBackup,inspectLinkedDataBackup,linkedBackupMatch,restoreLinkedDataBackup} from './linked-backup-w224.js';
@@ -35,7 +35,7 @@ import {duplicatedRepertoire,buildPerformanceSession,performanceStep,performance
 import {ViewerScorePicker} from './viewer-score-picker-w2152.js';
 
 // Font única de la versió visible tant en Ajustos com al peu de la navegació.
-const APP_VERSION='W2.24';
+const APP_VERSION='W2.25';
 
 const I = {
   copy:'<svg viewBox="0 0 24 24"><rect x="7" y="7" width="13" height="13" rx="2"/><path d="M4 16H3a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v1"/></svg>',
@@ -358,12 +358,16 @@ const dictation=new DictationController({
 const scanner=new ScannerController({
  onUpdate:()=>{if(state.page==='add'&&!state.view)render();},
  onWarning:message=>toast(message,true),
- onSaved:async({path,blob,repertoireId,pageCount})=>{
+ onSaved:async({path,blob,repertoireId,pageCount,newFolder=false})=>{
   // Última comprovació contra l'IndexedDB real, per a no sobreescriure un PDF
   // que haja aparegut mentre processàvem les fotografies.
-  const existing=await getAllScores();
-  const unique=uniqueScanPath(path,new Set(existing.map(s=>s.path)));
-  await saveBatch([{path:unique,blob,size:blob.size,added:Date.now()}]);
+  let unique;
+  if(linkedMode())unique=await linkedLocal.addPdf(path,blob,{newFolder});
+  else{
+   const existing=await getAllScores();
+   unique=uniqueScanPath(path,new Set(existing.map(s=>s.path)));
+   await saveBatch([{path:unique,blob,size:blob.size,added:Date.now()}]);
+  }
   if(repertoireId){
    const rep=state.repertoires.find(r=>r.id===repertoireId);
    if(rep&&!rep.paths.includes(unique)){
@@ -900,7 +904,7 @@ function renderModal(){if(!state.modal)return '';
  if(state.modal==='paper-remove')return renderPaperRemove(state.paperRemoveRole,state.lang);
  if(state.modal==='score-organize'){
   const score=state.scores.find(s=>s.path===state.organizePath);
-  return renderOrganizeModal({score,scores:state.scores,language:state.lang,busy:state.organizeBusy});
+  return renderOrganizeModal({score,scores:state.scores,language:state.lang,busy:state.organizeBusy,linked:linkedMode(),linkedFolders:linkedMode()?linkedLocal.folders:[]});
  }
  if(state.modal==='welcome')return `<div class="modal-backdrop" role="dialog" aria-modal="true"><div class="modal"><img src="./assets/icon-192.png" alt="Partitures Festeres"/><h2>Benvingut · Bienvenido</h2><p>Tria l’idioma · Elige el idioma</p><label><input type="radio" name="welcome-lang" value="va" ${state.lang==='va'?'checked':''}/> Valencià</label><label><input type="radio" name="welcome-lang" value="es" ${state.lang==='es'?'checked':''}/> Castellano</label><div class="modal-actions"><button class="primary" data-action="welcome-done">Començar · Empezar</button></div></div></div>`;
  if(state.modal==='restore-linked-choice'&&state.restore&&linkedMode()){
@@ -943,7 +947,7 @@ function renderModal(){if(!state.modal)return '';
         <label for="meta-notes">${esc(tr('metadataFieldNotes'))}<textarea id="meta-notes" rows="4" maxlength="1200">${esc(m.notes||'')}</textarea></label>
        </div>
        <div class="pf-meta-organize-block">
-        <button type="button" class="secondary pf-meta-organize-button" data-action="organize-open" ${linkedMode()?'disabled':''}>
+        <button type="button" class="secondary pf-meta-organize-button" data-action="organize-open">
          ${icon('folder')} ${state.lang==='es'?'Mover o renombrar archivo PDF':'Moure o renomenar fitxer PDF'}
         </button>
         <small>${state.lang==='es'?'Guarda primero los cambios de metadatos que quieras conservar.':'Guarda primer els canvis de metadades que vulgues conservar.'}</small>
@@ -1165,7 +1169,7 @@ function render(){
  }
  document.documentElement.lang = state.lang==='va'?'ca-ES-valencia':'es';
  document.title='Partitures Festeres Web';
- const page=state.page==='add'?scanner.markup({scores:state.scores,repertoires:state.repertoires,language:state.lang}):state.page==='index'?renderIndex():state.page==='tools'?renderTools():state.page==='settings'?renderSettings():state.page==='favorites'||state.page==='recents'?renderCollectionPage(state.page):state.page==='repertoires'?renderRepertoires():renderLibrary();
+ const page=state.page==='add'?scanner.markup({scores:state.scores,folders:linkedMode()?linkedLocal.folders:[],linked:linkedMode(),repertoires:state.repertoires,language:state.lang}):state.page==='index'?renderIndex():state.page==='tools'?renderTools():state.page==='settings'?renderSettings():state.page==='favorites'||state.page==='recents'?renderCollectionPage(state.page):state.page==='repertoires'?renderRepertoires():renderLibrary();
  $('#app').innerHTML = `<header class="topbar"><div class="brand"><img src="./assets/icon-192.png" alt=""/><div><h1>Partitures Festeres</h1><small>${esc(tr('subtitle'))}</small></div></div><div class="top-actions"><button type="button" class="pf-topbar-scan" data-action="scan-open">${icon('camera')} ${state.lang==='es'?'Escanear':'Escanejar'}</button><button class="primary" data-action="import">${icon('upload')} ${esc(tr('import'))}</button></div></header>
  <div class="main-layout"><aside class="sidebar"><span class="side-caption">Partitures Festeres Web</span>${nav('library','library')}${nav('list','repertoires')}${nav('book','index')}${nav('clock','recents')}${nav('star','favorites')}${nav('musicSymbol','tools')}${nav('settings','settings')}<div class="side-bottom">${esc(tr('dev'))} ${esc(APP_VERSION)}<p>${esc(tr('offlineReady'))}</p></div></aside><main class="content">${page}</main></div>
  <nav class="bottom-nav" aria-label="Navegació">${tabsMobile('library','library')}${tabsMobile('list','repertoires')}${tabsMobile('book','index')}${tabsMobile('clock','recents')}${tabsMobile('star','favorites')}${tabsMobile('musicSymbol','tools')}${tabsMobile('settings','settings')}</nav>${renderViewer()}${renderModal()}`;
@@ -1549,10 +1553,6 @@ async function handleClick(el){
  switch(action){
   case 'scan-open':{
    if(state.view||viewerPendingOpen||state.page==='add'||scanner.busy)break;
-   if(linkedMode()){
-    await activateLibrarySource('imported');
-    toast(state.lang==='es'?'Escáner: las nuevas partituras se guardarán en la biblioteca importada.':'Escàner: les partitures noves es guardaran en la biblioteca importada.');
-   }
    const folder=state.page==='library'?currentBase():selectedPaperBase();
    setPage('add');scanner.open({folder,repertoires:state.repertoires});break;
   }
@@ -1575,9 +1575,21 @@ async function handleClick(el){
   case 'scan-rotate':
   case 'scan-remove':
   case 'scan-clear':
-  case 'scan-save':
    if(state.page==='add'&&!state.view)await scanner.handleAction(action,val);
    break;
+  case 'scan-save':{
+   if(state.page!=='add'||state.view||scanner.busy||!scanner.pages.length)break;
+   if(linkedMode()){
+    // Demanar permís d’escriptura en ESTE clic, abans de qualsevol await.
+    let authorization;
+    try{authorization=linkedLocal.requestWriteAccess();}
+    catch(error){toast(error.message,true);break;}
+    try{await authorization;}
+    catch(error){toast(error.message,true);break;}
+   }
+   await scanner.handleAction(action,val);
+   break;
+  }
   case 'tool-tab':
    if(state.page==='tools'&&!state.view&&['metronome','tuner','reference','dictation'].includes(val)&&val!==state.toolTab){
     metronome.stop({release:true,notify:false});tuner.stop({notify:false});referenceTone.stop({notify:false});dictation.stop({notify:false});
@@ -1851,7 +1863,7 @@ async function handleClick(el){
   case 'crumb':state.cwd=state.cwd.slice(0,Number(val));state.search='';render();break;
   case 'folder':state.cwd.push(val);state.search='';render();break;
   case 'import':
-   if(linkedMode()){toast(state.lang==='es'?'La carpeta vinculada es de solo lectura. Cambia a Biblioteca importada para añadir PDF.':'La carpeta vinculada és de només lectura. Canvia a Biblioteca importada per a afegir PDF.',true);break;}
+   if(linkedMode()){toast(state.lang==='es'?'Para crear partituras directamente en esta carpeta, utiliza Escanear. Para añadir archivos existentes, usa el gestor de archivos y actualiza la biblioteca.':'Per a crear partitures directament en esta carpeta, utilitza Escanejar. Per a afegir arxius existents, usa el gestor d’arxius i actualitza la biblioteca.');break;}
    if(!(state.page==='add'&&scanner.busy))$('#import-input').click();break;
   case 'backup-create':await doBackup();break;
   case 'backup-choose':$('#restore-input').click();break;
@@ -1864,9 +1876,6 @@ async function handleClick(el){
 
 
   case 'organize-open':{
-    if(linkedMode()){
-     toast(state.lang==='es'?'Para renombrar o mover el PDF original, utiliza el gestor de archivos y actualiza la biblioteca.':'Per a renomenar o moure el PDF original, utilitza el gestor d’arxius i actualitza la biblioteca.',true);break;
-    }
     if(state.modal!=='metadata-edit'||!scorePaths().has(state.metaPath))break;
     state.organizePath=state.metaPath;state.organizeBusy=false;state.modal='score-organize';
     render();$('#organize-name')?.focus();break;
@@ -1890,9 +1899,22 @@ async function handleClick(el){
       toast(state.lang==='es'?'No hay cambios en la partitura.':'No hi ha canvis en la partitura.');
       state.modal='metadata-edit';state.organizePath=null;render();break;
     }
+    // Si és vinculada, requestPermission ha d'eixir del clic (abans del primer await).
+    const linkedMove=linkedMode();
+    let authorization=null;
+    if(linkedMove){
+     try{authorization=linkedLocal.requestWriteAccess();}
+     catch(error){toast(error.message,true);break;}
+    }
     state.organizeBusy=true;el.disabled=true;
     try{
-      await moveScoreSafely(original,destination);
+      if(linkedMove){
+       await authorization;
+       await linkedLocal.movePdf(original,destination,{
+        newFolder:!!($('#organize-new-folder')?.value||'').trim(),
+        updateData:(from,to)=>moveLinkedScoreData(linkedLocal.id,from,to)
+       });
+      }else await moveScoreSafely(original,destination);
       pdfThumbnails.invalidate(original);
       state.scores=await activeScoreIndex();
       await reloadCollections();
@@ -2411,7 +2433,7 @@ document.addEventListener('change',e=>{
   if(e.target.dataset?.scanFilter){
    scanner.setFilter(e.target.dataset.scanFilter,e.target.value);return;
   }
-  if(['scan-folder','scan-rep'].includes(e.target.id)){
+  if(['scan-folder','scan-new-folder','scan-rep'].includes(e.target.id)){
    scanner.updateField(e.target.id,e.target.value);return;
   }
   if(e.target.id==='scan-to-rep'){scanner.updateField('scan-to-rep',e.target.checked);return;}

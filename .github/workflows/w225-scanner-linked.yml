@@ -1,0 +1,41 @@
+name: W2.25 Scanner i arxius de biblioteca vinculada
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+jobs:
+  linked-scanner:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install Playwright
+        run: npm install --no-save playwright
+      - name: Use installed Chrome
+        run: |
+          for browser in google-chrome google-chrome-stable chromium chromium-browser; do
+            if command -v "$browser" >/dev/null 2>&1; then
+              echo "PF_CHROMIUM_PATH=$(command -v "$browser")" >> "$GITHUB_ENV"
+              exit 0
+            fi
+          done
+          exit 1
+      - name: Start local server
+        run: python3 -m http.server 8765 --bind 127.0.0.1 >/tmp/pf-w225.log 2>&1 &
+      - name: Syntax check
+        run: |
+          node --check app-w223.js
+          node --check linked-files-w225.js
+          node --check linked-library-w222a.js
+          node --check db.js
+          node --check scanner-controller-w2133.js
+          node --check scanner-ui-w2133.js
+          node --check score-organize-ui-w2141.js
+          node --check .github/scripts/w225-scanner-linked.mjs
+      - name: Test linked scanner and native file move
+        run: node .github/scripts/w225-scanner-linked.mjs
