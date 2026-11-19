@@ -478,7 +478,7 @@ async function storePaperConfig(){
 }
 async function loadPaperConfig(){
  const saved=await getLibraryPref(PAPER_ROLE_KEY,null);
- const old=await getLibraryPref('paper',null);
+ const old=await getLibraryPref('paper','root');
  if(linkedMode()&&!linkedLocal.ready){
   state.paperConfig=normalizePaperRoles(saved);
   state.paper='root';return;
