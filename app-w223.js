@@ -903,6 +903,26 @@ function renderModal(){if(!state.modal)return '';
   return renderOrganizeModal({score,scores:state.scores,language:state.lang,busy:state.organizeBusy});
  }
  if(state.modal==='welcome')return `<div class="modal-backdrop" role="dialog" aria-modal="true"><div class="modal"><img src="./assets/icon-192.png" alt="Partitures Festeres"/><h2>Benvingut · Bienvenido</h2><p>Tria l’idioma · Elige el idioma</p><label><input type="radio" name="welcome-lang" value="va" ${state.lang==='va'?'checked':''}/> Valencià</label><label><input type="radio" name="welcome-lang" value="es" ${state.lang==='es'?'checked':''}/> Castellano</label><div class="modal-actions"><button class="primary" data-action="welcome-done">Començar · Empezar</button></div></div></div>`;
+ if(state.modal==='restore-linked-choice'&&state.restore&&linkedMode()){
+  const m=state.restore.manifest,info=linkedBackupMatch(state.restore,linkedLocal),es=state.lang==='es';
+  const incompatible=info.matched===0;
+  return '<div class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="restore-linked-title"><div class="modal restore-modal">'+
+   '<h2 id="restore-linked-title">'+(es?'Restaurar datos de biblioteca':'Restaurar dades de biblioteca')+'</h2>'+
+   '<p><strong>'+esc(m.libraryName)+'</strong> · '+esc(new Date(m.createdAt).toLocaleDateString(es?'es-ES':'ca-ES'))+'</p>'+
+   '<p>'+(es?'Partituras que coinciden por carpeta y nombre: ':'Partitures que coincidixen per carpeta i nom: ')+
+     '<strong>'+info.matched+' / '+m.paths.length+'</strong></p>'+
+   (info.missing?'<p class="help">'+info.missing+(es?' no se han encontrado y se omitirán.':' no s’han trobat i s’ometran.')+'</p>':'')+
+   (info.libraryChanged?'<p class="help pf-linked-backup-warning">'+(es?'La carpeta actual tiene otro nombre. Comprueba que corresponde a la copia antes de continuar.':'La carpeta actual té un altre nom. Comprova que correspon a la còpia abans de continuar.')+'</p>':'')+
+   '<p class="help">'+(es?'Los PDF originales no se modificarán.':'Els PDF originals no es modificaran.')+'</p>'+
+   (incompatible?'<p class="help">'+(es?'No hay partituras coincidentes: no es puede restaurar esta copia.':'No hi ha partitures coincidents: no es pot restaurar esta còpia.')+'</p>':
+    '<div class="restore-options"><div><strong>'+(es?'Fusionar datos':'Fusionar dades')+'</strong>'+
+    '<p>'+(es?'Conserva las anotaciones y ajustes existentes y recupera los que falten.':'Conserva les anotacions i ajustos existents i recupera els que falten.')+'</p>'+
+    '<button class="primary" type="button" data-action="linked-restore-merge">'+(es?'Fusionar':'Fusionar')+'</button></div>'+
+    '<div class="replace-option"><strong>'+(es?'Sustituir datos':'Substituir dades')+'</strong>'+
+    '<p>'+(es?'Sustituye anotaciones y ajustes de partituras coincidentes. Conserva todos los PDF.':'Substituïx les anotacions i ajustos de partitures coincidents. Conserva tots els PDF.')+'</p>'+
+    '<button class="danger" type="button" data-action="linked-restore-replace">'+(es?'Sustituir':'Substituir')+'</button></div></div>')+
+   '<div class="modal-actions"><button class="secondary" data-action="close-modal">'+esc(tr('cancel'))+'</button></div></div></div>';
+ }
  if(state.modal==='restore-choice'&&state.restore){const m=state.restore.manifest;return `<div class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="restore-title"><div class="modal restore-modal"><h2 id="restore-title">${esc(tr('restoreChoice'))}</h2><p>${esc(tr('restoreExplain').replace('{count}',m.scoreCount).replace('{size}',bytes(m.totalBytes)))}</p><div class="restore-options"><div><strong>${esc(tr('restoreMerge'))}</strong><p>${esc(tr('restoreMergeHelp'))}</p><button class="primary" data-action="restore-merge">${icon('upload')}${esc(tr('restoreMerge'))}</button></div><div class="replace-option"><strong>${esc(tr('restoreReplace'))}</strong><p>${esc(tr('restoreReplaceHelp'))}</p><button class="danger" data-action="restore-replace">${icon('restore')}${esc(tr('restoreReplace'))}</button></div></div><div class="modal-actions"><button class="secondary" data-action="close-modal">${esc(tr('cancel'))}</button></div></div></div>`;}
 
 
@@ -1445,6 +1465,26 @@ async function doRestore(mode){
     toast(`${tr('restoreSuccess')} · ${count} ${tr('scoreCount')}`);updateStorageInfo();
   }catch(e){console.error(e);state.scores=await getAllScores().catch(()=>state.scores);render();toast(`${tr('restoreError')} ${e?.message||''}`,true);}
   finally{state.loading=false;progress(false);}
+}
+async function doRestoreLinked(mode){
+ if(state.loading||!state.restore||!linkedMode()||state.restoreTargetId!==linkedLocal.id)return;
+ state.loading=true;state.modal=null;render();progress(true,tr('backupVerify'));
+ try{
+  await annotationSaveQueue;await pageAdjustmentsQueue;await viewerPreferencesQueue;
+  const restored=await restoreLinkedDataBackup(state.restore,linkedLocal,mode);
+  state.restore=null;state.restoreTargetId=null;
+  state.scores=await activeScoreIndex();
+  await reloadCollections();await loadPaperConfig();validPaperSelection();
+  state.cwd=[];state.page='library';state.search='';
+  pdfThumbnails.clear();render();
+  toast((state.lang==='es'?'Datos restaurados: ':'Dades restaurades: ')+restored.matched+
+   ' PDF'+(restored.missing?' · '+restored.missing+
+    (state.lang==='es'?' sin coincidencia':' sense coincidència'):''));
+ }catch(error){
+  console.error(error);render();
+  toast((state.lang==='es'?'No se han restaurado los datos. ':'No s’han restaurat les dades. ')+
+   (error?.message||''),true);
+ }finally{state.loading=false;progress(false);}
 }
 function applyRosetteOption(id){
  if(!state.annotating||!scoreViewer||state.modal)return;
