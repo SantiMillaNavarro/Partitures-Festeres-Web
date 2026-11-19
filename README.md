@@ -1,3 +1,26 @@
+# Fase W2.24 — Còpia de seguretat de dades de biblioteques vinculades (sense PDF)
+
+**Objectiu:** protegir anotacions, metadades, repertoris i preferències d’una carpeta vinculada sense duplicar, reescriure ni descarregar els PDF originals.
+
+## Ús
+1. Vincula una carpeta real des de Biblioteca i entra a **Ajustos → Còpia de dades de la biblioteca vinculada**.
+2. Prem **Preparar còpia ZIP** i **Guardar ZIP** (o Compartir). El nom comença per `PartituresFesteres_Dades_`.
+3. Conserva el ZIP i **la carpeta real amb les partitures** en un lloc segur: el ZIP només guarda dades locals del navegador, mai PDF ni permisos d'accés.
+4. Per a restaurar, vincula primer la carpeta amb els PDF, entra a Ajustos i selecciona **Restaurar còpia ZIP**. La finestra mostra quantes obres coincidixen exactament per ruta relativa i nom.
+5. **Fusionar** conserva anotacions i ajustos existents i recupera els absents; **Substituir** aplica els de la còpia a les obres coincidents. Les obres que falten en la carpeta es deixen intactes. Ni un mode ni l'altre escriu, reanomena o esborra PDF.
+
+La biblioteca **importada** manté la còpia ZIP completa de sempre (amb PDF). Els formats de còpia són diferents per a evitar accidents i no es restauren en la biblioteca equivocada. S'inclouen preferències per obra del visor, ajustos de pàgina, papers i agrupació de l'Índex; **no** credencials OAuth, biblioteques importades, handles SAF o còpies offline.
+
+## Seguretat i estabilitat
+- El ZIP de dades és portable entre vinculacions de carpetes amb noms o IDs diferents, però només s'aplica a les **rutes PDF coincidents** i presenta una advertència si el nom de la carpeta canvia.
+- La importació valida estructura, límits, anotacions, metadades, repertoris i arxiu ZIP abans de modificar IndexedDB. El desament de dades i anotacions es fa en **una sola transacció**: si falla, s'anul·len tots els canvis.
+- S'ha corregit també el guardat de les **anotacions en biblioteca vinculada**: abans es validava erròniament l'existència del PDF dins de la base importada i podia impedir guardar-les. Ara s'autoritzen només amb un identificador de biblioteca vinculada vàlid i no es crea cap PDF fantasma.
+- Les còpies de dades són manuals i el navegador les pot eliminar de la seua base local si s'esborren les dades del lloc; és imprescindible desar el ZIP fora del navegador.
+
+**Proves W2.24:** E2E amb carpeta local real simulada via OPFS, comprovació que el ZIP no conté cap PDF, anotació desada de veritat, restauració fusionada i substitutiva, coincidència de camins, aïllament de la biblioteca importada i fluxos de la UI.
+
+---
+
 # Fase W2.23C — Avís clar per a l'activació de Biblioteca en Android
 
 - A Biblioteca, quan la carpeta local està vinculada des de Chrome Android, hi ha una instrucció breu: quan es torne a obrir l'aplicació, s'ha de prémer **«Activar biblioteca» si apareix** abans d'obrir partitures. Si el navegador ha retirat el permís, la instrucció és més directa i apareix al costat del botó.
