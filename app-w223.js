@@ -2295,6 +2295,9 @@ document.addEventListener('click',e=>{const b=e.target.closest('[data-action]');
  console.error(err);
  // Error del navegador llegint una partitura: no és una importació.
  const isOpen=['open','viewer-next-score','viewer-prev-score'].includes(b.dataset.action);
+ // Si la lectura individual ha fallat per permís, mostrar immediatament
+ // l'opció d'activació al costat del nom de la carpeta.
+ if(isOpen&&linkedMode()&&!state.view&&linkedLocal.checkState==='unavailable')render();
  toast(isOpen?err.message:`${tr('error')} ${err.message}`,true);
 });}});
 document.addEventListener('input',e=>{
