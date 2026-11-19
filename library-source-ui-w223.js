@@ -1,7 +1,7 @@
 /* W2.23A — Una biblioteca senzilla amb opcions tècniques als Ajustos.
    Contingut en valencià per defecte; es conserva el canvi a castellà. */
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-export function renderSourceControls({linked,mode='imported',lang='va',supported=true,compact=false,autoEnabled=true}={}){
+export function renderSourceControls({linked,mode='imported',lang='va',supported=true,compact=false,autoEnabled=true,android=false}={}){
  const es=lang==='es',active=mode==='linked',exists=!!linked?.exists,ready=!!linked?.ready;
  const imported=es?'Biblioteca importada':'Biblioteca importada';
  const local=es?'Carpeta del dispositiu':'Carpeta del dispositiu';
@@ -19,6 +19,15 @@ export function renderSourceControls({linked,mode='imported',lang='va',supported
  const recoverAction=canRequest?'source-authorize':supported?'source-choose':'source-fallback';
  const recoverLabel=canRequest?(es?'Activar biblioteca':'Activar biblioteca'):(es?'Volver a elegir carpeta':'Tornar a triar carpeta');
  const recoverButton=recover?'<button class="secondary pf-library-activate" type="button" data-action="'+recoverAction+'">'+recoverLabel+'</button>':'';
+ // Chrome Android pot revocar el permís en tancar la PWA. No amaguem este
+ // pas darrere d'Ajustos ni donem a entendre que els PDF estan descarregats.
+ const permissionHelp=active&&exists&&android
+  ?recover
+   ?(es?'Para abrir las partituras, pulsa «'+recoverLabel+'». Chrome puede pedirlo cada vez que abras la aplicación. No hace falta descargar los PDF.'
+      :'Per a obrir les partitures, prem «'+recoverLabel+'». Chrome pot demanar-ho cada vegada que òbrigues l’aplicació. No cal descarregar els PDF.')
+   :(es?'Al volver a abrir la aplicación, pulsa «Activar biblioteca» si aparece. No es necesario descargar los PDF.'
+      :'Quan tornes a obrir l’aplicació, prem «Activar biblioteca» si apareix. No cal descarregar els PDF.')
+  :'';
  const status=waiting?(es?'Comprobando cambios…':'Comprovant canvis…')
   :unavailable?(es?'Autoriza la carpeta para leer los PDF originales':'Autoritza la carpeta per a llegir els PDF originals')
   :active&&linked.offlineBusy?(linked.offlineProgress|| (es?'Preparando copias…':'Preparant còpies…'))
@@ -33,6 +42,7 @@ export function renderSourceControls({linked,mode='imported',lang='va',supported
        (es?'Acceso pendiente a la carpeta':'Accés pendent a la carpeta'))
      :(es?'Partituras guardadas en la aplicación':'Partitures guardades en l’aplicació'))+'</small>'+
     (status?'<small class="pf-library-check '+(unavailable?'warn':'')+'" role="status">'+esc(status)+'</small>':'')+
+    (permissionHelp?'<small class="pf-library-permission-help">'+esc(permissionHelp)+'</small>':'')+
    '</div>'+
    (!exists?'<button class="secondary" type="button" data-action="'+(supported?'source-choose':'source-fallback')+'">'+esc(choose)+'</button>':'')+
    recoverButton+
@@ -67,7 +77,7 @@ export function renderSourceControls({linked,mode='imported',lang='va',supported
  const autolabel=es?'Comprobar los cambios automáticamente al abrir':'Comprovar els canvis automàticament en obrir';
  return '<section class="pf-source-panel pf-source-compact" id="pf-source-config" aria-label="'+(es?'Origen de biblioteca':'Origen de biblioteca')+'">'+
   '<div class="pf-source-header"><strong>📂 '+(es?'Biblioteca':'Biblioteca')+'</strong><small>'+esc(folderName)+'</small></div>'+
-  '<p class="help">'+(es?'La biblioteca comprueba los cambios al abrir. Si Chrome retira el permiso, pulsa Activar biblioteca: no es necesario copiar los PDF.':'La biblioteca comprova els canvis en obrir. Si Chrome retira el permís, prem Activar biblioteca: no cal copiar els PDF.')+'</p>'+
+  '<p class="help">'+(es?'En Chrome para Android, al volver a abrir la aplicación puede que tengas que pulsar «Activar biblioteca» para abrir tus partituras. Esto no descarga ni duplica los PDF.':'En Chrome per a Android, quan tornes a obrir l’aplicació potser hauràs de prémer «Activar biblioteca» per a obrir les partitures. Això no descarrega ni duplica els PDF.')+'</p>'+
   sourceTabs+'<div class="pf-source-actions">'+operations+'</div>'+
   (active?'<div class="pf-source-info">'+esc(linked.name)+' · '+linked.scores.length+' PDF'+
     (known?' · '+(es?'Última actualización: ':'Última actualització: ')+esc(known):'')+'</div>':'')+
