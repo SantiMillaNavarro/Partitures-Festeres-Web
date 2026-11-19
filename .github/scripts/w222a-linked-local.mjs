@@ -23,6 +23,13 @@ const browser=await chromium.launch(options);
 try{
  const context=await browser.newContext({viewport:{width:1100,height:800},serviceWorkers:'block'});
  const page=await context.newPage();
+ const cdp=await context.newCDPSession(page);
+ await cdp.send('Debugger.enable');
+ cdp.on('Debugger.scriptFailedToParse',item=>{
+  console.log('W222A SCRIPT PARSE',JSON.stringify({
+   url:item.url,message:item.errorMessage,line:item.startLine,column:item.startColumn
+  }));
+ });
  // CI headless Chrome may hide the native picker. Emulate only the
  // user-triggered picker; the returned OPFS handle is genuine and clonable.
  await page.addInitScript(()=>{
