@@ -34,7 +34,7 @@ import {duplicatedRepertoire,buildPerformanceSession,performanceStep,performance
 import {ViewerScorePicker} from './viewer-score-picker-w2152.js';
 
 // Font única de la versió visible tant en Ajustos com al peu de la navegació.
-const APP_VERSION='W2.23A';
+const APP_VERSION='W2.23B';
 
 const I = {
   copy:'<svg viewBox="0 0 24 24"><rect x="7" y="7" width="13" height="13" rx="2"/><path d="M4 16H3a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v1"/></svg>',
@@ -287,6 +287,13 @@ async function checkLibraryInBackground(){
     render();
     if(y)window.scrollTo(0,y);
    }
+  }else if(result?.unavailable&&linkedMode()&&linkedLocal.id===libraryId&&
+    (state.page==='library'||state.page==='settings')&&!state.view&&!state.modal){
+   // El navegador pot exigir un clic per renovar la lectura. Oferim eixe
+   // clic des de Biblioteca, sense enviar l'usuari a Ajustos ni copiar PDF.
+   const y=window.scrollY||0;
+   render();
+   if(y)window.scrollTo(0,y);
   }else if(state.page==='settings'&&!state.view&&!state.modal){
    render();
   }
@@ -2196,8 +2203,8 @@ async function init(){
    requestAnimationFrame(()=>{if(!state.view)window.scrollTo(0,y);});
   }
   updateStorageInfo();
-  // El catàleg ja és visible: la comprovació de canvis comença després
-  // i NO espera a llegir centenars de fitxers per a mostrar Biblioteca.
+  // El catàleg ja és visible: comprovem de seguida l'origen, sense
+  // llegir els PDF. Si Chrome revoca el permís, mostrem Activar biblioteca.
   scheduleAutoCheck();
   if('serviceWorker' in navigator && (location.protocol==='https:' || location.hostname==='localhost')){
    navigator.serviceWorker.register('./sw.js',{scope:'./'}).catch(e=>console.warn('Service worker:',e));
@@ -2288,6 +2295,9 @@ document.addEventListener('click',e=>{const b=e.target.closest('[data-action]');
  console.error(err);
  // Error del navegador llegint una partitura: no és una importació.
  const isOpen=['open','viewer-next-score','viewer-prev-score'].includes(b.dataset.action);
+ // Si la lectura individual ha fallat per permís, mostrar immediatament
+ // l'opció d'activació al costat del nom de la carpeta.
+ if(isOpen&&linkedMode()&&!state.view&&linkedLocal.checkState==='unavailable')render();
  toast(isOpen?err.message:`${tr('error')} ${err.message}`,true);
 });}});
 document.addEventListener('input',e=>{

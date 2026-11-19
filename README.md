@@ -1,3 +1,16 @@
+# Fase W2.23B — Biblioteca original en obrir, sense còpies obligatòries
+
+**Canvi sobre W2.23A (19-11-2026).** Una comprovació silenciosa no ha de convertir-se en l'obligació de copiar els PDF per poder-los obrir.
+
+- En iniciar, la web recupera l'índex existent i **intenta enumerar la carpeta vinculada** per detectar novetats, fins i tot quan `queryPermission()` respon `prompt`: en alguns proveïdors Android/SAF la carpeta és realment llegible. No es llig ni es copia el contingut de tots els PDF.
+- Si Chrome ha revocat l'accés, es manté el catàleg i apareix **Activar biblioteca** directament a Biblioteca. Una única pulsació demana permís de lectura amb `requestPermission()` i, després, actualitza les carpetes sense obrir Ajustos. Si el navegador no disposa d'eixa API, s'oferix tornar a triar la carpeta.
+- El navegador **no permet obrir automàticament el diàleg de permís en carregar la pàgina**: `requestPermission()` necessita una activació directa de l'usuari, per seguretat. Si ja hi ha permís, l'actualització sí és completament automàtica.
+- **Obrir un PDF o generar una miniatura ja no crea una còpia silenciosa** en IndexedDB. Llegim l'original sota demanda. Les còpies offline existents funcionen com a alternativa quan l'origen és inaccessible, i preparar-ne de noves és una acció explícita als Ajustos.
+- Quan es pot llegir l'original, es preferix la versió actual de la carpeta fins i tot si hi ha una còpia offline anterior. Mai s'esborren els PDF originals, repertoris, preferències ni anotacions.
+- Proves W2.23B: lectura amb estat `prompt`, permís caducat sense perdre l'índex, botó d'activació a Biblioteca, no duplicació implícita i regressió de l'actualització manual i automàtica.
+
+---
+
 # Fase W2.23A — Biblioteca senzilla amb comprovació automàtica de canvis
 
 **Objectiu:** recuperar l'experiència immediata d'Android i eliminar la necessitat de gestionar permisos, descàrregues i sincronització des de la pantalla principal.

@@ -67,8 +67,26 @@ try{
    async *entries(){enumerated++;throw new DOMException('blocked','NotAllowedError');}
   };
   const outcome=await lib.checkForChanges();
-  if(!outcome.unavailable||lib.scores.length!==1||lib.folders[0]!=='1r'||requested!==0||enumerated!==0)
-   throw Error('La comprovació automàtica ha perdut l’índex o ha demanat permís.');
+  if(!outcome.unavailable||lib.scores.length!==1||lib.folders[0]!=='1r'||requested!==0||enumerated!==1)
+   throw Error('La comprovació ha de provar la lectura sense demanar permís ni perdre l’índex.');
+  // Android pot respondre "prompt" però permetre llegir entries(): cal
+  // detectar els canvis sense obligar a autoritzar ni a copiar fitxers.
+  lib.handle={kind:'directory',name:'Partitures',
+   queryPermission:async()=> 'prompt',
+   requestPermission:async()=>{requested++;throw Error('Unexpected requestPermission');},
+   async *entries(){
+    enumerated++;
+    yield ['1r',{kind:'directory',name:'1r',async *entries(){}}];
+    yield ['Nova.pdf',{kind:'file',name:'Nova.pdf'}];
+   }};
+  const readable=await lib.checkForChanges();
+  if(!readable.changed||lib.scores[0]?.path!=='Nova.pdf'||requested!==0)
+   throw Error('No es detecta una carpeta llegible amb permís prompt.');
+  const {renderSourceControls}=await import('./library-source-ui-w223.js');
+  lib.checkState='unavailable';
+  const userAction=renderSourceControls({linked:lib,mode:'linked',lang:'va',supported:true});
+  if(!userAction.includes('data-action="source-authorize"')||!userAction.includes('Activar biblioteca'))
+   throw Error('No s’ofereix reautorització visible des de Biblioteca.');
   // Sense API de permisos, un gestor que denega entries() tampoc pot
   // eliminar els resultats guardats prèviament.
   lib.handle={kind:'directory',name:'Partitures',
@@ -79,6 +97,32 @@ try{
   return {requested,enumerated,index:lib.scores.length};
  });
  assert.equal(safe.index,1);
+ // La lectura directa d'un PDF no ha de copiar-lo en segon pla.
+ const lazyRead=await page.evaluate(async bytes=>{
+  const {LinkedLocalLibrary}=await import('./linked-library-w222a.js');
+  const file=new Blob([new Uint8Array(bytes)],{type:'application/pdf'});
+  const lib=new LinkedLocalLibrary();
+  lib.id='w223b-no-implicit-copy';lib.name='Directa';lib.status='ready';
+  lib.scores=[{path:'Directa.pdf',size:0,added:0}];
+  lib.files.set('Directa.pdf',{kind:'file',getFile:async()=>file});
+  lib.handle={kind:'directory',name:'Directa'};
+  const score=await lib.getScore('Directa.pdf');
+  if(!score||score.offline||score.blob.size!==file.size)throw Error('No se llig el PDF original.');
+  await new Promise(resolve=>setTimeout(resolve,150));
+  const db=await new Promise((resolve,reject)=>{
+   const req=indexedDB.open('partitures-festeres-linked-w222a',2);
+   req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error);
+  });
+  const saved=await new Promise((resolve,reject)=>{
+   const req=db.transaction('cachedPdfs','readonly').objectStore('cachedPdfs')
+    .get(lib.id+'\u0000Directa.pdf');
+   req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error);
+  });
+  db.close();
+  if(saved)throw Error('Obrir o generar miniatura ha copiat un PDF sense consentiment.');
+  return {original:score.blob.size,copied:!!saved};
+ },Array.from(pdf));
+ assert.equal(lazyRead.copied,false);
  // L'usuari pot apagar l'actualització automàtica en Ajustos.
  await page.locator('[data-action="source-manage"]').first().click();
  await page.locator('[data-action="source-auto-toggle"]').click();
@@ -99,6 +143,6 @@ try{
  await page.locator('[data-action="source-auto-toggle"]').click();
  await page.waitForFunction(()=>document.querySelector('[data-action="source-auto-toggle"]')?.getAttribute('aria-pressed')==='true');
  assert.deepEqual(errors,[],errors.join(' | '));
- console.log('PASS W2.23A: compact library UI, hidden advanced options, auto refresh after startup, no permission prompts, index retained on permission failure, toggle off and manual refresh.',safe);
+ console.log('PASS W2.23B: startup auto-read with prompt where readable, one-tap authorization UI, no implicit PDF copies, index retained, toggle and manual refresh.',safe,lazyRead);
  await context.close();
 }finally{await browser.close();}
