@@ -2,6 +2,7 @@
    Lectura directa i de només lectura; mai escriu, mou o esborra PDFs.
    Les referències FileSystemDirectoryHandle es guarden en IndexedDB,
    no el contingut dels documents. Permisos sempre controlats per l'usuari. */
+import {requestLinkedWriteAccess,writeLinkedPdf,moveLinkedPdf} from './linked-files-w225.js';
 const LINK_DB='partitures-festeres-linked-w222a',LINK_KEY='active',MAX_PDFS=10000,MAX_FOLDERS=4000,MAX_DEPTH=30;
 const CACHE_LIMIT_BYTES=100*1024*1024;
 const cacheKey=(libraryId,path)=>libraryId+'\u0000'+path;
@@ -495,6 +496,90 @@ export class LinkedLocalLibrary{
    if(missing)throw new Error('La partitura no es troba en la carpeta original. Si s’ha mogut o canviat de nom, actualitza la biblioteca.');
    throw new Error('El proveïdor d’arxius no ha pogut obrir este PDF ('+(error?.name||'error')+'). La resta de la biblioteca es conserva.');
   }
+ }
+
+ // W2.25: només s'invoca en el clic «Guardar PDF» o «Moure».
+ requestWriteAccess(){
+  if(!this.exists)throw Error('Cal seleccionar una biblioteca vinculada.');
+  return requestLinkedWriteAccess(this.handle);
+ }
+ async addPdf(path,blob,{newFolder=false}={}){
+  if(!this.exists||!this.ready||this.offlineBusy)
+   throw Error('Activa la carpeta abans de guardar-hi partitures.');
+  const currentId=this.id;
+  const created=await writeLinkedPdf(this.handle,path,blob,{
+   knownPaths:this.scores.map(s=>s.path),createLastFolder:newFolder
+  });
+  if(this.id!==currentId)
+   throw Error('La carpeta ha canviat durant el desament. El PDF està guardat en la carpeta anterior.');
+  this.scores.push({path:created.path,size:created.size,added:Date.now()});
+  this.scores.sort((a,b)=>natural(a.path,b.path));
+  this.files.set(created.path,created.handle);
+  if(created.createdFolder){
+   const folder=created.path.split('/').slice(0,-1).join('/');
+   if(folder&&!this.folders.includes(folder))this.folders.push(folder);
+   this.folders.sort(natural);
+  }
+  this.status='ready';this.checkState='ok';this.lastScannedAt=Date.now();
+  try{await this.persistIndex();}catch(error){
+   console.warn('PDF guardat, però no es pot actualitzar l’índex:',error);
+  }
+  return created.path;
+ }
+ async movePdf(oldPath,newPath,{newFolder=false,updateData=async()=>{}}={}){
+  if(!this.exists||!this.ready||this.offlineBusy)
+   throw Error('Activa la biblioteca abans de moure la partitura.');
+  if(!this.scores.some(s=>s.path===oldPath)||this.scores.some(s=>s.path===newPath))
+   throw Error('La partitura d’origen no existix o el destí ja està ocupat.');
+  const handle=await this.fileHandleFor(oldPath);
+  const sourceFolder=oldPath.split('/').slice(0,-1).join('/');
+  const moved=await moveLinkedPdf(this.handle,oldPath,newPath,handle,{createLastFolder:newFolder});
+  try{
+   await updateData(oldPath,newPath);
+  }catch(error){
+   // Si IndexedDB falla, revertir el moviment físic sempre que siga possible
+   // per no deixar les anotacions sota un nom que ja no existix.
+   try{
+    await moveLinkedPdf(this.handle,newPath,oldPath,moved.handle);
+   }catch(revert){
+    throw Error('PDF mogut però no s’han pogut migrar les dades. Conserva la còpia ZIP de dades i revisa el nom del fitxer manualment. '+
+     (error.message||'')+' '+(revert.message||''));
+   }
+   throw error;
+  }
+  const previous=this.scores.find(s=>s.path===oldPath);
+  this.scores=this.scores.filter(s=>s.path!==oldPath);
+  this.scores.push({...previous,path:newPath});
+  this.scores.sort((a,b)=>natural(a.path,b.path));
+  this.files.delete(oldPath);
+  this.files.set(newPath,moved.handle);
+  if(newFolder){
+   const folder=newPath.split('/').slice(0,-1).join('/');
+   if(!this.folders.includes(folder))this.folders.push(folder);
+   this.folders.sort(natural);
+  }
+  if(this.cachedPaths.has(oldPath)){
+   try{
+    const db=await openLinkDB();
+    await new Promise((resolve,reject)=>{
+     const tx=db.transaction('cachedPdfs','readwrite'),store=tx.objectStore('cachedPdfs');
+     const read=store.get(cacheKey(this.id,oldPath));
+     read.onsuccess=()=>{
+      if(read.result){
+       store.put({...read.result,key:cacheKey(this.id,newPath),path:newPath});
+       store.delete(cacheKey(this.id,oldPath));
+      }
+     };
+     tx.oncomplete=resolve;
+     tx.onerror=()=>reject(tx.error);
+     tx.onabort=()=>reject(tx.error);
+    });
+    this.cachedPaths.delete(oldPath);this.cachedPaths.add(newPath);
+   }catch(error){console.warn('No s’ha pogut moure la còpia offline:',error);}
+  }
+  this.lastScannedAt=Date.now();this.status='ready';this.checkState='ok';
+  try{await this.persistIndex();}catch(error){console.warn('Índex del PDF mogut:',error);}
+  return newPath;
  }
  async forget(){
   if(this.offlineBusy)throw Error('Para primer la descàrrega de còpies.');
