@@ -102,7 +102,14 @@ try{
  assert.equal(scope,'https://www.googleapis.com/auth/drive.readonly');
  await page.locator('#drive-folder-ref').fill('https://drive.google.com/drive/folders/'+rootId);
  await page.locator('[data-action="drive-open-folder"]').click();
- await page.locator('[data-action="drive-enter"][data-value="'+childId+'"]').waitFor({timeout:10000});
+ try {
+  await page.locator('[data-action="drive-enter"][data-value="'+childId+'"]').waitFor({timeout:10000});
+ } catch(error){
+  console.log('W2.21 DEBUG: Google requests',JSON.stringify(calls,null,2));
+  console.log('W2.21 DEBUG: modal',await page.locator('.pf-drive-modal').innerText().catch(()=>'(missing)'));
+  console.log('W2.21 DEBUG: browser errors',errors);
+  throw error;
+ }
  assert.equal(await page.locator('[data-action="drive-import"][data-value="'+secondId+'"]').isDisabled(),true,
    'Respectar canDownload false.');
  await page.locator('[data-action="drive-enter"][data-value="'+childId+'"]').click();
