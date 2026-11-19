@@ -28,7 +28,9 @@ try{
  await page.addInitScript(()=>{
   window.showDirectoryPicker=()=>Promise.resolve(window.__w222folder);
  });
- page.on('pageerror',e=>errors.push(e.message));
+ page.on('pageerror',e=>errors.push(e.stack||e.message));
+ page.on('console',msg=>{if(msg.type()==='error')console.log('W222A CONSOLE:',msg.text());});
+ page.on('response',res=>{if(res.status()>=400)console.log('W222A HTTP:',res.status(),res.url());});
  await page.goto('http://127.0.0.1:8765/',{waitUntil:'domcontentloaded'});
  try{await page.locator('[data-action="source-choose"]').waitFor({timeout:16000});}
  catch(error){
