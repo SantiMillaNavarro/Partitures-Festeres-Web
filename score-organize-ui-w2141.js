@@ -2,11 +2,12 @@
 import {scanFolderChoices} from './scanner-pdf-w2131.js';
 import {scoreFolder,scoreStem,targetScorePath} from './score-organize-w2141.js';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-export function renderOrganizeModal({score,scores=[],language='va',busy=false,linked=false}={}){
+export function renderOrganizeModal({score,scores=[],language='va',busy=false,linked=false,linkedFolders=[]}={}){
  if(!score?.path)return '';
  const tr=(a,b)=>language==='es'?b:a;
  const folder=scoreFolder(score.path),stem=scoreStem(score.path);
  const folders=scanFolderChoices(scores);
+ if(linked)for(const f of linkedFolders)if(f&&!folders.includes(f))folders.push(f);
  if(folder&&!folders.includes(folder))folders.push(folder);
  folders.sort((a,b)=>!a?-1:!b?1:a.localeCompare(b,'ca',{numeric:true}));
  const options=folders.map(p=>'<option value="'+esc(p)+'"'+(p===folder?' selected':'')+'>'+
