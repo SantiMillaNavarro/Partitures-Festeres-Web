@@ -45,6 +45,15 @@ try{
  // user-triggered picker; the returned OPFS handle is genuine and clonable.
  await page.addInitScript(()=>{
   window.showDirectoryPicker=()=>Promise.resolve(window.__w222folder);
+  window.__directoryReadCount=0;
+  const proto=globalThis.FileSystemDirectoryHandle?.prototype;
+  if(proto?.entries){
+   const original=proto.entries;
+   proto.entries=function(...args){
+    window.__directoryReadCount++;
+    return original.apply(this,args);
+   };
+  }
  });
  page.on('pageerror',e=>errors.push(e.stack||e.message));
  page.on('console',msg=>{if(msg.type()==='error')console.log('W222A CONSOLE:',msg.text());});
@@ -183,8 +192,24 @@ try{
  assert(add>0);
  await page.locator('[data-action="source-refresh"]').first().click();
  await page.waitForFunction(()=>document.querySelector('.pf-source-info')?.textContent?.includes('3 PDF'),{timeout:15000});
+ // Guardem l'índex però MAI el blob ni els handles individuals.
+ const cached=await page.evaluate(async()=>{
+  const {LinkedLocalLibrary}=await import('./linked-library-w222a.js');
+  const restored=new LinkedLocalLibrary();
+  if(!(await restored.restore()))throw Error('No s’ha conservat la carpeta.');
+  if(restored.status!=='cached'||restored.scores.length!==3||restored.files.size)
+   throw Error('No s’ha guardat l’índex lleuger.');
+  const read=await restored.getScore('1r/Marxes/CIMO.pdf');
+  if(!read?.blob?.size)throw Error('L’índex persistit no permet obrir un PDF individual.');
+  if(restored.files.size!==1)throw Error('S’han llegit tots els handles en lloc d’un.');
+  return {scores:restored.scores.length,folders:restored.folders.length,bytes:read.blob.size};
+ });
+ assert.equal(cached.scores,3);
  await page.reload({waitUntil:'domcontentloaded'});
  await page.locator('[data-action="source-linked"]').first().waitFor({timeout:15000});
+ await page.waitForFunction(()=>document.querySelector('.pf-source-status')?.textContent?.includes('Índex guardat'));
+ const enumerations=await page.evaluate(()=>window.__directoryReadCount);
+ assert.equal(enumerations,0,'La reobertura ha tornat a escanejar tota la carpeta.');
  const authorize=page.locator('[data-action="source-authorize"]');
  if(await authorize.count())await authorize.first().click();
  await page.locator('[data-action="folder"][data-value="1r"]').waitFor({timeout:10000});
@@ -205,6 +230,6 @@ try{
  assert.equal(originalExists,true);
  await page.waitForFunction(()=>document.querySelector('[data-action="source-linked"]')===null,{timeout:10000});
  assert.deepEqual(errors,[],'Errors de navegador: '+errors.join(' | '));
- console.log('PASS W2.22A local library: live OPFS handles, recursive folders incl empty, no PDF imports, isolated favorites and metadata, native viewer, source switching, refresh external changes, reload persistence, forget leaves source intact.',linkedPrefs);
+ console.log('PASS W2.22A: linked folders, stored lightweight index, ZERO directory enumerations at startup, lazy single-file read after reload, isolated preferences, refresh, originals untouched.',{...linkedPrefs,cached});
  await context.close();
 }finally{await browser.close();}

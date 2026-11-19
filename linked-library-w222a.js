@@ -34,10 +34,11 @@ export function validateLinkedPath(path){
  return typeof path==='string'&&path.length<=500&&/\.pdf$/i.test(path)&&
  path.split('/').every(validLocalPart)&&/\.pdf$/i.test(path);
 }
-export async function scanLinkedDirectory(root,{maxFiles=MAX_PDFS,maxFolders=MAX_FOLDERS,maxDepth=MAX_DEPTH}={}){
+export async function scanLinkedDirectory(root,{maxFiles=MAX_PDFS,maxFolders=MAX_FOLDERS,maxDepth=MAX_DEPTH,previousScores=[]}={}){
  if(!root||root.kind!=='directory'||(typeof root.entries!=='function'&&typeof root.values!=='function'))
   throw Error('El navegador no permet examinar esta carpeta. Torna a triar-la o utilitza la importació de carpeta.');
  const records=[],folders=[],fileHandles=new Map(),visited=new Set();
+ const oldByPath=new Map(previousScores.map(record=>[record.path,record]));
  async function visit(directory,segments,depth){
   if(depth>maxDepth)throw Error('Hi ha massa nivells de subcarpetes.');
   const entries=[];
@@ -58,17 +59,11 @@ export async function scanLinkedDirectory(root,{maxFiles=MAX_PDFS,maxFolders=MAX
     await visit(handle,[...segments,name],depth+1);
    }else if(/\.pdf$/i.test(name)&&validateLinkedPath(path)){
     if(++count.files>maxFiles)throw Error('La carpeta té massa PDF; selecciona una arrel més concreta.');
-    try{
-     // getFile() obté únicament les metadades i un File handle:
-     // no es copia el contingut complet a la base de dades.
-     const file=await handle.getFile();
-     if(!file||!Number.isFinite(file.size))continue;
-     records.push({path,size:file.size,added:file.lastModified||0});
-     fileHandles.set(path,handle);
-    }catch(error){
-     // Un document inaccesible no ha de descartar tota la biblioteca.
-     count.unreadable++;
-    }
+    // No cridar getFile() per a cada PDF: en Android/SAF és molt lent.
+    // S'obté el PDF real només en obrir-lo o generar la seua miniatura.
+    const previous=oldByPath.get(path);
+    records.push({path,size:previous?.size||0,added:previous?.added||0});
+    fileHandles.set(path,handle);
    }
   }
  }
@@ -78,26 +73,52 @@ export async function scanLinkedDirectory(root,{maxFiles=MAX_PDFS,maxFolders=MAX
  folders.sort(natural);
  return {scores:records,folders,files:fileHandles,unreadable:count.unreadable};
 }
+// El catàleg és una instantània lleugera: només noms, rutes i carpetes.
+// Mai serialitzem Blob, File o FileSystemFileHandle dins de l'índex.
+function validIndex(index){
+ if(index?.version!==1||!Array.isArray(index.scores)||!Array.isArray(index.folders)||
+    index.scores.length>MAX_PDFS||index.folders.length>MAX_FOLDERS)return null;
+ const scores=[];
+ for(const item of index.scores){
+  if(!validateLinkedPath(item?.path))return null;
+  scores.push({path:item.path,size:Number.isFinite(item.size)&&item.size>=0?item.size:0,
+   added:Number.isFinite(item.added)&&item.added>=0?item.added:0});
+ }
+ const folders=[];
+ for(const path of index.folders){
+  if(typeof path!=='string'||path.length>500||!path.split('/').every(validLocalPart))return null;
+  folders.push(path);
+ }
+ return {scores,folders,unreadable:Number.isFinite(index.unreadable)?index.unreadable:0,
+  scannedAt:Number.isFinite(index.scannedAt)?index.scannedAt:0};
+}
 export class LinkedLocalLibrary{
  constructor(){
   this.id=null;this.name='';this.handle=null;
   this.scores=[];this.folders=[];this.files=new Map();this.unreadable=0;
-  this.status='none';this.error='';
+  this.status='none';this.error='';this.lastScannedAt=0;
  }
  get exists(){return !!this.handle&&!!this.id;}
- get ready(){return this.status==='ready';}
+ get ready(){return this.status==='ready'||this.status==='cached';}
+ get cached(){return this.status==='cached';}
  async restore(){
   const saved=await inRootStore('readonly',store=>store.get(LINK_KEY));
   if(saved?.id&&saved?.handle?.kind==='directory'){
    this.id=saved.id;this.name=saved.name||saved.handle.name||'Biblioteca';
    this.handle=saved.handle;this.status='permission';this.error='';
+   const cached=validIndex(saved.index);
+   if(cached){
+    this.scores=cached.scores;this.folders=cached.folders;this.unreadable=cached.unreadable;
+    this.lastScannedAt=cached.scannedAt;this.status='cached';
+   }
    return true;
   }
   return false;
  }
  async save(handle){
   if(!handle||handle.kind!=='directory')throw Error('La selecció no és una carpeta.');
-  const old={id:this.id,name:this.name,handle:this.handle,status:this.status,scores:this.scores,folders:this.folders,files:this.files};
+  const old={id:this.id,name:this.name,handle:this.handle,status:this.status,scores:this.scores,folders:this.folders,files:this.files,
+   unreadable:this.unreadable,lastScannedAt:this.lastScannedAt};
   // En tornar a seleccionar la mateixa carpeta, conservem la identitat i
   // per tant també els favorits, anotacions i repertoris associats.
   let sameEntry=false;
@@ -106,9 +127,12 @@ export class LinkedLocalLibrary{
    catch{/* La identitat no es pot assegurar. */}
   }
   this.id=sameEntry&&old.id?old.id:'folder-'+(typeof crypto.randomUUID==='function'?crypto.randomUUID():Date.now()+'-'+Math.random().toString(36).slice(2));
-  this.name=handle.name||'Biblioteca';this.handle=handle;this.status='permission';
-  this.scores=[];this.folders=[];this.files=new Map();
-  try{await inRootStore('readwrite',store=>store.put({key:LINK_KEY,id:this.id,name:this.name,handle}));}
+  this.name=handle.name||'Biblioteca';this.handle=handle;this.status=sameEntry&&old.lastScannedAt?'cached':'permission';
+  this.scores=sameEntry?old.scores:[];this.folders=sameEntry?old.folders:[];
+  this.unreadable=sameEntry?old.unreadable:0;this.lastScannedAt=sameEntry?old.lastScannedAt:0;
+  this.files=sameEntry?old.files:new Map();
+  const index=this.lastScannedAt?this.snapshot():null;
+  try{await inRootStore('readwrite',store=>store.put({key:LINK_KEY,id:this.id,name:this.name,handle,index}));}
   catch(error){
    Object.assign(this,old);
    throw Error('No es pot recordar esta carpeta. '+error.message);
@@ -155,9 +179,21 @@ export class LinkedLocalLibrary{
    // Els estats 'prompt' i 'unsupported' no són sempre fiables en Android:
    // provem només la lectura d'entries(), mai l'escriptura.
    try{
-    const listing=await scanLinkedDirectory(this.handle);
+    const listing=await scanLinkedDirectory(this.handle,{previousScores:this.scores});
     this.scores=listing.scores;this.folders=listing.folders;this.files=listing.files;
     this.unreadable=listing.unreadable;this.status='ready';this.error='';
+    this.lastScannedAt=Date.now();
+    // Guardem una vegada per escaneig. El pròxim inici no torna a recórrer
+    // centenars de PDF. Un error de quota no invalida la sessió actual.
+    try{
+     const index=this.snapshot();
+     await inRootStore('readwrite',store=>store.put({
+      key:LINK_KEY,id:this.id,name:this.name,handle:this.handle,index
+     }));
+    }catch(error){
+     console.warn('No s’ha pogut guardar l’índex de la carpeta:',error);
+     this.error='No s’ha pogut guardar l’índex per a la pròxima obertura.';
+    }
     return true;
    }catch(error){
     this.scores=[];this.folders=[];this.files=new Map();
@@ -174,20 +210,60 @@ export class LinkedLocalLibrary{
    }
   });
  }
+ snapshot(){
+  return {version:1,scores:this.scores.map(({path,size,added})=>({path,size,added})),
+   folders:[...this.folders],unreadable:this.unreadable,scannedAt:this.lastScannedAt};
+ }
+ async fileHandleFor(path){
+  if(this.files.has(path))return this.files.get(path);
+  // Després d'obrir de nou el navegador només disposem de l'índex i
+  // l'handle de la carpeta arrel. Resolem únicament el fitxer demanat,
+  // sense recórrer el catàleg complet una altra vegada.
+  let directory=this.handle;
+  const parts=path.split('/');
+  for(const name of parts.slice(0,-1)){
+   if(typeof directory.getDirectoryHandle==='function'){
+    directory=await directory.getDirectoryHandle(name);
+   }else{
+    let found=null;
+    const it=typeof directory.entries==='function'?directory.entries():directory.values();
+    for await(const entry of it){
+     const item=Array.isArray(entry)?entry[1]:entry;
+     if(item?.name===name&&item.kind==='directory'){found=item;break;}
+    }
+    if(!found)throw Error('La subcarpeta ja no existix: '+name);
+    directory=found;
+   }
+  }
+  const filename=parts.at(-1);
+  let handle;
+  if(typeof directory.getFileHandle==='function')handle=await directory.getFileHandle(filename);
+  else{
+   const it=typeof directory.entries==='function'?directory.entries():directory.values();
+   for await(const entry of it){
+    const item=Array.isArray(entry)?entry[1]:entry;
+    if(item?.name===filename&&item.kind==='file'){handle=item;break;}
+   }
+  }
+  if(!handle)throw Error('La partitura ja no està en la carpeta original.');
+  this.files.set(path,handle);return handle;
+ }
  async getScore(path){
   if(!this.ready)throw Error('La carpeta no està autoritzada. Torna a donar permís des de Biblioteca.');
-  if(!validateLinkedPath(path))return null;
-  const handle=this.files.get(path);if(!handle)return null;
+  if(!validateLinkedPath(path)||!this.scores.some(item=>item.path===path))return null;
   try{
+   const handle=await this.fileHandleFor(path);
    const file=await handle.getFile();
    return {path,size:file.size,added:file.lastModified||0,blob:file};
   }catch(error){
-   throw Error('No es pot llegir '+path+'. Actualitza la biblioteca o revisa els permisos.');
+   if(error?.name==='NotAllowedError'||error?.name==='SecurityError')
+    throw Error('El navegador necessita tornar a autoritzar esta carpeta. Prem Actualitzar biblioteca o Canviar carpeta.');
+   throw Error('No es pot llegir '+path+'. Actualitza la biblioteca si el fitxer ha canviat o s’ha mogut.');
   }
  }
  async forget(){
   await inRootStore('readwrite',store=>store.delete(LINK_KEY));
   this.id=null;this.name='';this.handle=null;this.scores=[];this.folders=[];
-  this.files=new Map();this.status='none';this.error='';
+  this.files=new Map();this.status='none';this.error='';this.lastScannedAt=0;
  }
 }

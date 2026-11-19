@@ -826,7 +826,7 @@ function renderSettings(){
  <div class="panel"><h3>${icon('folder')} ${esc(tr('storage'))}</h3><p>${esc(tr('localHint'))}</p>
    ${linkedMode()?'<p class="help">'+(state.lang==='es'?'Los PDF de la carpeta vinculada no ocupan el almacenamiento privado de la web.':'Els PDF de la carpeta vinculada no ocupen l’emmagatzematge privat de la web.')+'</p>':''}
   <div class="line"><span>${esc(tr('scoreCount'))}</span><strong>${state.scores.length}</strong></div>
-  <div class="line"><span>${esc(tr('disk'))}</span><strong>${bytes(sizeTotal())}</strong></div>
+  <div class="line"><span>${esc(tr('disk'))}</span><strong>${linkedMode()?'—':bytes(sizeTotal())}</strong></div>
   <div class="line"><span>${esc(tr('network'))}</span><strong>${state.online?tr('statusOnline'):tr('statusOffline')}</strong></div>
   ${state.storage?.usage!=null?`<div class="line"><span>${esc(tr('usage'))}</span><strong>${esc(bytes(state.storage.usage))}</strong></div>`:''}
   ${state.storage?.quota!=null?`<div class="line"><span>${esc(tr('quota'))}</span><strong>${esc(bytes(state.storage.quota))}</strong></div>`:''}
@@ -1595,7 +1595,7 @@ async function handleClick(el){
   case 'source-refresh':case 'source-authorize':{
    if(!linkedLocal.exists||state.view||viewerPendingOpen)break;
    // requestPermission() s'ha d'invocar en el mateix clic.
-   const scan=linkedLocal.scan({ask:action==='source-authorize'});
+   const scan=linkedLocal.scan({ask:action==='source-authorize'||linkedLocal.cached});
    state.loading=true;
    try{
     const granted=await scan;
@@ -2038,7 +2038,10 @@ async function init(){
   try{await linkedLocal.restore();}catch(error){console.warn('Carpeta vinculada:',error);}
   const requestedSource=await getPref('w222a:source','imported');
   state.source=requestedSource==='linked'&&linkedLocal.exists?'linked':'imported';
-  if(linkedMode()){
+  if(linkedMode()&&!linkedLocal.cached){
+   // Primer ús (sense índex guardat): només ara escanegem la carpeta.
+   // En les següents obertures carreguem el catàleg persistit
+   // immediatament i no tornem a visitar tots els PDF.
    try{await linkedLocal.scan({ask:false});}
    catch(error){console.warn('Índex de carpeta vinculada:',error);}
   }

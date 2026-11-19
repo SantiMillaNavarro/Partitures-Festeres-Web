@@ -11,7 +11,9 @@ export function renderSourceControls({linked,mode='imported',lang='va',supported
  const grant=es?'Autorizar lectura':'Autoritzar lectura';
  const unlink=es?'Desvincular':'Desvincular';
  const status=active&&exists
-  ?ready?(es?'Leyendo los PDF originales sin copiarlos':'Llegint els PDF originals sense copiar-los')
+  ?ready?(linked.cached
+    ?(es?'Índice guardado: acceso inmediato sin volver a leer toda la carpeta':'Índex guardat: accés immediat sense tornar a llegir tota la carpeta')
+    :(es?'Leyendo los PDF originales sin copiarlos':'Llegint els PDF originals sense copiar-los'))
    :linked.status==='scanning'?(es?'Leyendo carpetas…':'Llegint carpetes…')
    :linked.status==='error'?(es?'No se ha podido leer la carpeta':'No s’ha pogut llegir la carpeta')
     :!linked.handle?.requestPermission
@@ -27,8 +29,12 @@ export function renderSourceControls({linked,mode='imported',lang='va',supported
  const canRequest=exists&&typeof linked.handle?.requestPermission==='function';
  const operations=(exists&&active&&(ready||canRequest)?'<button type="button" class="secondary" data-action="'+(ready?'source-refresh':'source-authorize')+'">'+(ready?refresh:grant)+'</button>':'')+
   (exists?'<button type="button" class="quiet pf-source-unlink" data-action="source-forget">'+unlink+'</button>':'');
+ const lastUpdated=active&&linked.lastScannedAt&&ready
+   ?(es?' · Última actualización: ':' · Última actualització: ')+
+     new Date(linked.lastScannedAt).toLocaleString(es?'es-ES':'ca-ES',{dateStyle:'short',timeStyle:'short'})
+   :'';
  const message=active&&exists?(es?'Carpeta: ':'Carpeta: ')+linked.name+
-  (ready?' · '+linked.scores.length+' PDF'+(linked.unreadable?' · '+linked.unreadable+' '+(es?'sin acceso':'sense accés'):'')
+  (ready?' · '+linked.scores.length+' PDF'+(linked.unreadable?' · '+linked.unreadable+' '+(es?'sin acceso':'sense accés'):'')+lastUpdated
    :es?' · lectura pendiente':' · lectura pendent'):'';
  return '<section class="pf-source-panel '+(compact?'pf-source-compact':'')+'" aria-label="'+title+'">'+
   '<div class="pf-source-header"><strong>📂 '+title+'</strong><small>'+(active&&exists?esc(linked.name):imported)+'</small></div>'+

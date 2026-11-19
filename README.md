@@ -1,3 +1,13 @@
+## W2.22A.2 — Índex persistent i biblioteca ràpida (2026-11-19)
+
+- En escollir una carpeta, el primer recorregut en guarda a **IndexedDB un índex lleuger** amb noms, rutes, subcarpetes i data de l'última lectura, juntament amb la referència autoritzada a la carpeta original.
+- En tancar, recarregar o tornar a obrir la web, es mostra **immediatament l'últim catàleg**. No es tornen a escanejar els centenars de PDF a cada inici. Si l'usuari ja tenia una carpeta vinculada sense índex guardat, es generarà una sola vegada en iniciar la versió actualitzada.
+- Si s'obri un PDF o es necessita una miniatura després de reobrir, se'n resol **només el fitxer seleccionat** mitjançant el seu camí: els PDF originals continuen fora d'IndexedDB.
+- **Actualitzar biblioteca** continua sent una operació explícita, que rellegeix l'estructura i detecta fitxers nous, moguts o eliminats. Ara no s'executa `getFile()` per a cada PDF durant la indexació; només es llegeixen les entrades del directori.
+- L'índex és una instantània, no una sincronització contínua. Si s'afig o es renomena una partitura fora de la web, prem **Actualitzar biblioteca** perquè aparega el canvi. Si un permís caduca, pot caldre tornar a autoritzar-lo; això no elimina el catàleg guardat.
+- La pantalla distingeix **Índex guardat** del primer escaneig i mostra l'hora de l'última actualització.
+- La prova automatitzada verifica que després de recarregar hi ha **0 enumeracions de carpetes** a l'inici, que un PDF es pot llegir a demanda, que la biblioteca importada manté les seues dades i que la carpeta original queda intacta.
+
 ## W2.22A.1 — Correcció de permisos per a Chrome Android (2026-11-19)
 
 - El lector ja no exigeix que `queryPermission()` retorne exactament `granted` abans d'intentar llegir la carpeta. Si la carpeta és llegible, també funciona amb estats `prompt` o amb API de permisos incompleta (Android/SAF).
