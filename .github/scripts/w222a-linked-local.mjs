@@ -30,7 +30,15 @@ try{
  });
  page.on('pageerror',e=>errors.push(e.message));
  await page.goto('http://127.0.0.1:8765/',{waitUntil:'domcontentloaded'});
- await page.locator('[data-action="source-choose"]').waitFor({timeout:16000});
+ try{await page.locator('[data-action="source-choose"]').waitFor({timeout:16000});}
+ catch(error){
+  console.log('W222A INITIAL DEBUG',JSON.stringify({
+   body:(await page.locator('body').innerText()).slice(0,1800),
+   errors,
+   state:await page.evaluate(()=>({secure:window.isSecureContext,picker:typeof window.showDirectoryPicker,html:document.getElementById('app')?.innerHTML.slice(0,1200)}))
+  },null,2));
+  throw error;
+ }
  const welcome=page.locator('[data-action="welcome-done"]');
  if(await welcome.count())await welcome.click();
  await page.locator('#import-input').setInputFiles({name:'CIMO.pdf',mimeType:'application/pdf',buffer:pdf});
