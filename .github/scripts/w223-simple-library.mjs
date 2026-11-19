@@ -38,6 +38,20 @@ try{
  await page.locator('[data-action="source-choose"]').first().click();
  await page.waitForFunction(()=>document.querySelector('.pf-library-summary .pf-source-info')?.textContent?.includes('1 PDF'),{timeout:12000});
  assert.equal(await page.locator('#pf-source-config').count(),0,'No s’han ocultat les opcions tècniques.');
+ // Mostrar una instrucció precisa en Android sense espantar els navegadors d'escriptori.
+ const help=await page.evaluate(async()=>{
+  const {renderSourceControls}=await import('./library-source-ui-w223.js');
+  const base={exists:true,ready:true,name:'Partitures',scores:[{path:'CIMO.pdf'}],folders:[],checkState:'ok'};
+  const ready=renderSourceControls({linked:base,mode:'linked',lang:'va',android:true});
+  const denied=renderSourceControls({linked:{...base,checkState:'unavailable',
+   handle:{requestPermission(){}}},mode:'linked',lang:'es',android:true});
+  const desktop=renderSourceControls({linked:base,mode:'linked',lang:'es',android:false});
+  return {ready,denied,desktop};
+ });
+ assert.match(help.ready,/Quan tornes a obrir l.aplicació/);
+ assert.match(help.denied,/Chrome puede pedirlo cada vez/);
+ assert.match(help.denied,/data-action="source-authorize"/);
+ assert.doesNotMatch(help.desktop,/pf-library-permission-help/);
  assert.equal(await page.locator('.pf-source-offline').count(),0,'Les còpies offline no han de dominar Biblioteca.');
  await page.locator('[data-action="source-manage"]').first().click();
  const autoon=page.locator('[data-action="source-auto-toggle"]');

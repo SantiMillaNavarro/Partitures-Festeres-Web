@@ -34,7 +34,7 @@ import {duplicatedRepertoire,buildPerformanceSession,performanceStep,performance
 import {ViewerScorePicker} from './viewer-score-picker-w2152.js';
 
 // Font única de la versió visible tant en Ajustos com al peu de la navegació.
-const APP_VERSION='W2.23B';
+const APP_VERSION='W2.23C';
 
 const I = {
   copy:'<svg viewBox="0 0 24 24"><rect x="7" y="7" width="13" height="13" rx="2"/><path d="M4 16H3a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v1"/></svg>',
@@ -728,7 +728,7 @@ function nav(name,page){return `<button class="navlink ${state.page===page?'sele
 function tabsMobile(name,page){return `<button class="bottom-link ${state.page===page?'selected':''}" data-action="page" data-value="${page}">${icon(name)}<span>${esc(tr(page))}</span></button>`;}
 function sourceBar(compact=false){
  return renderSourceControls({linked:linkedLocal,mode:state.source,lang:state.lang,
-   supported:linkSupported(),compact,autoEnabled:state.autoCheck});
+   supported:linkSupported(),compact,autoEnabled:state.autoCheck,android:/Android/i.test(navigator.userAgent)});
 }
 function paperBar(){
  const folders=paperFolders();

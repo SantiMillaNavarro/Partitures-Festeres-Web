@@ -1,3 +1,12 @@
+# Fase W2.23C — Avís clar per a l'activació de Biblioteca en Android
+
+- A Biblioteca, quan la carpeta local està vinculada des de Chrome Android, hi ha una instrucció breu: quan es torne a obrir l'aplicació, s'ha de prémer **«Activar biblioteca» si apareix** abans d'obrir partitures. Si el navegador ha retirat el permís, la instrucció és més directa i apareix al costat del botó.
+- La informació està en valencià i castellà i només es mostra a Android, no en navegadors d'escriptori.
+- Activar la biblioteca **no descarrega, importa ni duplica** PDF. L'usuari continua obrint els fitxers originals; les còpies offline són opcionals.
+- El permís ha de demanar-se des d'una pulsació; no s'intenta forçar un diàleg automàtic a l'inici.
+
+---
+
 # Fase W2.23B — Biblioteca original en obrir, sense còpies obligatòries
 
 **Canvi sobre W2.23A (19-11-2026).** Una comprovació silenciosa no ha de convertir-se en l'obligació de copiar els PDF per poder-los obrir.
