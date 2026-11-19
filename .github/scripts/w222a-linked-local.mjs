@@ -91,6 +91,11 @@ try{
  await page.locator('[data-action="source-choose"]').first().click();
  await page.locator('.pf-source-choice.active[data-action="source-linked"]').waitFor({timeout:15000});
  await page.waitForFunction(()=>document.querySelector('.pf-source-info')?.textContent?.includes('2 PDF'));
+ console.log('W222A folder state',JSON.stringify(await page.evaluate(()=>({
+  folders:[...document.querySelectorAll('[data-action="folder"]')].map(e=>({value:e.dataset.value,text:e.textContent?.trim().slice(0,90)})),
+  body:document.querySelector('.content')?.innerText.slice(0,1350),
+  crumbs:[...document.querySelectorAll('.crumb')].map(e=>e.textContent)
+ })),null,2));
  assert.equal(await page.locator('[data-action="folder"][data-value="1r"]').count(),1);
  assert.equal(await page.locator('[data-action="folder"][data-value="2n"]').count(),1);
  await page.locator('[data-action="folder"][data-value="1r"]').click();
