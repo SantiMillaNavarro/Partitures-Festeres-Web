@@ -14,8 +14,13 @@ export function renderSourceControls({linked,mode='imported',lang='va',supported
  const checked=linked?.lastAutoCheckedAt?new Date(linked.lastAutoCheckedAt).toLocaleTimeString(es?'es-ES':'ca-ES',{hour:'2-digit',minute:'2-digit'}):null;
  const waiting=active&&linked.checkBusy;
  const unavailable=active&&linked.checkState==='unavailable';
+ const recover=active&&exists&&(unavailable||!ready);
+ const canRequest=typeof linked?.handle?.requestPermission==='function';
+ const recoverAction=canRequest?'source-authorize':supported?'source-choose':'source-fallback';
+ const recoverLabel=canRequest?(es?'Activar biblioteca':'Activar biblioteca'):(es?'Volver a elegir carpeta':'Tornar a triar carpeta');
+ const recoverButton=recover?'<button class="secondary pf-library-activate" type="button" data-action="'+recoverAction+'">'+recoverLabel+'</button>':'';
  const status=waiting?(es?'Comprobando cambios…':'Comprovant canvis…')
-  :unavailable?(es?'Sin acceso a cambios; se mantiene la biblioteca guardada':'Sense accés als canvis; es manté la biblioteca guardada')
+  :unavailable?(es?'Autoriza la carpeta para leer los PDF originales':'Autoritza la carpeta per a llegir els PDF originals')
   :active&&linked.offlineBusy?(linked.offlineProgress|| (es?'Preparando copias…':'Preparant còpies…'))
   :active&&!ready?(es?'Necesita permiso para consultar la carpeta':'Cal permís per a consultar la carpeta')
   :checked&&active?(es?'Comprobada a las ':'Comprovada a les ')+checked:'';
@@ -30,12 +35,13 @@ export function renderSourceControls({linked,mode='imported',lang='va',supported
     (status?'<small class="pf-library-check '+(unavailable?'warn':'')+'" role="status">'+esc(status)+'</small>':'')+
    '</div>'+
    (!exists?'<button class="secondary" type="button" data-action="'+(supported?'source-choose':'source-fallback')+'">'+esc(choose)+'</button>':'')+
+   recoverButton+
    (!active?'<button class="quiet pf-drive-quick" type="button" data-action="drive-open" title="'+(es?'Importar desde Drive':'Importar des de Drive')+'">Drive</button>':'')+
    '<button class="quiet pf-library-manage" type="button" data-action="source-manage" title="'+(es?'Gestionar biblioteca':'Gestionar biblioteca')+'">'+
     (es?'Gestionar':'Gestionar')+'</button>'+
    '</section>';
  }
- const operations=(exists&&active?'<button type="button" class="secondary" data-action="source-refresh">'+refresh+'</button>':'')+
+ const operations=recoverButton+(exists&&active?'<button type="button" class="secondary" data-action="source-refresh">'+refresh+'</button>':'')+
   '<button type="button" class="secondary" data-action="'+(supported?'source-choose':'source-fallback')+'">'+esc(choose)+'</button>'+
   (exists?'<button type="button" class="quiet pf-source-unlink" data-action="source-forget">'+(es?'Desvincular':'Desvincular')+'</button>':'');
  const count=active&&exists?linked.offlineCount+'/'+linked.scores.length:'';
@@ -53,7 +59,7 @@ export function renderSourceControls({linked,mode='imported',lang='va',supported
       (es?'Actualizar copias':'Actualitzar còpies')+'</button>'+
       '<button type="button" class="quiet" data-action="source-cache-clear">'+(es?'Eliminar copias':'Eliminar còpies')+'</button>':'')+
     '</div>')+
-   '<p class="help">'+(es?'Solo son necesarias para abrir PDF sin permisos de carpeta o sin conexión. Consumen almacenamiento del navegador; no se modifica el archivo original.':'Només són necessàries per a obrir PDF sense permís de carpeta o sense connexió. Ocupen espai al navegador; no es modifica l’arxiu original.')+'</p>'+
+   '<p class="help">'+(es?'Son opcionales: los PDF se leen directamente de su carpeta cuando está autorizada. Las copias solo sirven si quieres usarlos sin permiso o conexión y ocupan almacenamiento extra.':'Són opcionals: els PDF es lligen directament de la carpeta quan està autoritzada. Les còpies només servixen si els vols utilitzar sense permís o connexió i ocupen espai addicional.')+'</p>'+
    '</div>':'';
  const sourceTabs='<div class="pf-source-switch" role="group" aria-label="'+(es?'Origen de biblioteca':'Origen de biblioteca')+'">'+
   '<button type="button" class="pf-source-choice '+(!active?'active':'')+'" data-action="source-imported" aria-pressed="'+(!active)+'">'+imported+'</button>'+
@@ -61,7 +67,7 @@ export function renderSourceControls({linked,mode='imported',lang='va',supported
  const autolabel=es?'Comprobar los cambios automáticamente al abrir':'Comprovar els canvis automàticament en obrir';
  return '<section class="pf-source-panel pf-source-compact" id="pf-source-config" aria-label="'+(es?'Origen de biblioteca':'Origen de biblioteca')+'">'+
   '<div class="pf-source-header"><strong>📂 '+(es?'Biblioteca':'Biblioteca')+'</strong><small>'+esc(folderName)+'</small></div>'+
-  '<p class="help">'+(es?'Selecciona una vez tu carpeta de partituras. La biblioteca se abre inmediatamente con el último índice guardado.':'Tria una vegada la teua carpeta de partitures. La biblioteca s’obri immediatament amb l’últim índex guardat.')+'</p>'+
+  '<p class="help">'+(es?'La biblioteca comprueba los cambios al abrir. Si Chrome retira el permiso, pulsa Activar biblioteca: no es necesario copiar los PDF.':'La biblioteca comprova els canvis en obrir. Si Chrome retira el permís, prem Activar biblioteca: no cal copiar els PDF.')+'</p>'+
   sourceTabs+'<div class="pf-source-actions">'+operations+'</div>'+
   (active?'<div class="pf-source-info">'+esc(linked.name)+' · '+linked.scores.length+' PDF'+
     (known?' · '+(es?'Última actualización: ':'Última actualització: ')+esc(known):'')+'</div>':'')+
